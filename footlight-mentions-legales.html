@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Mentions légales & CGU</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #07090e; --bg2: #0d1017; --bg3: #141820;
+  --border: rgba(255,255,255,0.07); --text: #f0f2f7;
+  --muted: #5a6275; --blue: #4f8ef7;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,14,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800;
+  background: linear-gradient(90deg, #4f8ef7, #7c6af7);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.back { font-size: 0.82rem; color: var(--muted); text-decoration: none; }
+.back:hover { color: var(--text); }
+
+.page { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+
+.page-title {
+  font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+  margin-bottom: 8px;
+}
+.page-date { font-size: 0.82rem; color: var(--muted); margin-bottom: 48px; }
+
+/* Sommaire */
+.toc {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px 24px; margin-bottom: 40px;
+}
+.toc-title { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+.toc-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.toc-list a { font-size: 0.85rem; color: var(--blue); text-decoration: none; }
+.toc-list a:hover { text-decoration: underline; }
+
+/* Sections */
+.section { margin-bottom: 40px; scroll-margin-top: 72px; }
+.section-title {
+  font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--blue);
+}
+.section p { font-size: 0.88rem; color: #c9d1d9; line-height: 1.8; margin-bottom: 12px; }
+.section p:last-child { margin-bottom: 0; }
+.section ul { list-style: none; padding: 0; }
+.section ul li {
+  font-size: 0.88rem; color: #c9d1d9; line-height: 1.8;
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+  display: flex; gap: 10px;
+}
+.section ul li:last-child { border-bottom: none; }
+.section ul li::before { content: '→'; color: var(--blue); flex-shrink: 0; }
+.section strong { color: var(--text); }
+.info-box {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;
+}
+.info-box p { margin-bottom: 0; }
+.info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+.info-row:last-child { border-bottom: none; }
+.info-row span:first-child { color: var(--muted); }
+.info-row span:last-child { color: var(--text); font-weight: 500; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+  <a href="index.html" class="back">← Retour</a>
+</nav>
+
+<div class="page">
+  <div class="page-title">Mentions légales & CGU</div>
+  <div class="page-date">Dernière mise à jour : avril 2025</div>
+
+  <div class="toc">
+    <div class="toc-title">Sommaire</div>
+    <ul class="toc-list">
+      <li><a href="#editeur">1. Éditeur du site</a></li>
+      <li><a href="#objet">2. Objet de la plateforme</a></li>
+      <li><a href="#acces">3. Accès et inscription</a></li>
+      <li><a href="#donnees">4. Données personnelles (RGPD)</a></li>
+      <li><a href="#tarifs">5. Tarifs et abonnements</a></li>
+      <li><a href="#contenu">6. Contenu et responsabilités</a></li>
+      <li><a href="#propriete">7. Propriété intellectuelle</a></li>
+      <li><a href="#cookies">8. Cookies</a></li>
+      <li><a href="#contact">9. Contact</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. ÉDITEUR -->
+  <div class="section" id="editeur">
+    <div class="section-title">1. Éditeur du site</div>
+    <div class="info-box">
+      <div class="info-row"><span>Nom commercial</span><span>FootLight</span></div>
+      <div class="info-row"><span>Statut juridique</span><span>Auto-entrepreneur (micro-entreprise)</span></div>
+      <div class="info-row"><span>Responsable</span><span>À compléter — Prénom Nom</span></div>
+      <div class="info-row"><span>SIRET</span><span>À compléter dès réception</span></div>
+      <div class="info-row"><span>Adresse</span><span>À compléter</span></div>
+      <div class="info-row"><span>Email</span><span>contact@footlight.fr</span></div>
+      <div class="info-row"><span>Hébergeur</span><span>Netlify, Inc. — 44 Montgomery St, San Francisco, CA</span></div>
+      <div class="info-row"><span>Paiements</span><span>Stripe, Inc. — 354 Oyster Point Blvd, South San Francisco, CA</span></div>
+    </div>
+  </div>
+
+  <!-- 2. OBJET -->
+  <div class="section" id="objet">
+    <div class="section-title">2. Objet de la plateforme</div>
+    <p>FootLight est une plateforme numérique dédiée au football amateur français (niveaux N2, N3, R1 et assimilés). Elle permet aux joueurs de créer un profil public avec leurs statistiques personnelles, et aux recruteurs (clubs, agents, scouts) d'accéder à ces profils à des fins de recrutement sportif.</p>
+    <p>FootLight ne constitue pas un service d'emploi au sens du droit du travail. Les données présentées sont déclaratives et fournies par les joueurs eux-mêmes. FootLight ne garantit pas l'exactitude des statistiques publiées.</p>
+  </div>
+
+  <!-- 3. ACCÈS -->
+  <div class="section" id="acces">
+    <div class="section-title">3. Accès et inscription</div>
+    <p><strong>Joueurs :</strong> L'inscription est gratuite et ouverte à tout joueur de football amateur. Le joueur s'engage à fournir des informations exactes et à jour. Il est seul responsable des données qu'il publie sur son profil.</p>
+    <p><strong>Recruteurs :</strong> L'accès recruteur est soumis à abonnement. L'utilisateur s'engage à utiliser la plateforme uniquement à des fins de recrutement sportif et à ne pas contacter les joueurs à des fins commerciales ou non sportives.</p>
+    <ul>
+      <li>Tout utilisateur doit avoir au moins 18 ans</li>
+      <li>Un seul compte par personne est autorisé</li>
+      <li>Le partage de compte est interdit</li>
+      <li>FootLight se réserve le droit de suspendre tout compte en cas d'utilisation abusive</li>
+    </ul>
+  </div>
+
+  <!-- 4. DONNÉES PERSONNELLES -->
+  <div class="section" id="donnees">
+    <div class="section-title">4. Données personnelles (RGPD)</div>
+    <p>FootLight collecte et traite des données personnelles conformément au Règlement Général sur la Protection des Données (RGPD — Règlement UE 2016/679).</p>
+    <p><strong>Données collectées :</strong></p>
+    <ul>
+      <li>Joueurs : prénom, nom, date de naissance, email, club, statistiques sportives, données GPS (si renseignées)</li>
+      <li>Recruteurs : prénom, nom, email, organisation, données de paiement (gérées par Stripe)</li>
+    </ul>
+    <p><strong>Finalités du traitement :</strong></p>
+    <ul>
+      <li>Gestion des comptes et authentification</li>
+      <li>Affichage des profils joueurs aux recruteurs abonnés</li>
+      <li>Calcul des indicateurs statistiques</li>
+      <li>Traitement des paiements via Stripe</li>
+      <li>Envoi de notifications et alertes (avec consentement)</li>
+    </ul>
+    <p><strong>Droits des utilisateurs :</strong> Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de portabilité et d'opposition. Pour exercer ces droits, contactez-nous à <strong>contact@footlight.fr</strong>. Délai de réponse : 30 jours maximum.</p>
+    <p><strong>Conservation des données :</strong> Les données sont conservées pendant la durée d'activité du compte, puis 3 ans après la dernière connexion. Les données de paiement sont gérées directement par Stripe et ne sont pas stockées sur nos serveurs.</p>
+    <p>Les données ne sont pas vendues à des tiers. Elles peuvent être partagées avec Stripe (paiement) et Netlify (hébergement) dans le cadre de leurs services respectifs.</p>
+  </div>
+
+  <!-- 5. TARIFS -->
+  <div class="section" id="tarifs">
+    <div class="section-title">5. Tarifs et abonnements</div>
+    <div class="info-box">
+      <div class="info-row"><span>Plan Gratuit</span><span>0€ / mois — accès limité</span></div>
+      <div class="info-row"><span>Plan Pro</span><span>19€ / mois — sans engagement</span></div>
+      <div class="info-row"><span>Plan Premium</span><span>39€ / mois — sans engagement</span></div>
+      <div class="info-row"><span>Essai</span><span>1 jour gratuit sur Pro et Premium</span></div>
+      <div class="info-row"><span>Engagement</span><span>Aucun — résiliez à tout moment</span></div>
+      <div class="info-row"><span>Remboursement</span><span>Non applicable (services numériques)</span></div>
+    </div>
+    <p>Les abonnements sont renouvelés automatiquement chaque mois à la date anniversaire. La résiliation prend effet à la fin de la période en cours. Aucun remboursement au prorata n'est accordé.</p>
+    <p>Les prix s'entendent TTC. FootLight se réserve le droit de modifier ses tarifs avec un préavis de 30 jours par email.</p>
+  </div>
+
+  <!-- 6. CONTENU -->
+  <div class="section" id="contenu">
+    <div class="section-title">6. Contenu et responsabilités</div>
+    <p>Les statistiques et informations publiées sur FootLight sont déclarées par les joueurs eux-mêmes. FootLight n'effectue pas de vérification systématique de l'exactitude de ces données.</p>
+    <p>FootLight décline toute responsabilité en cas de :</p>
+    <ul>
+      <li>Données incorrectes ou frauduleuses publiées par un joueur</li>
+      <li>Décision de recrutement basée sur les données de la plateforme</li>
+      <li>Interruption temporaire du service pour maintenance</li>
+      <li>Perte de données due à un événement extérieur</li>
+    </ul>
+    <p>Tout contenu inapproprié, trompeur ou portant atteinte aux droits d'un tiers peut être signalé à <strong>contact@footlight.fr</strong>.</p>
+  </div>
+
+  <!-- 7. PROPRIÉTÉ INTELLECTUELLE -->
+  <div class="section" id="propriete">
+    <div class="section-title">7. Propriété intellectuelle</div>
+    <p>Le nom FootLight, le logo, l'interface et les codes sources sont la propriété exclusive de l'éditeur. Toute reproduction, même partielle, sans autorisation écrite est interdite.</p>
+    <p>Les données personnelles et statistiques des joueurs restent leur propriété. En s'inscrivant, le joueur accorde à FootLight une licence non exclusive d'affichage de ces données aux recruteurs abonnés.</p>
+  </div>
+
+  <!-- 8. COOKIES -->
+  <div class="section" id="cookies">
+    <div class="section-title">8. Cookies</div>
+    <p>FootLight utilise des cookies strictement nécessaires au fonctionnement du site (session, authentification). Aucun cookie publicitaire ou de tracking tiers n'est utilisé.</p>
+    <ul>
+      <li>Cookie de session : maintien de la connexion — durée : session</li>
+      <li>Cookie de préférences : langue et affichage — durée : 12 mois</li>
+    </ul>
+    <p>Conformément à la loi, votre consentement n'est pas requis pour ces cookies essentiels.</p>
+  </div>
+
+  <!-- 9. CONTACT -->
+  <div class="section" id="contact">
+    <div class="section-title">9. Contact</div>
+    <div class="info-box">
+      <div class="info-row"><span>Email général</span><span>contact@footlight.fr</span></div>
+      <div class="info-row"><span>RGPD / Données</span><span>rgpd@footlight.fr</span></div>
+      <div class="info-row"><span>Signalement contenu</span><span>contact@footlight.fr</span></div>
+      <div class="info-row"><span>Support abonnement</span><span>support@footlight.fr</span></div>
+    </div>
+    <p>Pour toute réclamation non résolue, vous pouvez saisir la CNIL : <strong>www.cnil.fr</strong></p>
+  </div>
+
+</div>
+</body>
+</html>

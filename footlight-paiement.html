@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Paiement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<!-- Stripe.js -->
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #07090e; --bg2: #0d1017; --bg3: #141820; --bg4: #1a2030;
+  --border: rgba(255,255,255,0.06); --border2: rgba(255,255,255,0.1);
+  --text: #f0f2f7; --muted: #5a6275; --muted2: #3a4155;
+  --blue: #4f8ef7; --blue2: #7c6af7;
+  --green: #2dd882; --gold: #f5a623; --red: #f74f4f;
+}
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh;
+}
+.bg-mesh {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 20%, rgba(79,142,247,0.07), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(124,106,247,0.06), transparent 60%);
+}
+.wrapper {
+  position: relative; z-index: 1;
+  max-width: 520px; margin: 0 auto;
+  padding: 0 20px 80px; min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 0 28px;
+}
+.logo {
+  font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800;
+  background: linear-gradient(90deg, #4f8ef7, #7c6af7);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.secure-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.72rem; color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+.secure-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+/* ── PLAN SUMMARY ── */
+.plan-summary {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 18px; padding: 20px; margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.plan-summary::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--plan-color, var(--blue));
+}
+.plan-summary-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.plan-name {
+  font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700;
+}
+.plan-change {
+  font-size: 0.75rem; color: var(--blue); cursor: pointer; text-decoration: underline;
+}
+.plan-price-big {
+  font-family: 'DM Mono', monospace; font-size: 2.4rem; font-weight: 700;
+  margin-bottom: 4px;
+}
+.plan-price-big span { font-size: 1rem; font-weight: 400; color: var(--muted); }
+.plan-trial-info {
+  font-size: 0.75rem; padding: 5px 12px; border-radius: 20px; display: inline-block;
+  margin-bottom: 14px;
+}
+.plan-trial-info.green { background: rgba(45,216,130,0.1); color: var(--green); border: 1px solid rgba(45,216,130,0.2); }
+.plan-trial-info.muted { background: var(--bg4); color: var(--muted); }
+
+.plan-features-mini { display: flex; flex-wrap: wrap; gap: 6px; }
+.feat-pill {
+  font-size: 0.72rem; padding: 3px 10px; border-radius: 20px;
+  background: var(--bg4); border: 1px solid var(--border2); color: var(--muted);
+}
+.feat-pill.on { border-color: rgba(79,142,247,0.3); color: var(--blue); background: rgba(79,142,247,0.08); }
+
+/* ── FORM PAIEMENT ── */
+.form-section { margin-bottom: 20px; }
+.form-title {
+  font-size: 0.68rem; font-family: 'DM Mono', monospace;
+  text-transform: uppercase; letter-spacing: 2px; color: var(--muted);
+  margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.field { margin-bottom: 12px; }
+.field-label {
+  font-size: 0.72rem; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--muted); margin-bottom: 7px;
+}
+.field-input {
+  width: 100%; padding: 13px 16px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 12px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 0.92rem;
+  outline: none; transition: border-color .2s, background .2s;
+}
+.field-input:focus { border-color: var(--blue); background: var(--bg4); }
+.field-input::placeholder { color: var(--muted2); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Stripe Element container */
+.stripe-element-wrap {
+  padding: 13px 16px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 12px; transition: border-color .2s;
+}
+.stripe-element-wrap.focused { border-color: var(--blue); background: var(--bg4); }
+.stripe-element-wrap.error { border-color: var(--red); }
+
+#card-errors {
+  font-size: 0.75rem; color: var(--red); margin-top: 6px;
+  min-height: 18px; padding-left: 2px;
+}
+
+/* ── RÉCAP COMMANDE ── */
+.order-recap {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 14px; overflow: hidden; margin-bottom: 20px;
+}
+.order-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  font-size: 0.83rem;
+}
+.order-row:last-child { border-bottom: none; }
+.order-key { color: var(--muted); }
+.order-val { font-weight: 500; }
+.order-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px; background: var(--bg4);
+  font-size: 1rem; font-weight: 700;
+}
+.order-total-price { font-family: 'DM Mono', monospace; font-size: 1.2rem; color: var(--blue); }
+
+/* ── GARANTIES ── */
+.guarantees {
+  display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.guarantee {
+  flex: 1; min-width: 120px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 12px 10px; text-align: center;
+}
+.guarantee-icon { font-size: 1.2rem; margin-bottom: 4px; }
+.guarantee-text { font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+
+/* ── BOUTON PAYER ── */
+.pay-btn {
+  width: 100%; height: 54px; border-radius: 16px; border: none;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 1rem; font-weight: 600; cursor: pointer;
+  box-shadow: 0 8px 28px rgba(79,142,247,0.3);
+  transition: opacity .2s, transform .1s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.pay-btn:hover { opacity: 0.92; }
+.pay-btn:active { transform: scale(0.98); }
+.pay-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pay-btn.loading { pointer-events: none; }
+.spinner {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  animation: spin .6s linear infinite; display: none;
+}
+.pay-btn.loading .spinner { display: block; }
+.pay-btn.loading .btn-text { opacity: 0.7; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.stripe-badge {
+  text-align: center; font-size: 0.7rem; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.stripe-logo {
+  font-family: 'DM Mono', monospace; font-weight: 700;
+  color: #635bff; font-size: 0.8rem;
+}
+
+/* ── MODE TEST ── */
+.test-banner {
+  background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3);
+  border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.test-banner-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.test-banner-text { font-size: 0.78rem; color: var(--gold); line-height: 1.6; }
+.test-banner-text strong { color: #fff; }
+.test-card {
+  font-family: 'DM Mono', monospace; font-size: 0.75rem;
+  background: var(--bg4); border-radius: 6px; padding: 2px 8px;
+  color: var(--gold); display: inline-block; margin-top: 4px;
+}
+
+/* ── PLAN SELECTOR (si on revient) ── */
+.plan-selector {
+  display: none; margin-bottom: 20px;
+}
+.plan-selector.visible { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.ps-card {
+  background: var(--bg3); border: 2px solid var(--border2);
+  border-radius: 14px; padding: 14px 10px; text-align: center;
+  cursor: pointer; transition: all .15s;
+}
+.ps-card:hover { border-color: var(--muted); }
+.ps-card.selected.free { border-color: var(--green); }
+.ps-card.selected.pro { border-color: var(--blue); }
+.ps-card.selected.premium { border-color: var(--gold); }
+.ps-name { font-size: 0.82rem; font-weight: 700; margin-bottom: 2px; }
+.ps-price { font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+/* ── SUCCÈS ── */
+.success-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg); display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px; text-align: center;
+}
+.success-overlay.visible { display: flex; animation: fadeIn .4s; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.success-ring {
+  width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 24px;
+  background: rgba(45,216,130,0.1); border: 2px solid rgba(45,216,130,0.3);
+  display: flex; align-items: center; justify-content: center; font-size: 2.8rem;
+  animation: pop .5s cubic-bezier(.36,.07,.19,.97);
+}
+@keyframes pop { 0%{transform:scale(.3);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+.suc-title { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:800; margin-bottom:10px; }
+.suc-sub { font-size:0.88rem; color:var(--muted); line-height:1.7; margin-bottom:28px; max-width:380px; }
+.suc-btn {
+  padding: 14px 32px; border-radius: 14px; border: none;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+  display: block; width: 100%; max-width: 360px;
+}
+.suc-btn-outline {
+  padding: 12px 32px; border-radius: 14px;
+  background: transparent; border: 1px solid var(--border2); color: var(--muted);
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; cursor: pointer;
+  display: block; width: 100%; max-width: 360px;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <a href="index.html" class="logo">FootLight</a>
+    <div class="secure-badge">
+      <div class="secure-dot"></div>
+      Paiement sécurisé
+    </div>
+  </div>
+
+
+
+  <!-- PLAN SELECTOR (changement de plan) -->
+  <div class="plan-selector" id="plan-selector">
+    <div class="ps-card free selected" onclick="changePlan('free',this)">
+      <div class="ps-name" style="color:var(--muted)">Gratuit</div>
+      <div class="ps-price">0€/mois</div>
+    </div>
+    <div class="ps-card pro" onclick="changePlan('pro',this)">
+      <div class="ps-name" style="color:#60a5fa">Pro</div>
+      <div class="ps-price">14€/mois</div>
+    </div>
+    <div class="ps-card premium" onclick="changePlan('premium',this)">
+      <div class="ps-name" style="color:var(--gold)">Premium</div>
+      <div class="ps-price">29€/mois</div>
+    </div>
+  </div>
+
+  <!-- RÉCAP PLAN -->
+  <div class="plan-summary" id="plan-summary">
+    <div class="plan-summary-top">
+      <div class="plan-name" id="plan-name">Plan Pro</div>
+      <span class="plan-change" onclick="togglePlanSelector()">Changer →</span>
+    </div>
+    <div class="plan-price-big" id="plan-price">19€ <span>/mois</span></div>
+    <div class="plan-trial-info green" id="plan-trial">1 jour gratuit · Engagement 3 mois requise aujourd'hui</div>
+    <div class="plan-features-mini" id="plan-features">
+      <span class="feat-pill on">Illimité</span>
+      <span class="feat-pill on">Impact collectif</span>
+      <span class="feat-pill on">Filtres avancés</span>
+      <span class="feat-pill on">Shortlist & alertes</span>
+      <span class="feat-pill">Vidéos & GPS</span>
+      <span class="feat-pill">Export</span>
+    </div>
+  </div>
+
+  <!-- FORM EMAIL (si pas déjà connu) -->
+  <div class="form-section">
+    <div class="form-title">Votre compte</div>
+    <div class="field">
+      <div class="field-label">Email</div>
+      <input class="field-input" type="email" id="email-input"
+        placeholder="votre@email.com" value=""/>
+    </div>
+  </div>
+
+  <!-- CARTE BANCAIRE -->
+  <div class="form-section" id="card-section">
+    <div class="form-title">Carte bancaire</div>
+
+    <div class="field">
+      <div class="field-label">Numéro de carte</div>
+      <div class="stripe-element-wrap" id="card-number-wrap">
+        <div id="card-number-element"></div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <div class="field-label">Date d'expiration</div>
+        <div class="stripe-element-wrap" id="card-expiry-wrap">
+          <div id="card-expiry-element"></div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">CVC</div>
+        <div class="stripe-element-wrap" id="card-cvc-wrap">
+          <div id="card-cvc-element"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="card-errors"></div>
+  </div>
+
+  <!-- RÉCAP COMMANDE -->
+  <div class="order-recap" id="order-recap">
+    <div class="order-row">
+      <span class="order-key">Plan</span>
+      <span class="order-val" id="recap-plan">Pro</span>
+    </div>
+    <div class="order-row" id="trial-row">
+      <span class="order-key">Essai</span>
+      <span class="order-val" style="color:var(--green)">1 jour gratuit</span>
+    </div>
+    <div class="order-row">
+      <span class="order-key">Puis</span>
+      <span class="order-val" id="recap-puis">14€ / mois</span>
+    </div>
+    <div class="order-row">
+      <span class="order-key">Engagement</span>
+      <span class="order-val" style="color:var(--green)">Engagement 3 mois minimum · Engagement minimum 3 mois</span>
+    </div>
+    <div class="order-total">
+      <span>Aujourd'hui</span>
+      <span class="order-total-price" id="recap-today">0,00€</span>
+    </div>
+  </div>
+
+  <!-- GARANTIES -->
+  <div class="guarantees">
+    <div class="guarantee">
+      <div class="guarantee-icon">🔒</div>
+      <div class="guarantee-text">Paiement SSL sécurisé par Stripe</div>
+    </div>
+    <div class="guarantee">
+      <div class="guarantee-icon">🔄</div>
+      <div class="guarantee-text">Engagement 3 mois minimum · Engagement minimum 3 mois</div>
+    </div>
+    <div class="guarantee">
+      <div class="guarantee-icon">📧</div>
+      <div class="guarantee-text">Confirmation par email immédiate</div>
+    </div>
+  </div>
+
+  <!-- BOUTON PAYER -->
+  <button class="pay-btn" id="pay-btn" onclick="handlePayment()">
+    <div class="spinner" id="spinner"></div>
+    <span class="btn-text" id="btn-text">Démarrer l'essai gratuit</span>
+  </button>
+
+  <div class="stripe-badge">
+    Paiement sécurisé par <span class="stripe-logo">stripe</span> · SSL · PCI DSS
+  </div>
+
+</div>
+
+<!-- OVERLAY SUCCÈS -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-ring">✓</div>
+  <div class="suc-title">Accès activé !</div>
+  <div class="suc-sub" id="suc-sub">
+    Votre compte FootLight est prêt. Commencez à rechercher des talents dès maintenant.
+  </div>
+  <button class="suc-btn" onclick="window.location.href='footlight-recherche.html'">
+    Accéder à la recherche →
+  </button>
+  <button class="suc-btn-outline" onclick="window.location.href='index.html'">
+    Retour à l'accueil
+  </button>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  ⚠️  CONFIGURATION STRIPE
+//  Remplace ces valeurs par tes vraies clés
+//  depuis dashboard.stripe.com
+// ════════════════════════════════════════════
+
+const STRIPE_CONFIG = {
+  // ── CLÉ PUBLIQUE ──
+  // Test  : commence par pk_test_...
+  // Live  : commence par pk_live_...
+  publicKey: 'pk_live_51TR5ntF8F2JI2vQrBkXoJwKykdhPbVMvwFITh1CSig08BhQGGQKjbI6glGQUeLr47LdYsdfdxWEolZZgLsCvd6TW00ZHdLMQzY',
+
+  // ── IDs DES PRIX (créés dans Stripe Dashboard > Products) ──
+  // Pour chaque plan, crée un produit avec abonnement mensuel
+  prices: {
+    pro:     'price_1TR6HYF8F2JI2vQrQ2zUjjy0',      // 14€/mois ✅
+    premium: 'price_1TtofqF8F2JI2vQrpej8fsuE',  // 29€/mois ✅
+  },
+
+  // ── DURÉE D'ESSAI ──
+  trialDays: 1,
+};
+
+// ════════════════════════════════════════════
+//  PLANS
+// ════════════════════════════════════════════
+const PLANS_DATA = {
+  free: {
+    name: 'Gratuit', price: '0€', priceNum: 0,
+    color: '#5a6275', trial: false, trialText: 'Accès immédiat — gratuit',
+    today: '0,00€', puis: 'Gratuit',
+    features: [
+      {on:true,  txt:'10 profils / mois'},
+      {on:true,  txt:'Stats basiques'},
+      {on:true,  txt:'3 joueurs manuels'},
+      {on:false, txt:'Impact collectif'},
+      {on:false, txt:'Filtres avancés'},
+      {on:false, txt:'Vidéos & GPS'},
+    ]
+  },
+  pro: {
+    name: 'Pro', price: '19€', priceNum: 19,
+    color: '#4f8ef7', trial: true, trialText: '1 jour gratuit · Engagement 3 mois requise aujourd\'hui',
+    today: '0,00€', puis: '14€ / mois',
+    features: [
+      {on:true,  txt:'Illimité'},
+      {on:true,  txt:'Impact collectif'},
+      {on:true,  txt:'Filtres avancés'},
+      {on:true,  txt:'Shortlist & alertes'},
+      {on:true,  txt:'Joueurs manuels illimités'},
+      {on:false, txt:'Vidéos & GPS'},
+    ]
+  },
+  premium: {
+    name: 'Premium', price: '39€', priceNum: 39,
+    color: '#f5a623', trial: true, trialText: '1 jour gratuit · Engagement 3 mois requise aujourd\'hui',
+    today: '0,00€', puis: '29€ / mois',
+    features: [
+      {on:true, txt:'Tout le Pro'},
+      {on:true, txt:'Vidéos & GPS'},
+      {on:true, txt:'Export PDF/Excel'},
+      {on:true, txt:'Contact direct'},
+      {on:true, txt:'Comparaison joueurs'},
+      {on:true, txt:'Support prioritaire'},
+    ]
+  }
+};
+
+// ════════════════════════════════════════════
+//  ÉTAT
+// ════════════════════════════════════════════
+let currentPlan = 'pro';
+let stripe = null;
+let cardNumber = null;
+let cardExpiry = null;
+let cardCvc = null;
+
+// ════════════════════════════════════════════
+//  INIT STRIPE
+// ════════════════════════════════════════════
+function initStripe() {
+  try {
+    stripe = Stripe(STRIPE_CONFIG.publicKey);
+    const elements = stripe.elements({
+      appearance: {
+        theme: 'night',
+        variables: {
+          colorPrimary: '#4f8ef7',
+          colorBackground: '#141820',
+          colorText: '#f0f2f7',
+          colorDanger: '#f74f4f',
+          fontFamily: 'DM Sans, sans-serif',
+          borderRadius: '8px',
+          spacingUnit: '4px',
+        }
+      }
+    });
+
+    cardNumber = elements.create('cardNumber', { placeholder: '1234 5678 9012 3456' });
+    cardExpiry = elements.create('cardExpiry');
+    cardCvc    = elements.create('cardCvc');
+
+    cardNumber.mount('#card-number-element');
+    cardExpiry.mount('#card-expiry-element');
+    cardCvc.mount('#card-cvc-element');
+
+    // Focus styles
+    [
+      {el: cardNumber, wrap: 'card-number-wrap'},
+      {el: cardExpiry, wrap: 'card-expiry-wrap'},
+      {el: cardCvc,    wrap: 'card-cvc-wrap'},
+    ].forEach(({el, wrap}) => {
+      el.on('focus', () => document.getElementById(wrap).classList.add('focused'));
+      el.on('blur',  () => document.getElementById(wrap).classList.remove('focused'));
+      el.on('change', e => {
+        const err = document.getElementById('card-errors');
+        err.textContent = e.error ? e.error.message : '';
+        if (e.error) document.getElementById(wrap).classList.add('error');
+        else document.getElementById(wrap).classList.remove('error');
+      });
+    });
+
+    console.log('✅ Stripe initialisé');
+  } catch(e) {
+    console.warn('Stripe non configuré — mode démo activé');
+    // Mode démo : cacher la section carte
+    document.getElementById('card-section').innerHTML = `
+      <div class="form-title">Carte bancaire</div>
+      <div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:12px;padding:16px;font-size:0.82rem;color:var(--gold);line-height:1.7">
+        <strong style="color:#fff">Configuration requise</strong><br>
+        Remplace <code style="background:var(--bg4);padding:2px 6px;border-radius:4px">pk_test_REMPLACE...</code> par ta clé publique Stripe dans le fichier JS pour activer le paiement.
+      </div>
+    `;
+  }
+}
+
+// ════════════════════════════════════════════
+//  GESTION DES PLANS
+// ════════════════════════════════════════════
+function renderPlan(planKey) {
+  const p = PLANS_DATA[planKey];
+  document.documentElement.style.setProperty('--plan-color', p.color);
+  document.getElementById('plan-name').textContent = `Plan ${p.name}`;
+  document.getElementById('plan-name').style.color = p.color;
+  document.getElementById('plan-price').innerHTML = `${p.price} <span>/mois</span>`;
+
+  const trialEl = document.getElementById('plan-trial');
+  trialEl.textContent = p.trialText;
+  trialEl.className = `plan-trial-info ${p.trial ? 'green' : 'muted'}`;
+
+  document.getElementById('plan-features').innerHTML = p.features.map(f =>
+    `<span class="feat-pill ${f.on ? 'on' : ''}">${f.txt}</span>`
+  ).join('');
+
+  // Récap
+  document.getElementById('recap-plan').textContent = p.name;
+  document.getElementById('recap-today').textContent = p.today;
+  document.getElementById('recap-puis').textContent = p.puis;
+  document.getElementById('trial-row').style.display = p.trial ? '' : 'none';
+
+  // Bouton
+  const btn = document.getElementById('btn-text');
+  if (planKey === 'free') {
+    btn.textContent = 'Créer mon compte gratuit';
+  } else {
+    btn.textContent = `Démarrer l'essai gratuit · ${p.name}`;
+  }
+}
+
+function changePlan(planKey, el) {
+  currentPlan = planKey;
+  document.querySelectorAll('.ps-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected', planKey);
+  renderPlan(planKey);
+  // Cacher/montrer la carte selon plan
+  document.getElementById('card-section').style.display =
+    planKey === 'free' ? 'none' : 'block';
+  document.getElementById('order-recap').style.display =
+    planKey === 'free' ? 'none' : 'block';
+}
+
+function togglePlanSelector() {
+  const el = document.getElementById('plan-selector');
+  el.classList.toggle('visible');
+}
+
+// ════════════════════════════════════════════
+//  PAIEMENT
+// ════════════════════════════════════════════
+async function handlePayment() {
+  const btn = document.getElementById('pay-btn');
+  const email = document.getElementById('email-input').value.trim();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    document.getElementById('card-errors').textContent = 'Veuillez saisir un email valide.';
+    return;
+  }
+
+  // Plan gratuit → pas de CB
+  if (currentPlan === 'free') {
+    showSuccess('free');
+    return;
+  }
+
+  // Vérifier que Stripe est initialisé
+  if (!stripe || !cardNumber) {
+    // Mode démo
+    showSuccess(currentPlan);
+    return;
+  }
+
+  // Démarrer le loading
+  setLoading(true);
+
+  try {
+    // 1. Créer un PaymentMethod
+    const { paymentMethod, error } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: cardNumber,
+      billing_details: { email },
+    });
+
+    if (error) {
+      document.getElementById('card-errors').textContent = error.message;
+      setLoading(false);
+      return;
+    }
+
+    // 2. Envoyer au backend (à implémenter avec Netlify Functions)
+    // Pour l'instant, simuler la réponse
+    // ── À REMPLACER PAR ──
+    // const response = await fetch('/.netlify/functions/create-subscription', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     paymentMethodId: paymentMethod.id,
+    //     priceId: STRIPE_CONFIG.prices[currentPlan],
+    //     email,
+    //     trialDays: STRIPE_CONFIG.trialDays,
+    //   })
+    // });
+    // const data = await response.json();
+
+    // Simuler succès pour la démo
+    await new Promise(r => setTimeout(r, 1500));
+    showSuccess(currentPlan);
+
+  } catch(err) {
+    document.getElementById('card-errors').textContent = 'Une erreur est survenue. Réessayez.';
+    setLoading(false);
+  }
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('pay-btn');
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+  document.getElementById('spinner').style.display = on ? 'block' : 'none';
+}
+
+function showSuccess(planKey) {
+  const p = PLANS_DATA[planKey];
+  const sub = planKey === 'free'
+    ? 'Votre compte gratuit est actif. Découvrez FootLight avec 10 profils par mois.'
+    : `Votre essai ${p.name} d'1 jour est activé. Engagement 3 mois minimum montant débité aujourd'hui.`;
+  document.getElementById('suc-sub').textContent = sub;
+  document.getElementById('success-overlay').classList.add('visible');
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+// Récupérer le plan depuis l'URL (?plan=pro)
+const urlPlan = new URLSearchParams(window.location.search).get('plan');
+if (urlPlan && PLANS_DATA[urlPlan]) {
+  currentPlan = urlPlan;
+}
+
+// Récupérer l'email depuis l'URL (?email=...)
+const urlEmail = new URLSearchParams(window.location.search).get('email');
+if (urlEmail) document.getElementById('email-input').value = urlEmail;
+
+renderPlan(currentPlan);
+
+// Marquer le bon plan dans le sélecteur
+document.querySelectorAll('.ps-card').forEach(c => c.classList.remove('selected'));
+const targetCard = document.querySelector(`.ps-card.${currentPlan}`);
+if (targetCard) targetCard.classList.add('selected', currentPlan);
+
+// Cacher carte si plan gratuit
+if (currentPlan === 'free') {
+  document.getElementById('card-section').style.display = 'none';
+  document.getElementById('order-recap').style.display = 'none';
+}
+
+// Init Stripe
+initStripe();
+</script>
+</body>
+</html>
