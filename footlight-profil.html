@@ -148,12 +148,23 @@ async function loadProfil() {
   // Chercher par nom si pas d'ID
   if (!joueurId && joueurNom) {
     const prenomParam = params.get('prenom');
-    let query = db.from('joueurs').select('*').eq('nom', joueurNom).eq('profil_public', true);
-    if (prenomParam) query = query.eq('prenom', prenomParam);
-    const { data, error } = await query.limit(1);
-    const joueur = data && data.length > 0 ? data[0] : null;
+    // Chercher sans filtre profil_public pour debug
+    const { data, error } = await db
+      .from('joueurs')
+      .select('*')
+      .ilike('nom', joueurNom)
+      .ilike('prenom', prenomParam || '%')
+      .limit(1);
+    
+    console.log('Recherche:', prenomParam, joueurNom, 'Résultat:', data, 'Erreur:', error);
+    
     document.getElementById('loading').style.display = 'none';
-    if (!joueur) { document.getElementById('not-found').style.display = 'block'; return; }
+    const joueur = data && data.length > 0 ? data[0] : null;
+    if (!joueur) { 
+      document.getElementById('not-found').innerHTML = '<h2>Profil introuvable</h2><p>Recherche: ' + prenomParam + ' ' + joueurNom + '</p><p style="color:red">' + (error ? error.message : 'Aucun résultat') + '</p><a href="footlight-recherche.html"><button style="padding:10px 20px;background:#1f6feb;border:none;color:#fff;border-radius:8px;cursor:pointer;">Retour à la recherche</button></a>';
+      document.getElementById('not-found').style.display = 'block'; 
+      return; 
+    }
     renderProfil(joueur, false);
     return;
   }
