@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Profil joueur</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --blue:#1f6feb;--blue-l:#79c0ff;
+  --gold:#d29922;--gold-l:#e3b341;
+  --green:#238636;--green-l:#56d364;
+  --red:#da3633;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-links{display:flex;gap:16px;align-items:center;}
+.nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.nav-links a:hover{color:var(--text);}
+
+.page{max-width:900px;margin:0 auto;padding:76px 24px 60px;}
+
+/* Loading */
+.loading{text-align:center;padding:80px 20px;color:var(--muted);}
+.loading-spin{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Header profil */
+.profile-header{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;display:flex;gap:20px;align-items:flex-start;}
+.profile-avatar{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:#fff;flex-shrink:0;}
+.profile-name{font-size:1.6rem;font-weight:800;margin-bottom:6px;}
+.profile-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.tag{font-size:0.75rem;padding:3px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);}
+.tag.blue{border-color:var(--blue);color:var(--blue-l);}
+.tag.green{border-color:var(--green);color:var(--green-l);}
+.tag.gold{border-color:var(--gold);color:var(--gold-l);}
+.profile-score{margin-left:auto;text-align:center;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px 20px;}
+.score-big{font-size:2.4rem;font-weight:900;color:var(--blue-l);}
+.score-lbl{font-size:0.72rem;color:var(--muted);}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.stat-val{font-size:1.6rem;font-weight:800;margin-bottom:4px;}
+.stat-lbl{font-size:0.72rem;color:var(--muted);}
+
+/* Section */
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;}
+.section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg3);font-size:0.85rem;}
+.info-row:last-child{border-bottom:none;}
+.info-key{color:var(--muted);}
+.info-val{font-weight:500;}
+
+/* Boutons */
+.btn-row{display:flex;gap:10px;margin-top:16px;}
+.btn{padding:10px 20px;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn.primary{background:var(--blue);color:#fff;}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn:hover{opacity:0.85;}
+
+/* Not found */
+.not-found{text-align:center;padding:80px 20px;}
+.not-found h2{font-size:1.4rem;margin-bottom:10px;}
+.not-found p{color:var(--muted);margin-bottom:20px;}
+
+/* Impact / barres */
+.bar-item{margin-bottom:14px;}
+.bar-item:last-child{margin-bottom:0;}
+.bar-label-row{display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:5px;}
+.bar-label-row .k{color:var(--muted);}
+.bar-label-row .v{font-weight:700;}
+.bar-track{background:var(--bg3);border-radius:4px;height:7px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;}
+
+/* Verrou plan */
+.locked-box{background:rgba(31,111,235,0.06);border:1px solid rgba(31,111,235,0.2);border-radius:12px;padding:20px;text-align:center;}
+.locked-box p{font-size:0.85rem;color:var(--blue-l);margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+  <div class="nav-links">
+    <a href="index.html">Accueil</a>
+    <a href="footlight-recherche.html">Recherche</a>
+    <a href="footlight-connexion.html" id="nav-auth">Connexion</a>
+  </div>
+</nav>
+
+<div class="page">
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="loading-spin"></div>
+    <p>Chargement du profil...</p>
+  </div>
+
+  <!-- PROFIL -->
+  <div id="profil-content" style="display:none;"></div>
+
+  <!-- NOT FOUND -->
+  <div class="not-found" id="not-found" style="display:none;">
+    <h2>Profil introuvable</h2>
+    <p>Ce joueur n'existe pas ou son profil n'est pas public.</p>
+    <a href="footlight-recherche.html"><button class="btn primary">Retour à la recherche</button></a>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const COULEURS = {
+  'gardien':'#1f6feb','defenseur_central':'#da3633',
+  'lateral_droit':'#8957e5','lateral_gauche':'#8957e5',
+  'milieu_central':'#238636','milieu_offensif':'#238636',
+  'milieu_defensif':'#238636','milieu_gauche':'#238636',
+  'ailier_droit':'#d29922','ailier_gauche':'#d29922',
+  'attaquant':'#d29922','autre':'#6e7681'
+};
+
+const BADGES = {
+  'declaratif': '⚪ Déclaratif',
+  'video': '🎥 Vérifié vidéo',
+  'gps': '📍 Vérifié GPS',
+  'elite': '⭐ Elite'
+};
+
+let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
+let viewerPlan = 'free';
+
+async function loadProfil() {
+  // Vérifier la session
+  const { data: { user } } = await db.auth.getUser();
+  if (user) {
+    document.getElementById('nav-auth').textContent = 'Mon profil';
+    document.getElementById('nav-auth').href = '#';
+
+    const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
+    if (recruteur) {
+      viewerRole = 'recruteur';
+      viewerPlan = recruteur.plan || 'free';
+    } else {
+      const { data: joueurCompte } = await db.from('joueurs').select('id').eq('email', user.email).single();
+      viewerRole = joueurCompte ? 'joueur' : 'nouveau';
+    }
+  }
+
+  // Récupérer l'ID depuis l'URL
+  const params = new URLSearchParams(window.location.search);
+  const joueurId = params.get('id');
+  const joueurNom = params.get('nom');
+
+  if (!joueurId && !joueurNom) {
+    // Si pas d'ID et connecté, charger son propre profil
+    if (user) {
+      const { data: joueur } = await db.from('joueurs').select('*').eq('email', user.email).single();
+      if (joueur) { renderProfil(joueur, true); return; }
+    }
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-found').style.display = 'block';
+    return;
+  }
+
+  // Un compte joueur ne peut pas consulter le profil d'un autre joueur
+  if (viewerRole === 'joueur') {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-found').innerHTML = '<h2>🔒 Réservé aux recruteurs</h2><p>La consultation des profils joueurs est réservée aux comptes recruteur.</p><a href="footlight-espace.html"><button class="btn primary">Aller à mon espace</button></a>';
+    document.getElementById('not-found').style.display = 'block';
+    return;
+  }
+
+  // Chercher par nom si pas d'ID
+  if (!joueurId && joueurNom) {
+    const prenomParam = params.get('prenom');
+    // Chercher sans filtre profil_public pour debug
+    const { data, error } = await db
+      .from('joueurs')
+      .select('*')
+      .ilike('nom', joueurNom)
+      .ilike('prenom', prenomParam || '%')
+      .limit(1);
+
+    console.log('Recherche:', prenomParam, joueurNom, 'Résultat:', data, 'Erreur:', error);
+
+    document.getElementById('loading').style.display = 'none';
+    const joueur = data && data.length > 0 ? data[0] : null;
+    if (!joueur) {
+      document.getElementById('not-found').innerHTML = '<h2>Profil introuvable</h2><p>Recherche: ' + prenomParam + ' ' + joueurNom + '</p><p style="color:red">' + (error ? error.message : 'Aucun résultat') + '</p><a href="footlight-recherche.html"><button style="padding:10px 20px;background:#1f6feb;border:none;color:#fff;border-radius:8px;cursor:pointer;">Retour à la recherche</button></a>';
+      document.getElementById('not-found').style.display = 'block';
+      return;
+    }
+    renderProfil(joueur, false);
+    return;
+  }
+
+  // Charger le joueur par ID
+  const { data: joueur, error } = await db.from('joueurs').select('*').eq('id', joueurId).single();
+
+  document.getElementById('loading').style.display = 'none';
+
+  if (error || !joueur) {
+    document.getElementById('not-found').style.display = 'block';
+    return;
+  }
+
+  renderProfil(joueur, user && user.email === joueur.email);
+}
+
+function renderProfil(j, isOwner) {
+  const poste_raw = j.poste || 'autre';
+  const couleur = COULEURS[poste_raw] || '#6e7681';
+  const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
+  const score = j.score || 50;
+  const scoreColor = score >= 75 ? '#56d364' : score >= 60 ? '#e3b341' : '#8b949e';
+  const pct_tps = j.matchs_joues > 0 ? Math.round((j.minutes_jouees||0) / (j.matchs_joues * 90) * 100) : 0;
+
+  const html = `
+    <div class="profile-header">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,${couleur},${couleur}88)">${initiales}</div>
+      <div style="flex:1">
+        <div class="profile-name">${j.prenom} ${j.nom}</div>
+        <div class="profile-tags">
+          <span class="tag blue">${poste_raw.replace(/_/g,' ')}</span>
+          <span class="tag">${j.club||'—'}</span>
+          <span class="tag">${j.niveau||'—'}</span>
+          ${j.pied_fort ? `<span class="tag">Pied ${j.pied_fort}</span>` : ''}
+          <span class="tag ${j.badge==='elite'?'gold':j.badge==='video'||j.badge==='gps'?'green':''}">${BADGES[j.badge]||'⚪ Déclaratif'}</span>
+        </div>
+        ${j.bio ? `<div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${j.bio}</div>` : ''}
+        ${isOwner ? `<div class="btn-row"><button class="btn primary" onclick="window.location.href='footlight-saisie-match.html'">Saisir mes stats</button><button class="btn outline">Modifier mon profil</button></div>` : ''}
+      </div>
+      <div class="profile-score">
+        <div class="score-big" style="color:${scoreColor}">${score}</div>
+        <div class="score-lbl">/100</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;">Score FootLight</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val">${j.matchs_joues||0}</div>
+        <div class="stat-lbl">Matchs joués</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--green-l)">${j.buts||0}</div>
+        <div class="stat-lbl">Buts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--blue-l)">${j.passes_decisives||0}</div>
+        <div class="stat-lbl">Passes déc.</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${j.minutes_jouees||0}</div>
+        <div class="stat-lbl">Minutes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${j.titularisations||0}</div>
+        <div class="stat-lbl">Titularisations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--gold-l)">${j.cartons_jaunes||0}</div>
+        <div class="stat-lbl">Cartons jaunes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--red)">${j.cartons_rouges||0}</div>
+        <div class="stat-lbl">Cartons rouges</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${pct_tps}%</div>
+        <div class="stat-lbl">Temps de jeu</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Informations</div>
+      <div class="info-row"><span class="info-key">Club</span><span class="info-val">${j.club||'—'}</span></div>
+      <div class="info-row"><span class="info-key">Niveau</span><span class="info-val">${j.niveau||'—'}</span></div>
+      <div class="info-row"><span class="info-key">Saison</span><span class="info-val">${j.saison||'2024-2025'}</span></div>
+      <div class="info-row"><span class="info-key">Poste</span><span class="info-val">${poste_raw.replace(/_/g,' ')}</span></div>
+      ${j.poste_secondaire ? `<div class="info-row"><span class="info-key">Poste secondaire</span><span class="info-val">${j.poste_secondaire.replace(/_/g,' ')}</span></div>` : ''}
+      <div class="info-row"><span class="info-key">Pied fort</span><span class="info-val">${j.pied_fort||'—'}</span></div>
+      ${j.taille ? `<div class="info-row"><span class="info-key">Taille</span><span class="info-val">${j.taille} cm</span></div>` : ''}
+      ${j.nationalite ? `<div class="info-row"><span class="info-key">Nationalité</span><span class="info-val">${j.nationalite}</span></div>` : ''}
+    </div>
+
+    ${(function() {
+      const canImpact = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
+      const hasImpactData = j.impact_differentiel != null || j.pct_matchs_avec_but != null || j.points_avec != null;
+      if (!hasImpactData) return '';
+      if (!canImpact) {
+        return `
+        <div class="section">
+          <div class="section-title">Impact collectif</div>
+          <div class="locked-box">
+            <p>🔒 Réservé aux recruteurs Pro et Premium</p>
+            <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+          </div>
+        </div>`;
+      }
+      const diff = j.impact_differentiel;
+      const diffPct = diff == null ? 0 : Math.max(0, Math.min(100, 50 + diff * 50));
+      return `
+        <div class="section">
+          <div class="section-title">Impact collectif</div>
+          ${diff != null ? `
+          <div class="bar-item">
+            <div class="bar-label-row"><span class="k">Différentiel d'impact</span><span class="v" style="color:${diff>=0?'var(--green-l)':'var(--red)'}">${diff>=0?'+':''}${diff.toFixed(2)}</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${diffPct}%;background:${diff>=0?'var(--green-l)':'var(--red)'}"></div></div>
+          </div>` : ''}
+          ${j.pct_matchs_avec_but != null ? `
+          <div class="bar-item">
+            <div class="bar-label-row"><span class="k">% matchs avec but</span><span class="v" style="color:var(--gold-l)">${Math.round(j.pct_matchs_avec_but)}%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,j.pct_matchs_avec_but)}%;background:var(--gold-l)"></div></div>
+          </div>` : ''}
+          ${j.points_avec != null && j.points_sans != null ? `
+          <div class="info-row"><span class="info-key">Points pris avec le joueur</span><span class="info-val">${j.points_avec}${j.pct_points_avec!=null?' ('+Math.round(j.pct_points_avec)+'%)':''}</span></div>
+          <div class="info-row"><span class="info-key">Points pris sans le joueur</span><span class="info-val">${j.points_sans}${j.pct_points_sans!=null?' ('+Math.round(j.pct_points_sans)+'%)':''}</span></div>` : ''}
+        </div>`;
+    })()}
+
+    ${(function() {
+      const canGPS = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
+      const hasGPS = j.vitesse_max_kmh != null || j.vma_kmh != null || j.distance_moyenne_km != null || j.sprints_match != null;
+      if (!hasGPS) return '';
+      if (!canGPS) {
+        return `
+        <div class="section">
+          <div class="section-title">Données GPS</div>
+          <div class="locked-box">
+            <p>🔒 Réservé aux recruteurs Premium</p>
+            <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+          </div>
+        </div>`;
+      }
+      return `
+        <div class="section">
+          <div class="section-title">Données GPS</div>
+          <div class="stats-grid" style="margin-bottom:0;">
+            ${j.vitesse_max_kmh!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${j.vitesse_max_kmh}</div><div class="stat-lbl">Vitesse max km/h</div></div>`:''}
+            ${j.vma_kmh!=null?`<div class="stat-card"><div class="stat-val">${j.vma_kmh}</div><div class="stat-lbl">VMA km/h</div></div>`:''}
+            ${j.distance_moyenne_km!=null?`<div class="stat-card"><div class="stat-val">${j.distance_moyenne_km}</div><div class="stat-lbl">Km/match moy.</div></div>`:''}
+            ${j.sprints_match!=null?`<div class="stat-card"><div class="stat-val">${j.sprints_match}</div><div class="stat-lbl">Sprints/match</div></div>`:''}
+          </div>
+        </div>`;
+    })()}
+
+    ${j.video_url ? (isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium') ? `
+    <div class="section">
+      <div class="section-title">Vidéo de match</div>
+      <a href="${j.video_url}" target="_blank" style="color:var(--blue-l);font-size:0.85rem;">🎥 Voir la vidéo →</a>
+    </div>` : `
+    <div class="section">
+      <div class="section-title">Vidéo de match</div>
+      <div class="locked-box">
+        <p>🔒 Réservé aux recruteurs Premium</p>
+        <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+      </div>
+    </div>`) : ''}
+
+    <div class="section">
+      <div class="section-title">Badge de validation</div>
+      <div style="font-size:1.5rem;margin-bottom:8px">${BADGES[j.badge]||'⚪ Déclaratif'}</div>
+      <div style="font-size:0.8rem;color:var(--muted)">
+        ${j.badge==='declaratif' ? 'Stats déclarées par le joueur. Uploadez une vidéo pour améliorer votre badge.' : ''}
+        ${j.badge==='video' ? 'Vidéo de match validée.' : ''}
+        ${j.badge==='gps' ? 'Données GPS connectées.' : ''}
+        ${j.badge==='elite' ? 'Badge Elite — 2 saisons validées.' : ''}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('profil-content').innerHTML = html;
+  document.getElementById('profil-content').style.display = 'block';
+  document.title = `FootLight — ${j.prenom} ${j.nom}`;
+}
+
+loadProfil();
+</script>
+</body>
+</html>
