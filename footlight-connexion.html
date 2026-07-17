@@ -372,12 +372,8 @@ async function login() {
       return;
     }
 
-    // Connexion réussie
-    if (currentType === 'joueur') {
-      window.location.href = 'footlight-profil.html';
-    } else {
-      window.location.href = 'footlight-recherche.html';
-    }
+    // Connexion réussie - rediriger vers la recherche par défaut
+    window.location.href = 'footlight-recherche.html';
   } catch(err) {
     btn.classList.remove('loading');
     btn.disabled = false;
