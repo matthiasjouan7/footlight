@@ -312,6 +312,13 @@ body {
     </div>
   </div>
 
+
+  <!-- SÉLECTEUR DURÉE (visible si plan Pro ou Premium) -->
+  <div id="tier-selector" style="display:none;margin-bottom:20px;">
+    <div style="font-size:0.68rem;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:12px;">Choisissez votre durée d'engagement</div>
+    <div style="display:flex;flex-direction:column;gap:8px;" id="tier-options"></div>
+  </div>
+
   <!-- FORM EMAIL (si pas déjà connu) -->
   <div class="form-section">
     <div class="form-title">Votre compte</div>
@@ -426,19 +433,20 @@ body {
 // ════════════════════════════════════════════
 
 const STRIPE_CONFIG = {
-  // ── CLÉ PUBLIQUE ──
-  // Test  : commence par pk_test_...
-  // Live  : commence par pk_live_...
   publicKey: 'pk_live_51TR5ntF8F2JI2vQrBkXoJwKykdhPbVMvwFITh1CSig08BhQGGQKjbI6glGQUeLr47LdYsdfdxWEolZZgLsCvd6TW00ZHdLMQzY',
 
-  // ── IDs DES PRIX (créés dans Stripe Dashboard > Products) ──
-  // Pour chaque plan, crée un produit avec abonnement mensuel
   prices: {
-    pro:     'price_1TR6HYF8F2JI2vQrQ2zUjjy0',      // 14€/mois ✅
-    premium: 'price_1TtofqF8F2JI2vQrpej8fsuE',  // 29€/mois ✅
+    // Plan Pro
+    pro_3mois:  'price_1TR6HYF8F2JI2vQrQ2zUjjy0',  // 14€/mois — 1 à 3 mois
+    pro_6mois:  'price_1Tu5FkF8F2JI2vQrHHbLNbC7',  // 11€/mois — 4 à 6 mois
+    pro_plus:   'price_1Tu5G6F8F2JI2vQr59lgMBgL',  //  9€/mois — 6 mois+
+
+    // Plan Premium
+    premium_3mois: 'price_1TtofqF8F2JI2vQrpej8fsuE', // 29€/mois — 1 à 3 mois
+    premium_6mois: 'price_1Tu5GrF8F2JI2vQrmgpTTDss', // 23€/mois — 4 à 6 mois
+    premium_plus:  'price_1Tu5HBF8F2JI2vQrewsmu6Bi', // 19€/mois — 6 mois+
   },
 
-  // ── DURÉE D'ESSAI ──
   trialDays: 1,
 };
 
