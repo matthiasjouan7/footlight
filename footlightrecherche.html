@@ -1,0 +1,517 @@
+<!DOCTYPE html><!-- v2.0 -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Recherche joueurs</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --blue:#1f6feb;--blue-l:#79c0ff;
+  --gold:#d29922;--gold-l:#e3b341;
+  --green:#238636;--green-l:#56d364;
+  --red:#da3633;--red-l:#f85149;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-links{display:flex;gap:16px;align-items:center;}
+.nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.nav-links a:hover{color:var(--text);}
+.nav-links a.active{color:var(--blue-l);}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:260px 1fr;padding-top:56px;min-height:100vh;}
+@media(max-width:800px){.layout{grid-template-columns:1fr;}}
+
+/* SIDEBAR */
+.sidebar{border-right:1px solid var(--border);padding:20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;}
+.sidebar-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:16px;}
+.filter-group{margin-bottom:20px;}
+.filter-label{font-size:0.82rem;font-weight:600;margin-bottom:8px;display:block;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{padding:5px 12px;border-radius:20px;font-size:0.78rem;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;transition:all .15s;}
+.chip:hover{border-color:var(--muted);color:var(--text);}
+.chip.active{background:#1f6feb22;border-color:var(--blue);color:var(--blue-l);}
+.range-wrap{padding:4px 0;}
+.range-row{display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);margin-bottom:6px;}
+input[type=range]{width:100%;accent-color:var(--blue);}
+.reset-btn{width:100%;padding:9px;border-radius:8px;font-size:0.82rem;font-weight:600;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;margin-top:8px;}
+.reset-btn:hover{border-color:var(--muted);color:var(--text);}
+hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
+
+/* MAIN */
+.main{padding:20px;}
+.results-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.results-count{font-size:0.95rem;font-weight:700;}
+.results-count span{color:var(--blue-l);}
+.sort-select{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-size:0.82rem;cursor:pointer;}
+
+/* LOADING */
+.loading{text-align:center;padding:60px 20px;color:var(--muted);}
+.loading-spin{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.player-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .2s,transform .15s;cursor:pointer;}
+.player-card:hover{border-color:var(--muted);transform:translateY(-2px);}
+.card-top{padding:14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.card-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:800;color:#fff;flex-shrink:0;}
+.card-name{font-size:0.9rem;font-weight:700;margin-bottom:3px;}
+.card-pos{font-size:0.7rem;padding:2px 8px;border-radius:20px;display:inline-block;}
+.card-score{margin-left:auto;text-align:center;}
+.score-num{font-size:1.2rem;font-weight:900;}
+.score-lbl{font-size:0.6rem;color:var(--muted);}
+.card-body{padding:12px 14px;}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.ctag{font-size:0.68rem;padding:2px 7px;border-radius:20px;border:1px solid var(--border);color:var(--muted);}
+.ctag.blue{border-color:var(--blue);color:var(--blue-l);}
+.card-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.cs{text-align:center;background:var(--bg3);border-radius:8px;padding:7px 4px;}
+.cs-val{font-size:0.95rem;font-weight:800;}
+.cs-lbl{font-size:0.62rem;color:var(--muted);margin-top:1px;}
+.card-actions{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--bg3);}
+.ca-btn{flex:1;padding:7px;border-radius:8px;font-size:0.75rem;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;}
+.ca-btn:hover{background:var(--bg3);color:var(--text);}
+.ca-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+.ca-btn.primary:hover{background:#388bfd;}
+
+/* NO RESULTS */
+.no-results{text-align:center;padding:60px 20px;color:var(--muted);}
+.no-results h3{font-size:1.1rem;margin-bottom:8px;color:var(--text);}
+
+/* MODAL AJOUT */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(13,17,23,0.92);display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.visible{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;position:relative;}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:6px;}
+.modal-sub{font-size:0.82rem;color:var(--muted);margin-bottom:20px;}
+.modal-close{position:absolute;top:18px;right:18px;width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-label{font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.form-input,.form-select{padding:9px 12px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;}
+.form-input:focus,.form-select:focus{border-color:var(--blue);}
+.form-input::placeholder{color:var(--muted);}
+.modal-btn{flex:1;padding:11px;border-radius:10px;font-size:0.88rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.modal-btn.primary{background:var(--blue);color:#fff;}
+.modal-btn.primary:hover{background:#388bfd;}
+.modal-btn.outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.modal-actions{display:flex;gap:10px;margin-top:18px;}
+.ctag.manual{border-color:#d2992244;color:var(--gold-l);background:#d2992210;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+  <div class="nav-links">
+    <a href="index.html">Accueil</a>
+    <a class="active">Recherche</a>
+    <a href="footlight-suggestions.html">Suggestions</a>
+    <a href="footlight-connexion.html">Connexion</a>
+    <a href="footlight-inscription-recruteur.html" style="background:var(--blue);color:#fff;padding:5px 12px;border-radius:8px;font-size:0.8rem;">S'inscrire</a>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-title">Filtres</div>
+
+    <div class="filter-group">
+      <span class="filter-label">Poste</span>
+      <div class="chips" id="f-poste">
+        <div class="chip active" data-val="tous" onclick="setFilter('poste','tous',this)">Tous</div>
+        <div class="chip" data-val="Gardien" onclick="setFilter('poste','Gardien',this)">Gardien</div>
+        <div class="chip" data-val="Défenseur" onclick="setFilter('poste','Défenseur',this)">Défenseur</div>
+        <div class="chip" data-val="Latéral" onclick="setFilter('poste','Latéral',this)">Latéral</div>
+        <div class="chip" data-val="Milieu" onclick="setFilter('poste','Milieu',this)">Milieu</div>
+        <div class="chip" data-val="Attaquant" onclick="setFilter('poste','Attaquant',this)">Attaquant</div>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Niveau</span>
+      <div class="chips" id="f-niveau">
+        <div class="chip active" data-val="tous" onclick="setFilter('niveau','tous',this)">Tous</div>
+        <div class="chip" data-val="N1" onclick="setFilter('niveau','N1',this)">N1</div>
+        <div class="chip" data-val="N2" onclick="setFilter('niveau','N2',this)">N2</div>
+        <div class="chip" data-val="R1" onclick="setFilter('niveau','R1',this)">R1</div>
+        <div class="chip" data-val="Autre" onclick="setFilter('niveau','Autre',this)">Autre</div>
+      </div>
+    </div>
+
+    <hr class="fdiv"/>
+
+    <div class="filter-group">
+      <span class="filter-label">Score minimum</span>
+      <div class="range-wrap">
+        <div class="range-row"><span>0</span><span id="score-val">0</span></div>
+        <input type="range" min="0" max="100" value="0" step="5" oninput="document.getElementById('score-val').textContent=this.value;minScore=parseInt(this.value);applyFilters()"/>
+      </div>
+    </div>
+
+    <hr class="fdiv"/>
+    <button class="reset-btn" onclick="resetFilters()">Réinitialiser</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div id="bandeau-non-connecte" style="display:none;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+  <span style="font-size:0.82rem;color:var(--blue-l);">👀 Vous consultez en mode aperçu — Connectez-vous pour accéder aux stats complètes et aux profils détaillés.</span>
+  <button onclick="window.location.href='footlight-connexion.html'" style="flex-shrink:0;padding:7px 16px;border-radius:8px;background:var(--blue);border:none;color:#fff;font-size:0.78rem;font-weight:600;cursor:pointer;">Se connecter</button>
+</div>
+<div class="results-bar">
+      <div class="results-count"><span id="result-count">0</span> joueurs trouvés</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button onclick="openAddPlayer()" style="padding:7px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;background:var(--blue);border:none;color:#fff;cursor:pointer;">+ Ajouter un joueur</button>
+        <select class="sort-select" onchange="sortCards(this.value)">
+          <option value="score">Trier par score</option>
+          <option value="buts">Trier par buts</option>
+          <option value="matchs">Trier par matchs</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading" id="loading">
+      <div class="loading-spin"></div>
+      <p>Chargement des joueurs...</p>
+    </div>
+
+    <!-- CARDS -->
+    <div class="cards-grid" id="cards-grid" style="display:none;"></div>
+
+    <!-- NO RESULTS -->
+    <div class="no-results hidden" id="no-results" style="display:none;">
+      <h3>Aucun joueur trouvé</h3>
+      <p>Modifiez vos filtres pour élargir la recherche.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AJOUT JOUEUR -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAddPlayer()">✕</button>
+    <div class="modal-title">Ajouter un joueur</div>
+    <div class="modal-sub">Ce joueur n'est pas encore inscrit sur FootLight.</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Prénom *</label><input class="form-input" id="a-prenom" placeholder="Thomas"/></div>
+      <div class="form-group"><label class="form-label">Nom *</label><input class="form-input" id="a-nom" placeholder="Dupont"/></div>
+      <div class="form-group"><label class="form-label">Poste *</label>
+        <select class="form-select" id="a-poste">
+          <option value="">—</option>
+          <option value="Gardien">Gardien</option>
+          <option value="Défenseur">Défenseur</option>
+          <option value="Latéral">Latéral</option>
+          <option value="Milieu">Milieu</option>
+          <option value="Attaquant">Attaquant</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Niveau</label>
+        <select class="form-select" id="a-niveau">
+          <option value="N1">N1</option>
+          <option value="N2">N2</option>
+          <option value="R1">R1</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1"><label class="form-label">Club</label><input class="form-input" id="a-club" placeholder="FC Exemple"/></div>
+      <div class="form-group"><label class="form-label">Matchs</label><input class="form-input" type="number" id="a-matchs" placeholder="0" min="0"/></div>
+      <div class="form-group"><label class="form-label">Buts</label><input class="form-input" type="number" id="a-buts" placeholder="0" min="0"/></div>
+      <div class="form-group" style="grid-column:1/-1"><label class="form-label">Note</label><input class="form-input" id="a-note" placeholder="Ex: Vu en match le 12/04..."/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn outline" onclick="closeAddPlayer()">Annuler</button>
+      <button class="modal-btn primary" onclick="saveAddPlayer()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG SUPABASE ──
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── ÉTAT ──
+var allPlayers = [];
+var filters = { poste: 'tous', niveau: 'tous' };
+var minScore = 0;
+var shortlist = new Set();
+
+// ── MAPPING ──
+const POSTE_DISPLAY = {
+  'gardien':'Gardien','defenseur_central':'Défenseur',
+  'lateral_droit':'Latéral','lateral_gauche':'Latéral',
+  'milieu_central':'Milieu','milieu_offensif':'Milieu',
+  'milieu_defensif':'Milieu','milieu_gauche':'Milieu',
+  'ailier_droit':'Attaquant','ailier_gauche':'Attaquant',
+  'attaquant':'Attaquant','autre':'Milieu'
+};
+const COULEURS = {
+  'gardien':'#1f6feb','defenseur_central':'#da3633',
+  'lateral_droit':'#8957e5','lateral_gauche':'#8957e5',
+  'milieu_central':'#238636','milieu_offensif':'#238636',
+  'milieu_defensif':'#238636','milieu_gauche':'#238636',
+  'ailier_droit':'#d29922','ailier_gauche':'#d29922',
+  'attaquant':'#d29922','autre':'#6e7681'
+};
+
+// ── CHARGEMENT ──
+async function loadJoueurs() {
+  try {
+    const { data, error } = await db
+      .from('joueurs')
+      .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,minutes_jouees,badge,pied_fort')
+      .eq('profil_public', true)
+      .order('score', { ascending: false });
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('cards-grid').style.display = 'grid';
+
+    if (error) { console.error(error); return; }
+    if (!data || data.length === 0) {
+      document.getElementById('no-results').style.display = 'block';
+      return;
+    }
+
+    allPlayers = data;
+    renderCards(data);
+  } catch(err) {
+    console.error('Erreur chargement:', err);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('no-results').style.display = 'block';
+  }
+}
+
+// ── RENDU ──
+function renderCards(players) {
+  const grid = document.getElementById('cards-grid');
+  
+  // Garder les cartes manuelles
+  const manual = Array.from(grid.querySelectorAll('.player-card[data-manual]'));
+  grid.innerHTML = '';
+  manual.forEach(c => grid.appendChild(c));
+
+  players.forEach(j => {
+    const poste_raw = j.poste || 'autre';
+    const poste_display = POSTE_DISPLAY[poste_raw] || 'Milieu';
+    const couleur = COULEURS[poste_raw] || '#6e7681';
+    const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
+    const score = j.score || 50;
+    const scoreColor = score >= 75 ? 'var(--green-l)' : score >= 60 ? 'var(--gold-l)' : 'var(--muted)';
+
+    const card = document.createElement('div');
+    card.className = 'player-card';
+    card.dataset.poste = poste_display;
+    card.dataset.niveau = j.niveau || 'N1';
+    card.dataset.score = score;
+    card.dataset.buts = j.buts || 0;
+    card.dataset.matchs = j.matchs_joues || 0;
+
+    const clubCourt = j.club ? (j.club.length > 16 ? j.club.substring(0,14)+'…' : j.club) : '—';
+
+    card.innerHTML =
+      '<div class="card-top">' +
+        '<div class="card-avatar" style="background:linear-gradient(135deg,'+couleur+','+couleur+'88)">'+initiales+'</div>' +
+        '<div>' +
+          '<div class="card-name">'+j.prenom+' '+(j.nom||'')[0]+'.</div>' +
+          '<span class="card-pos" style="background:'+couleur+'22;border:1px solid '+couleur+'44;color:'+couleur+'">'+poste_raw.replace(/_/g,' ')+'</span>' +
+        '</div>' +
+        '<div class="card-score"><div class="score-num" style="color:'+scoreColor+'">'+score+'</div><div class="score-lbl">/100</div></div>' +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="card-tags">' +
+          '<span class="ctag">'+clubCourt+'</span>' +
+          '<span class="ctag '+(j.niveau==='N1'?'blue':'')+'">'+( j.niveau||'N1')+'</span>' +
+        '</div>' +
+        (isConnected ?
+          '<div class="card-stats">' +
+            '<div class="cs"><div class="cs-val">'+(j.matchs_joues||0)+'</div><div class="cs-lbl">Matchs</div></div>' +
+            '<div class="cs"><div class="cs-val" style="color:var(--green-l)">'+(j.buts||0)+'</div><div class="cs-lbl">Buts</div></div>' +
+            '<div class="cs"><div class="cs-val" style="color:var(--blue-l)">'+(j.passes_decisives||0)+'</div><div class="cs-lbl">Passes</div></div>' +
+          '</div>'
+        :
+          '<div style="background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.15);border-radius:10px;padding:12px;text-align:center;margin-bottom:8px;">' +
+            '<div style="font-size:0.78rem;color:var(--blue-l);margin-bottom:6px;">🔒 Stats complètes réservées aux membres</div>' +
+            '<button onclick="window.location.href=\'footlight-connexion.html\'" style="padding:6px 16px;border-radius:8px;background:var(--blue);border:none;color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;">Se connecter</button>' +
+          '</div>'
+        ) +
+        '<div class="card-actions">' +
+          '<button class="ca-btn" onclick="toggleShortlist(this,event,'+"'"+j.id+"'"+')">☆ Shortlist</button>' +
+          '<button class="ca-btn primary" onclick="window.location.href=\'footlight-profil.html?id='+j.id+'\'">Voir profil</button>' +
+        '</div>' +
+      '</div>';
+
+    grid.appendChild(card);
+  });
+
+  document.getElementById('result-count').textContent = players.length + manual.length;
+  if (players.length === 0 && manual.length === 0) {
+    document.getElementById('no-results').style.display = 'block';
+  } else {
+    document.getElementById('no-results').style.display = 'none';
+  }
+}
+
+// ── FILTRES ──
+function setFilter(key, val, el) {
+  filters[key] = val;
+  document.querySelectorAll('#f-'+key+' .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  var filtered = allPlayers.filter(function(j) {
+    var poste_display = POSTE_DISPLAY[j.poste||'autre'] || 'Milieu';
+    if (filters.poste !== 'tous' && poste_display !== filters.poste) return false;
+    if (filters.niveau !== 'tous' && (j.niveau||'N2') !== filters.niveau) return false;
+    if ((j.score||50) < minScore) return false;
+    return true;
+  });
+  renderCards(filtered);
+}
+
+function resetFilters() {
+  filters = { poste: 'tous', niveau: 'tous' };
+  minScore = 0;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.chip[data-val="tous"]').forEach(c => c.classList.add('active'));
+  document.querySelector('input[type=range]').value = 0;
+  document.getElementById('score-val').textContent = '0';
+  renderCards(allPlayers);
+}
+
+function sortCards(val) {
+  var sorted = [...allPlayers].sort(function(a,b) {
+    if (val === 'score') return (b.score||50) - (a.score||50);
+    if (val === 'buts') return (b.buts||0) - (a.buts||0);
+    if (val === 'matchs') return (b.matchs_joues||0) - (a.matchs_joues||0);
+    return 0;
+  });
+  renderCards(sorted);
+}
+
+// ── SHORTLIST ──
+function toggleShortlist(btn, e, id) {
+  e.stopPropagation();
+  if (shortlist.has(id)) {
+    shortlist.delete(id);
+    btn.textContent = '☆ Shortlist';
+    btn.closest('.player-card').style.borderColor = '';
+  } else {
+    shortlist.add(id);
+    btn.textContent = '★ Ajouté';
+    btn.closest('.player-card').style.borderColor = 'var(--gold)';
+  }
+}
+
+// ── AJOUT MANUEL ──
+function openAddPlayer() { document.getElementById('add-modal').classList.add('visible'); }
+function closeAddPlayer() { document.getElementById('add-modal').classList.remove('visible'); }
+
+function saveAddPlayer() {
+  var prenom = document.getElementById('a-prenom').value.trim();
+  var nom = document.getElementById('a-nom').value.trim();
+  var poste = document.getElementById('a-poste').value;
+  if (!prenom || !nom || !poste) { alert('Prénom, Nom et Poste obligatoires.'); return; }
+
+  var niveau = document.getElementById('a-niveau').value;
+  var club = document.getElementById('a-club').value.trim() || '—';
+  var matchs = parseInt(document.getElementById('a-matchs').value) || 0;
+  var buts = parseInt(document.getElementById('a-buts').value) || 0;
+  var note = document.getElementById('a-note').value.trim();
+  var initiales = (prenom[0]+nom[0]).toUpperCase();
+
+  var card = document.createElement('div');
+  card.className = 'player-card';
+  card.dataset.manual = '1';
+  card.dataset.poste = poste;
+  card.dataset.niveau = niveau;
+  card.dataset.score = 50;
+  card.dataset.buts = buts;
+  card.dataset.matchs = matchs;
+
+  card.innerHTML =
+    '<div class="card-top">' +
+      '<div class="card-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">'+initiales+'</div>' +
+      '<div><div class="card-name">'+prenom+' '+nom+'</div><span class="card-pos" style="background:#6366f122;border:1px solid #6366f144;color:#a5b4fc">'+poste+'</span></div>' +
+      '<div class="card-score"><div class="score-num" style="color:var(--muted)">—</div><div class="score-lbl">/100</div></div>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<div class="card-tags"><span class="ctag">'+club+'</span><span class="ctag">'+niveau+'</span><span class="ctag manual">✏️ Manuel</span></div>' +
+      '<div class="card-stats">' +
+        '<div class="cs"><div class="cs-val">'+matchs+'</div><div class="cs-lbl">Matchs</div></div>' +
+        '<div class="cs"><div class="cs-val" style="color:var(--green-l)">'+buts+'</div><div class="cs-lbl">Buts</div></div>' +
+        '<div class="cs"><div class="cs-val">—</div><div class="cs-lbl">Passes</div></div>' +
+      '</div>' +
+      (note ? '<div style="font-size:0.72rem;color:var(--muted);padding:6px 0;border-top:1px solid var(--bg3);margin-top:4px;font-style:italic">"'+note+'"</div>' : '') +
+      '<div class="card-actions">' +
+        '<button class="ca-btn" onclick="this.textContent=\'✓ Invité\'">Inviter</button>' +
+        '<button class="ca-btn primary" onclick="window.location.href=\'footlight-profil.html?prenom='+encodeURIComponent(prenom)+'&nom='+encodeURIComponent(nom)+'\'">Voir profil</button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('cards-grid').insertBefore(card, document.getElementById('cards-grid').firstChild);
+  var count = parseInt(document.getElementById('result-count').textContent) + 1;
+  document.getElementById('result-count').textContent = count;
+  closeAddPlayer();
+  ['a-prenom','a-nom','a-club','a-matchs','a-buts','a-note'].forEach(function(id){ document.getElementById(id).value=''; });
+}
+
+// ── INIT ──
+let isConnected = false;
+
+async function checkSession() {
+  try {
+    const { data: { user } } = await db.auth.getUser();
+    isConnected = !!user;
+    const bandeau = document.getElementById('bandeau-non-connecte');
+    if (bandeau) bandeau.style.display = isConnected ? 'none' : 'flex';
+    if (user) {
+      // Remplacer "Connexion" par "Mon espace"
+      document.querySelectorAll('.nav-links a').forEach(a => {
+        if (a.href.includes('footlight-connexion')) {
+          a.textContent = 'Mon espace';
+          a.href = 'footlight-espace.html';
+        }
+        // Cacher le bouton S'inscrire
+        if (a.href.includes('footlight-inscription-recruteur') || a.style.background) {
+          a.style.display = 'none';
+        }
+      });
+      // Ajouter bouton déconnexion
+      const navLinks = document.querySelector('.nav-links');
+      if (navLinks && !document.getElementById('deco-btn')) {
+        const deco = document.createElement('a');
+        deco.id = 'deco-btn';
+        deco.textContent = 'Déconnexion';
+        deco.href = '#';
+        deco.style.cssText = 'font-size:0.82rem;color:var(--muted);cursor:pointer;';
+        deco.onclick = async function(e) {
+          e.preventDefault();
+          await db.auth.signOut();
+          window.location.reload();
+        };
+        navLinks.appendChild(deco);
+      }
+    }
+  } catch(e) {}
+  loadJoueurs();
+}
+
+checkSession();
+</script>
+</body>
+</html>
