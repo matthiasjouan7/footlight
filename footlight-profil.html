@@ -147,7 +147,11 @@ async function loadProfil() {
 
   // Chercher par nom si pas d'ID
   if (!joueurId && joueurNom) {
-    const { data: joueur } = await db.from('joueurs').select('*').eq('nom', joueurNom).eq('profil_public', true).single();
+    const prenomParam = params.get('prenom');
+    let query = db.from('joueurs').select('*').eq('nom', joueurNom).eq('profil_public', true);
+    if (prenomParam) query = query.eq('prenom', prenomParam);
+    const { data, error } = await query.limit(1);
+    const joueur = data && data.length > 0 ? data[0] : null;
     document.getElementById('loading').style.display = 'none';
     if (!joueur) { document.getElementById('not-found').style.display = 'block'; return; }
     renderProfil(joueur, false);
