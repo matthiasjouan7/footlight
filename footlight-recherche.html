@@ -120,7 +120,17 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
   </div>
 </nav>
 
-<div class="layout">
+<!-- BLOQUÉ POUR LES JOUEURS -->
+<div id="joueur-blocked" style="display:none; max-width:480px; margin:120px auto 0; text-align:center; padding:0 20px;">
+  <div style="font-size:2.5rem; margin-bottom:16px;">🔒</div>
+  <h2 style="margin-bottom:10px;">Réservé aux recruteurs</h2>
+  <p style="color:var(--muted); margin-bottom:20px; font-size:0.9rem;">
+    La recherche de joueurs est réservée aux comptes recruteur (club, agent, scout). En tant que joueur, gère ton profil depuis ton espace.
+  </p>
+  <a href="footlight-espace.html" style="display:inline-block; padding:10px 20px; border-radius:10px; background:var(--blue); color:#fff; text-decoration:none; font-size:0.9rem; font-weight:600;">Aller à mon espace</a>
+</div>
+
+<div class="layout" id="layout">
 
   <!-- SIDEBAR -->
   <div class="sidebar">
@@ -472,6 +482,8 @@ function saveAddPlayer() {
 
 // ── INIT ──
 let isConnected = false;
+let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
+let viewerPlan = 'free';
 
 async function checkSession() {
   try {
@@ -480,6 +492,16 @@ async function checkSession() {
     const bandeau = document.getElementById('bandeau-non-connecte');
     if (bandeau) bandeau.style.display = isConnected ? 'none' : 'flex';
     if (user) {
+      // Déterminer le rôle : recruteur ou joueur ?
+      const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
+      if (recruteur) {
+        viewerRole = 'recruteur';
+        viewerPlan = recruteur.plan || 'free';
+      } else {
+        const { data: joueur } = await db.from('joueurs').select('id').eq('email', user.email).single();
+        viewerRole = joueur ? 'joueur' : 'nouveau';
+      }
+
       // Remplacer "Connexion" par "Mon espace"
       document.querySelectorAll('.nav-links a').forEach(a => {
         if (a.href.includes('footlight-connexion')) {
@@ -508,6 +530,14 @@ async function checkSession() {
       }
     }
   } catch(e) {}
+
+  // Un compte joueur ne peut pas parcourir les autres joueurs
+  if (viewerRole === 'joueur') {
+    document.getElementById('layout').style.display = 'none';
+    document.getElementById('joueur-blocked').style.display = 'block';
+    return;
+  }
+
   loadJoueurs();
 }
 

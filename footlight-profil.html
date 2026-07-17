@@ -69,6 +69,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 .not-found{text-align:center;padding:80px 20px;}
 .not-found h2{font-size:1.4rem;margin-bottom:10px;}
 .not-found p{color:var(--muted);margin-bottom:20px;}
+
+/* Impact / barres */
+.bar-item{margin-bottom:14px;}
+.bar-item:last-child{margin-bottom:0;}
+.bar-label-row{display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:5px;}
+.bar-label-row .k{color:var(--muted);}
+.bar-label-row .v{font-weight:700;}
+.bar-track{background:var(--bg3);border-radius:4px;height:7px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;}
+
+/* Verrou plan */
+.locked-box{background:rgba(31,111,235,0.06);border:1px solid rgba(31,111,235,0.2);border-radius:12px;padding:20px;text-align:center;}
+.locked-box p{font-size:0.85rem;color:var(--blue-l);margin-bottom:12px;}
 </style>
 </head>
 <body>
@@ -121,12 +134,24 @@ const BADGES = {
   'elite': '⭐ Elite'
 };
 
+let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
+let viewerPlan = 'free';
+
 async function loadProfil() {
   // Vérifier la session
   const { data: { user } } = await db.auth.getUser();
   if (user) {
     document.getElementById('nav-auth').textContent = 'Mon profil';
     document.getElementById('nav-auth').href = '#';
+
+    const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
+    if (recruteur) {
+      viewerRole = 'recruteur';
+      viewerPlan = recruteur.plan || 'free';
+    } else {
+      const { data: joueurCompte } = await db.from('joueurs').select('id').eq('email', user.email).single();
+      viewerRole = joueurCompte ? 'joueur' : 'nouveau';
+    }
   }
 
   // Récupérer l'ID depuis l'URL
@@ -145,6 +170,14 @@ async function loadProfil() {
     return;
   }
 
+  // Un compte joueur ne peut pas consulter le profil d'un autre joueur
+  if (viewerRole === 'joueur') {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-found').innerHTML = '<h2>🔒 Réservé aux recruteurs</h2><p>La consultation des profils joueurs est réservée aux comptes recruteur.</p><a href="footlight-espace.html"><button class="btn primary">Aller à mon espace</button></a>';
+    document.getElementById('not-found').style.display = 'block';
+    return;
+  }
+
   // Chercher par nom si pas d'ID
   if (!joueurId && joueurNom) {
     const prenomParam = params.get('prenom');
@@ -155,15 +188,15 @@ async function loadProfil() {
       .ilike('nom', joueurNom)
       .ilike('prenom', prenomParam || '%')
       .limit(1);
-    
+
     console.log('Recherche:', prenomParam, joueurNom, 'Résultat:', data, 'Erreur:', error);
-    
+
     document.getElementById('loading').style.display = 'none';
     const joueur = data && data.length > 0 ? data[0] : null;
-    if (!joueur) { 
+    if (!joueur) {
       document.getElementById('not-found').innerHTML = '<h2>Profil introuvable</h2><p>Recherche: ' + prenomParam + ' ' + joueurNom + '</p><p style="color:red">' + (error ? error.message : 'Aucun résultat') + '</p><a href="footlight-recherche.html"><button style="padding:10px 20px;background:#1f6feb;border:none;color:#fff;border-radius:8px;cursor:pointer;">Retour à la recherche</button></a>';
-      document.getElementById('not-found').style.display = 'block'; 
-      return; 
+      document.getElementById('not-found').style.display = 'block';
+      return;
     }
     renderProfil(joueur, false);
     return;
@@ -171,9 +204,9 @@ async function loadProfil() {
 
   // Charger le joueur par ID
   const { data: joueur, error } = await db.from('joueurs').select('*').eq('id', joueurId).single();
-  
+
   document.getElementById('loading').style.display = 'none';
-  
+
   if (error || !joueur) {
     document.getElementById('not-found').style.display = 'block';
     return;
@@ -259,11 +292,79 @@ function renderProfil(j, isOwner) {
       ${j.nationalite ? `<div class="info-row"><span class="info-key">Nationalité</span><span class="info-val">${j.nationalite}</span></div>` : ''}
     </div>
 
-    ${j.video_url ? `
+    ${(function() {
+      const canImpact = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
+      const hasImpactData = j.impact_differentiel != null || j.pct_matchs_avec_but != null || j.points_avec != null;
+      if (!hasImpactData) return '';
+      if (!canImpact) {
+        return `
+        <div class="section">
+          <div class="section-title">Impact collectif</div>
+          <div class="locked-box">
+            <p>🔒 Réservé aux recruteurs Pro et Premium</p>
+            <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+          </div>
+        </div>`;
+      }
+      const diff = j.impact_differentiel;
+      const diffPct = diff == null ? 0 : Math.max(0, Math.min(100, 50 + diff * 50));
+      return `
+        <div class="section">
+          <div class="section-title">Impact collectif</div>
+          ${diff != null ? `
+          <div class="bar-item">
+            <div class="bar-label-row"><span class="k">Différentiel d'impact</span><span class="v" style="color:${diff>=0?'var(--green-l)':'var(--red)'}">${diff>=0?'+':''}${diff.toFixed(2)}</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${diffPct}%;background:${diff>=0?'var(--green-l)':'var(--red)'}"></div></div>
+          </div>` : ''}
+          ${j.pct_matchs_avec_but != null ? `
+          <div class="bar-item">
+            <div class="bar-label-row"><span class="k">% matchs avec but</span><span class="v" style="color:var(--gold-l)">${Math.round(j.pct_matchs_avec_but)}%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,j.pct_matchs_avec_but)}%;background:var(--gold-l)"></div></div>
+          </div>` : ''}
+          ${j.points_avec != null && j.points_sans != null ? `
+          <div class="info-row"><span class="info-key">Points pris avec le joueur</span><span class="info-val">${j.points_avec}${j.pct_points_avec!=null?' ('+Math.round(j.pct_points_avec)+'%)':''}</span></div>
+          <div class="info-row"><span class="info-key">Points pris sans le joueur</span><span class="info-val">${j.points_sans}${j.pct_points_sans!=null?' ('+Math.round(j.pct_points_sans)+'%)':''}</span></div>` : ''}
+        </div>`;
+    })()}
+
+    ${(function() {
+      const canGPS = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
+      const hasGPS = j.vitesse_max_kmh != null || j.vma_kmh != null || j.distance_moyenne_km != null || j.sprints_match != null;
+      if (!hasGPS) return '';
+      if (!canGPS) {
+        return `
+        <div class="section">
+          <div class="section-title">Données GPS</div>
+          <div class="locked-box">
+            <p>🔒 Réservé aux recruteurs Premium</p>
+            <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+          </div>
+        </div>`;
+      }
+      return `
+        <div class="section">
+          <div class="section-title">Données GPS</div>
+          <div class="stats-grid" style="margin-bottom:0;">
+            ${j.vitesse_max_kmh!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${j.vitesse_max_kmh}</div><div class="stat-lbl">Vitesse max km/h</div></div>`:''}
+            ${j.vma_kmh!=null?`<div class="stat-card"><div class="stat-val">${j.vma_kmh}</div><div class="stat-lbl">VMA km/h</div></div>`:''}
+            ${j.distance_moyenne_km!=null?`<div class="stat-card"><div class="stat-val">${j.distance_moyenne_km}</div><div class="stat-lbl">Km/match moy.</div></div>`:''}
+            ${j.sprints_match!=null?`<div class="stat-card"><div class="stat-val">${j.sprints_match}</div><div class="stat-lbl">Sprints/match</div></div>`:''}
+          </div>
+        </div>`;
+    })()}
+
+    ${j.video_url ? (isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium') ? `
     <div class="section">
       <div class="section-title">Vidéo de match</div>
       <a href="${j.video_url}" target="_blank" style="color:var(--blue-l);font-size:0.85rem;">🎥 Voir la vidéo →</a>
-    </div>` : ''}
+    </div>` : `
+    <div class="section">
+      <div class="section-title">Vidéo de match</div>
+      <div class="locked-box">
+        <p>🔒 Réservé aux recruteurs Premium</p>
+        <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+      </div>
+    </div>`) : ''}
 
     <div class="section">
       <div class="section-title">Badge de validation</div>
