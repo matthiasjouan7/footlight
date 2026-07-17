@@ -143,7 +143,7 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       <div class="chips" id="f-niveau">
         <div class="chip active" data-val="tous" onclick="setFilter('niveau','tous',this)">Tous</div>
         <div class="chip" data-val="N1" onclick="setFilter('niveau','N1',this)">N1</div>
-        <div class="chip" data-val="N1" onclick="setFilter('niveau','N1',this)">N1</div>
+        <div class="chip" data-val="N2" onclick="setFilter('niveau','N2',this)">N2</div>
         <div class="chip" data-val="R1" onclick="setFilter('niveau','R1',this)">R1</div>
         <div class="chip" data-val="Autre" onclick="setFilter('niveau','Autre',this)">Autre</div>
       </div>
@@ -376,7 +376,7 @@ function applyFilters() {
   var filtered = allPlayers.filter(function(j) {
     var poste_display = POSTE_DISPLAY[j.poste||'autre'] || 'Milieu';
     if (filters.poste !== 'tous' && poste_display !== filters.poste) return false;
-    if (filters.niveau !== 'tous' && (j.niveau||'N1') !== filters.niveau) return false;
+    if (filters.niveau !== 'tous' && (j.niveau||'N2') !== filters.niveau) return false;
     if ((j.score||50) < minScore) return false;
     return true;
   });
