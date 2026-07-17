@@ -404,7 +404,7 @@ async function sendReset() {
   const email = document.getElementById('reset-email').value.trim();
   if (!email) return;
   const { error } = await db.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://footlight.fr/footlight-connexion.html',
+    redirectTo: 'https://footlight.fr/footlight-reset-password.html',
   });
   document.getElementById('reset-success').classList.add('visible');
 }
