@@ -417,6 +417,44 @@
     .footer-links a:hover { color: var(--text); }
     .footer-copy { font-size: 0.78rem; color: var(--muted); }
   </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Vérifier la session au chargement
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    const { data: { user } } = await db.auth.getUser();
+    if (user) {
+      // Utilisateur connecté - mettre à jour la nav
+      const navCta = document.getElementById('nav-cta');
+      if (navCta) {
+        navCta.textContent = 'Mon espace';
+        navCta.href = 'footlight-profil.html';
+      }
+      // Mettre à jour les boutons d'inscription
+      document.querySelectorAll('.btn-inscription').forEach(btn => {
+        btn.textContent = 'Accéder à mon profil →';
+        btn.href = 'footlight-profil.html';
+      });
+      // Mettre à jour la nav connexion
+      const navConnexion = document.getElementById('nav-connexion');
+      if (navConnexion) {
+        navConnexion.textContent = 'Se déconnecter';
+        navConnexion.onclick = async function(e) {
+          e.preventDefault();
+          await db.auth.signOut();
+          window.location.reload();
+        };
+      }
+    }
+  } catch(err) {
+    console.warn('Session check:', err);
+  }
+});
+</script>
 </head>
 <body>
 
@@ -447,7 +485,7 @@
     saisies directement par les joueurs, sans intermédiaire. Gratuit pour les joueurs.
   </p>
   <div class="hero-btns">
-    <a href="footlight-inscription-joueur.html" class="btn-primary">Créer mon profil joueur — Gratuit</a>
+    <a href="footlight-inscription-joueur.html" class="btn-primary btn-inscription" id="btn-cta-joueur">Créer mon profil joueur — Gratuit</a>
     <a href="footlight-recherche.html" class="btn-secondary">Accéder à la recherche</a>
   </div>
   <div class="hero-stats">
