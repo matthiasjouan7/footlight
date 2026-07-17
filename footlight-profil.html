@@ -132,8 +132,9 @@ async function loadProfil() {
   // Récupérer l'ID depuis l'URL
   const params = new URLSearchParams(window.location.search);
   const joueurId = params.get('id');
+  const joueurNom = params.get('nom');
 
-  if (!joueurId) {
+  if (!joueurId && !joueurNom) {
     // Si pas d'ID et connecté, charger son propre profil
     if (user) {
       const { data: joueur } = await db.from('joueurs').select('*').eq('email', user.email).single();
@@ -141,6 +142,15 @@ async function loadProfil() {
     }
     document.getElementById('loading').style.display = 'none';
     document.getElementById('not-found').style.display = 'block';
+    return;
+  }
+
+  // Chercher par nom si pas d'ID
+  if (!joueurId && joueurNom) {
+    const { data: joueur } = await db.from('joueurs').select('*').eq('nom', joueurNom).eq('profil_public', true).single();
+    document.getElementById('loading').style.display = 'none';
+    if (!joueur) { document.getElementById('not-found').style.display = 'block'; return; }
+    renderProfil(joueur, false);
     return;
   }
 
