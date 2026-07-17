@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Mon espace</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#1f6feb;--blue-l:#79c0ff;--green:#238636;--green-l:#56d364;--gold:#d29922;--gold-l:#e3b341;--red:#da3633;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-links{display:flex;gap:16px;align-items:center;}
+.nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.nav-links a:hover{color:var(--text);}
+.page{max-width:800px;margin:0 auto;padding:76px 24px 60px;}
+.loading{text-align:center;padding:80px;color:var(--muted);}
+.loading-spin{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;}
+.section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg3);font-size:0.88rem;}
+.info-row:last-child{border-bottom:none;}
+.info-key{color:var(--muted);}
+.info-val{font-weight:500;}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;}
+.badge.free{background:rgba(139,148,158,0.1);border:1px solid var(--border);color:var(--muted);}
+.badge.pro{background:rgba(31,111,235,0.1);border:1px solid var(--blue);color:var(--blue-l);}
+.badge.premium{background:rgba(210,153,34,0.1);border:1px solid var(--gold);color:var(--gold-l);}
+.btn{padding:10px 20px;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;text-decoration:none;display:inline-block;}
+.btn.primary{background:var(--blue);color:#fff;}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn.red{background:rgba(218,54,51,0.1);border:1px solid var(--red);color:var(--red);}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+.header-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:16px;}
+.avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;color:#fff;flex-shrink:0;}
+.user-name{font-size:1.3rem;font-weight:700;margin-bottom:4px;}
+.user-type{font-size:0.82rem;color:var(--muted);}
+.plan-card{background:linear-gradient(135deg,rgba(31,111,235,0.08),rgba(124,106,247,0.08));border:1px solid rgba(79,142,247,0.2);border-radius:14px;padding:20px;margin-bottom:16px;}
+.plan-name{font-size:1.1rem;font-weight:700;color:var(--blue-l);margin-bottom:4px;}
+.plan-desc{font-size:0.82rem;color:var(--muted);margin-bottom:14px;}
+.upgrade-btn{display:block;width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#1f6feb,#7c6af7);color:#fff;font-size:0.88rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+  <div class="nav-links">
+    <a href="footlight-recherche.html">Recherche</a>
+    <a href="footlight-espace.html" style="color:var(--blue-l);">Mon espace</a>
+    <a href="#" onclick="deconnexion()">Déconnexion</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="loading" id="loading">
+    <div class="loading-spin"></div>
+    <p>Chargement de votre espace...</p>
+  </div>
+  <div id="contenu" style="display:none;"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function deconnexion() {
+  await db.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+async function init() {
+  const { data: { user } } = await db.auth.getUser();
+  
+  if (!user) {
+    window.location.href = 'footlight-connexion.html';
+    return;
+  }
+
+  // Chercher si recruteur
+  const { data: recruteur } = await db.from('recruteurs').select('*').eq('email', user.email).single();
+  
+  if (recruteur) {
+    renderRecruteur(user, recruteur);
+    return;
+  }
+
+  // Chercher si joueur
+  const { data: joueur } = await db.from('joueurs').select('*').eq('email', user.email).single();
+  
+  if (joueur) {
+    renderJoueur(user, joueur);
+    return;
+  }
+
+  // Compte créé mais pas encore de profil
+  renderNouvelUtilisateur(user);
+}
+
+function renderRecruteur(user, r) {
+  const initiales = ((r.prenom||'?')[0] + (r.nom||'?')[0]).toUpperCase();
+  const plan = r.plan || 'free';
+  const planLabels = {free: 'Gratuit', pro: 'Pro', premium: 'Premium'};
+  const planColors = {free: 'free', pro: 'pro', premium: 'premium'};
+  
+  document.getElementById('contenu').innerHTML = `
+    <div class="header-card">
+      <div class="avatar" style="background:linear-gradient(135deg,#1f6feb,#7c6af7)">${initiales}</div>
+      <div>
+        <div class="user-name">${r.prenom} ${r.nom}</div>
+        <div class="user-type">Recruteur · ${r.type_profil === 'club' ? 'Club amateur' : r.type_profil === 'agent' ? 'Agent' : 'Scout'}</div>
+        <div style="margin-top:6px;"><span class="badge ${planColors[plan]}">${planLabels[plan]}</span></div>
+      </div>
+    </div>
+
+    <div class="plan-card">
+      <div class="plan-name">Plan ${planLabels[plan]}</div>
+      <div class="plan-desc">
+        ${plan === 'free' ? '10 profils consultables par mois · Stats basiques · 3 joueurs manuels' : ''}
+        ${plan === 'pro' ? 'Recherche illimitée · Stats complètes · Impact collectif · Shortlist illimitée' : ''}
+        ${plan === 'premium' ? 'Tout le Pro + Vidéos, GPS, Export, Contact direct joueurs' : ''}
+      </div>
+      ${plan === 'free' ? '<a href="footlight-paiement.html?plan=pro" class="upgrade-btn">Passer au plan Pro — 14€/mois →</a>' : ''}
+      ${plan === 'pro' ? '<a href="footlight-paiement.html?plan=premium" class="upgrade-btn">Passer au plan Premium — 29€/mois →</a>' : ''}
+    </div>
+
+    <div class="section">
+      <div class="section-title">Mes informations</div>
+      <div class="info-row"><span class="info-key">Prénom</span><span class="info-val">${r.prenom}</span></div>
+      <div class="info-row"><span class="info-key">Nom</span><span class="info-val">${r.nom}</span></div>
+      <div class="info-row"><span class="info-key">Email</span><span class="info-val">${r.email}</span></div>
+      <div class="info-row"><span class="info-key">Organisation</span><span class="info-val">${r.organisation || '—'}</span></div>
+      <div class="info-row"><span class="info-key">Téléphone</span><span class="info-val">${r.telephone || '—'}</span></div>
+      <div class="info-row"><span class="info-key">Type</span><span class="info-val">${r.type_profil === 'club' ? 'Club amateur' : r.type_profil === 'agent' ? 'Agent / Mandataire' : 'Scout indépendant'}</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Actions rapides</div>
+      <div class="btn-row">
+        <a href="footlight-recherche.html" class="btn primary">Rechercher des joueurs</a>
+        <button class="btn outline" onclick="alert('Fonctionnalité à venir')">Ma shortlist</button>
+        <button class="btn red" onclick="deconnexion()">Déconnexion</button>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('contenu').style.display = 'block';
+}
+
+function renderJoueur(user, j) {
+  const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
+  const couleurs = {'gardien':'#1f6feb','defenseur_central':'#da3633','attaquant':'#d29922','milieu_central':'#238636'};
+  const couleur = couleurs[j.poste] || '#6e7681';
+  
+  document.getElementById('contenu').innerHTML = `
+    <div class="header-card">
+      <div class="avatar" style="background:linear-gradient(135deg,${couleur},${couleur}88)">${initiales}</div>
+      <div>
+        <div class="user-name">${j.prenom} ${j.nom}</div>
+        <div class="user-type">Joueur · ${(j.poste||'').replace(/_/g,' ')} · ${j.club||'—'}</div>
+        <div style="margin-top:6px;font-size:0.78rem;color:var(--muted)">Score : <span style="color:var(--blue-l);font-weight:700;">${j.score||50}/100</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Mes stats saison ${j.saison||'2024-2025'}</div>
+      <div class="info-row"><span class="info-key">Matchs joués</span><span class="info-val">${j.matchs_joues||0}</span></div>
+      <div class="info-row"><span class="info-key">Buts</span><span class="info-val" style="color:var(--green-l)">${j.buts||0}</span></div>
+      <div class="info-row"><span class="info-key">Passes décisives</span><span class="info-val" style="color:var(--blue-l)">${j.passes_decisives||0}</span></div>
+      <div class="info-row"><span class="info-key">Minutes jouées</span><span class="info-val">${j.minutes_jouees||0}</span></div>
+      <div class="info-row"><span class="info-key">Cartons jaunes</span><span class="info-val" style="color:var(--gold-l)">${j.cartons_jaunes||0}</span></div>
+      <div class="info-row"><span class="info-key">Cartons rouges</span><span class="info-val" style="color:var(--red)">${j.cartons_rouges||0}</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Mon profil</div>
+      <div class="info-row"><span class="info-key">Club</span><span class="info-val">${j.club||'—'}</span></div>
+      <div class="info-row"><span class="info-key">Niveau</span><span class="info-val">${j.niveau||'—'}</span></div>
+      <div class="info-row"><span class="info-key">Poste</span><span class="info-val">${(j.poste||'').replace(/_/g,' ')}</span></div>
+      <div class="info-row"><span class="info-key">Pied fort</span><span class="info-val">${j.pied_fort||'—'}</span></div>
+      <div class="info-row"><span class="info-key">Badge</span><span class="info-val">${j.badge === 'declaratif' ? '⚪ Déclaratif' : j.badge === 'video' ? '🎥 Vérifié vidéo' : j.badge === 'gps' ? '📍 GPS' : '⭐ Elite'}</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Actions rapides</div>
+      <div class="btn-row">
+        <a href="footlight-saisie-match.html" class="btn primary">Saisir mes stats de match</a>
+        <a href="footlight-profil.html?email=${encodeURIComponent(j.email)}" class="btn outline">Voir mon profil public</a>
+        <button class="btn red" onclick="deconnexion()">Déconnexion</button>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('contenu').style.display = 'block';
+}
+
+function renderNouvelUtilisateur(user) {
+  document.getElementById('contenu').innerHTML = `
+    <div class="header-card">
+      <div class="avatar" style="background:linear-gradient(135deg,#6e7681,#444)">?</div>
+      <div>
+        <div class="user-name">${user.email}</div>
+        <div class="user-type">Compte créé — profil incomplet</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Complétez votre profil</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">Votre compte est créé mais votre profil n'est pas encore configuré.</p>
+      <div class="btn-row">
+        <a href="footlight-inscription-joueur.html" class="btn primary">Je suis joueur</a>
+        <a href="footlight-inscription-recruteur.html" class="btn outline">Je suis recruteur</a>
+      </div>
+    </div>
+  `;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('contenu').style.display = 'block';
+}
+
+init();
+</script>
+</body>
+</html>
