@@ -433,6 +433,21 @@ document.addEventListener('DOMContentLoaded', async function() {
       if (navCta) {
         navCta.textContent = 'Mon espace';
         navCta.href = 'footlight-profil.html';
+        navCta.style.background = '#238636';
+      }
+      // Ajouter bouton déconnexion dans la nav
+      const navLinks = document.querySelector('.nav-links');
+      if (navLinks) {
+        const decoLink = document.createElement('a');
+        decoLink.textContent = 'Déconnexion';
+        decoLink.href = '#';
+        decoLink.style.cssText = 'font-size:0.82rem;color:#8b949e;cursor:pointer;';
+        decoLink.onclick = async function(e) {
+          e.preventDefault();
+          await db.auth.signOut();
+          window.location.reload();
+        };
+        navLinks.insertBefore(decoLink, navCta);
       }
       // Mettre à jour les boutons d'inscription
       document.querySelectorAll('.btn-inscription').forEach(btn => {
@@ -466,7 +481,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     <a href="footlight-recherche.html">Recherche</a>
     <a href="#tarifs">Tarifs</a>
     <a href="footlight-suggestions.html">Suggestions</a>
-    <a href="footlight-inscription-joueur.html" class="nav-cta">Inscription gratuite</a>
+    <a href="footlight-inscription-joueur.html" class="nav-cta" id="nav-cta">Inscription gratuite</a>
   </div>
 </nav>
 
