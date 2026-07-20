@@ -301,7 +301,7 @@ body {
       <span class="plan-change" onclick="togglePlanSelector()">Changer →</span>
     </div>
     <div class="plan-price-big" id="plan-price">14€ <span>/mois</span></div>
-    <div class="plan-trial-info green" id="plan-trial">1 jour gratuit · Engagement 3 mois requise aujourd'hui</div>
+    <div class="plan-trial-info muted" id="plan-trial">Engagement 3 mois minimum · débité aujourd'hui</div>
     <div class="plan-features-mini" id="plan-features">
       <span class="feat-pill on">Illimité</span>
       <span class="feat-pill on">Impact collectif</span>
@@ -364,9 +364,9 @@ body {
       <span class="order-key">Plan</span>
       <span class="order-val" id="recap-plan">Pro</span>
     </div>
-    <div class="order-row" id="trial-row">
+    <div class="order-row" id="trial-row" style="display:none;">
       <span class="order-key">Essai</span>
-      <span class="order-val" style="color:var(--green)">1 jour gratuit</span>
+      <span class="order-val" style="color:var(--green)"></span>
     </div>
     <div class="order-row">
       <span class="order-key">Puis</span>
@@ -401,7 +401,7 @@ body {
   <!-- BOUTON PAYER -->
   <button class="pay-btn" id="pay-btn" onclick="handlePayment()">
     <div class="spinner" id="spinner"></div>
-    <span class="btn-text" id="btn-text">Démarrer l'essai gratuit</span>
+    <span class="btn-text" id="btn-text">S'abonner</span>
   </button>
 
   <div class="stripe-badge">
@@ -482,8 +482,8 @@ const PLANS_DATA = {
   },
   premium: {
     name: 'Premium', price: '29€', priceNum: 39,
-    color: '#f5a623', trial: true, trialText: '1 jour gratuit · Engagement 3 mois requise aujourd\'hui',
-    today: '0,00€', puis: '29€ / mois',
+    color: '#f5a623', trial: false, trialText: 'Engagement 3 mois minimum · débité aujourd\'hui',
+    today: '29€', puis: '29€ / mois',
     features: [
       {on:true, txt:'Tout le Pro'},
       {on:true, txt:'Vidéos & GPS'},
