@@ -142,7 +142,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         <div class="field-row">
           <div class="field">
             <label class="field-label">Poste principal</label>
-            <select class="field-select" id="f-poste">
+            <select class="field-select" id="f-poste" onchange="toggleDefenseFields()">
               <option value="gardien">Gardien</option>
               <option value="defenseur_central">Défenseur central</option>
               <option value="lateral_droit">Latéral droit</option>
@@ -209,8 +209,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         <div class="stat-grid">
           <div class="field"><label class="field-label">Matchs joués</label><input class="field-input" type="number" id="s-matchs" min="0"/></div>
           <div class="field"><label class="field-label">Titularisations</label><input class="field-input" type="number" id="s-titu" min="0"/></div>
-          <div class="field"><label class="field-label">Buts</label><input class="field-input" type="number" id="s-buts" min="0"/></div>
-          <div class="field"><label class="field-label">Passes déc.</label><input class="field-input" type="number" id="s-passes" min="0"/></div>
+          <div class="field" id="field-buts"><label class="field-label">Buts</label><input class="field-input" type="number" id="s-buts" min="0"/></div>
+          <div class="field" id="field-passes"><label class="field-label">Passes déc.</label><input class="field-input" type="number" id="s-passes" min="0"/></div>
+          <div class="field" id="field-encaisses" style="display:none;"><label class="field-label">Buts encaissés</label><input class="field-input" type="number" id="s-encaisses" min="0"/></div>
+          <div class="field" id="field-cleansheets" style="display:none;"><label class="field-label">Clean sheets</label><input class="field-input" type="number" id="s-cleansheets" min="0"/></div>
           <div class="field"><label class="field-label">Minutes</label><input class="field-input" type="number" id="s-minutes" min="0"/></div>
           <div class="field"><label class="field-label">Cartons jaunes</label><input class="field-input" type="number" id="s-cartj" min="0"/></div>
           <div class="field"><label class="field-label">Cartons rouges</label><input class="field-input" type="number" id="s-cartr" min="0"/></div>
@@ -291,6 +293,16 @@ async function init() {
   document.getElementById('form-content').style.display = 'block';
 }
 
+const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
+
+function toggleDefenseFields() {
+  const isDef = POSTES_DEFENSIFS.includes(document.getElementById('f-poste').value);
+  document.getElementById('field-buts').style.display = isDef ? 'none' : '';
+  document.getElementById('field-passes').style.display = isDef ? 'none' : '';
+  document.getElementById('field-encaisses').style.display = isDef ? '' : 'none';
+  document.getElementById('field-cleansheets').style.display = isDef ? '' : 'none';
+}
+
 function fillForm(j) {
   document.getElementById('f-club').value = j.club || '';
   document.getElementById('f-niveau').value = j.niveau || '';
@@ -306,9 +318,12 @@ function fillForm(j) {
   document.getElementById('s-titu').value = j.titularisations ?? '';
   document.getElementById('s-buts').value = j.buts ?? '';
   document.getElementById('s-passes').value = j.passes_decisives ?? '';
+  document.getElementById('s-encaisses').value = j.buts_encaisses_avec ?? '';
+  document.getElementById('s-cleansheets').value = j.clean_sheets ?? '';
   document.getElementById('s-minutes').value = j.minutes_jouees ?? '';
   document.getElementById('s-cartj').value = j.cartons_jaunes ?? '';
   document.getElementById('s-cartr').value = j.cartons_rouges ?? '';
+  toggleDefenseFields();
 }
 
 async function changeEmail() {
@@ -369,6 +384,8 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     titularisations: parseInt(document.getElementById('s-titu').value) || 0,
     buts: parseInt(document.getElementById('s-buts').value) || 0,
     passes_decisives: parseInt(document.getElementById('s-passes').value) || 0,
+    buts_encaisses_avec: document.getElementById('s-encaisses').value ? parseInt(document.getElementById('s-encaisses').value) : null,
+    clean_sheets: document.getElementById('s-cleansheets').value ? parseInt(document.getElementById('s-cleansheets').value) : null,
     minutes_jouees: parseInt(document.getElementById('s-minutes').value) || 0,
     cartons_jaunes: parseInt(document.getElementById('s-cartj').value) || 0,
     cartons_rouges: parseInt(document.getElementById('s-cartr').value) || 0,
