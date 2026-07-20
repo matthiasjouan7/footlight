@@ -385,9 +385,14 @@ async function login() {
   }
 }
 
-function googleLogin() {
-  // À intégrer avec Firebase Auth ou Netlify Identity
-  alert('Connexion Google — À configurer avec votre provider d\'authentification.');
+async function googleLogin() {
+  const { error } = await db.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + '/footlight-espace.html' }
+  });
+  if (error) {
+    alert('Connexion Google indisponible : ' + error.message);
+  }
 }
 
 function showReset() {
