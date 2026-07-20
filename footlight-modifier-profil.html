@@ -129,12 +129,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
             </select>
           </div>
           <div class="field">
-            <label class="field-label">Saison</label>
-            <select class="field-select" id="f-saison">
-              <option value="2026-2027">2026-2027</option>
-              <option value="2025-2026">2025-2026</option>
-            </select>
+            <label class="field-label">Saison à modifier</label>
+            <select class="field-select" id="f-saison" onchange="onSeasonSelectChange()"></select>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Choisis une saison pour voir/corriger ses propres stats — ça ne touche pas les autres saisons.</div>
           </div>
+        </div>
+        <div class="field" id="new-season-field" style="display:none;">
+          <label class="field-label">Nouvelle saison (ex: 2024-2025)</label>
+          <input class="field-input" type="text" id="f-new-saison" placeholder="2024-2025"/>
         </div>
       </div>
 
@@ -265,6 +267,7 @@ async function findOwnJoueur(user) {
 }
 
 let isRecruiterEditing = false;
+let seasonsData = [];
 
 async function init() {
   const { data: { user } } = await db.auth.getUser();
@@ -302,9 +305,7 @@ async function init() {
     document.getElementById('page-sub').textContent = 'Aide ce joueur à avoir un profil complet en renseignant club, niveau et stats manquantes.';
     document.getElementById('recruteur-banner').style.display = 'block';
     document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
-    fillForm(joueur);
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('form-content').style.display = 'block';
+    await finishInit();
     return;
   }
 
@@ -319,14 +320,60 @@ async function init() {
   }
 
   joueur = data;
-  fillForm(joueur);
 
   if (params.get('bienvenue') === '1') {
     document.getElementById('welcome-banner').style.display = 'block';
   }
 
+  await finishInit();
+}
+
+async function finishInit() {
+  const { data: historiqueRaw } = await db
+    .from('stats_saisons')
+    .select('*')
+    .eq('joueur_id', joueur.id)
+    .order('saison', { ascending: false });
+  const historique = historiqueRaw || [];
+
+  const currentSeason = {
+    saison: joueur.saison || '2026-2027', isCurrent: true,
+    club: joueur.club, niveau: joueur.niveau,
+    matchs_joues: joueur.matchs_joues, titularisations: joueur.titularisations,
+    buts: joueur.buts, passes_decisives: joueur.passes_decisives,
+    buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets,
+    minutes_jouees: joueur.minutes_jouees,
+    cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
+  };
+  seasonsData = [currentSeason, ...historique].sort((a,b) => (b.saison||'').localeCompare(a.saison||''));
+
+  fillPlayerFields(joueur);
+  populateSeasonSelect();
+  document.getElementById('f-saison').value = currentSeason.saison;
+  fillSeasonFields(currentSeason);
+
   document.getElementById('loading').style.display = 'none';
   document.getElementById('form-content').style.display = 'block';
+}
+
+function populateSeasonSelect() {
+  const sel = document.getElementById('f-saison');
+  sel.innerHTML = seasonsData.map(s =>
+    `<option value="${s.saison}">${s.saison}${s.isCurrent ? ' (actuelle)' : ''}</option>`
+  ).join('') + `<option value="__new__">+ Ajouter une nouvelle saison</option>`;
+}
+
+function onSeasonSelectChange() {
+  const val = document.getElementById('f-saison').value;
+  if (val === '__new__') {
+    document.getElementById('new-season-field').style.display = '';
+    document.getElementById('f-new-saison').value = '';
+    fillSeasonFields({ club: joueur.club, niveau: joueur.niveau });
+    return;
+  }
+  document.getElementById('new-season-field').style.display = 'none';
+  const s = seasonsData.find(x => x.saison === val);
+  if (s) fillSeasonFields(s);
 }
 
 const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
@@ -339,10 +386,7 @@ function toggleDefenseFields() {
   document.getElementById('field-cleansheets').style.display = isDef ? '' : 'none';
 }
 
-function fillForm(j) {
-  document.getElementById('f-club').value = j.club || '';
-  document.getElementById('f-niveau').value = j.niveau || '';
-  document.getElementById('f-saison').value = j.saison || '2026-2027';
+function fillPlayerFields(j) {
   document.getElementById('f-poste').value = j.poste || 'autre';
   document.getElementById('f-poste2').value = j.poste_secondaire || '';
   document.getElementById('f-pied').value = j.pied_fort || '';
@@ -350,16 +394,21 @@ function fillForm(j) {
   document.getElementById('f-nationalite').value = j.nationalite || '';
   document.getElementById('f-bio').value = j.bio || '';
   document.getElementById('f-video-url').value = j.video_url || '';
-  document.getElementById('s-matchs').value = j.matchs_joues ?? '';
-  document.getElementById('s-titu').value = j.titularisations ?? '';
-  document.getElementById('s-buts').value = j.buts ?? '';
-  document.getElementById('s-passes').value = j.passes_decisives ?? '';
-  document.getElementById('s-encaisses').value = j.buts_encaisses_avec ?? '';
-  document.getElementById('s-cleansheets').value = j.clean_sheets ?? '';
-  document.getElementById('s-minutes').value = j.minutes_jouees ?? '';
-  document.getElementById('s-cartj').value = j.cartons_jaunes ?? '';
-  document.getElementById('s-cartr').value = j.cartons_rouges ?? '';
   toggleDefenseFields();
+}
+
+function fillSeasonFields(s) {
+  document.getElementById('f-club').value = s.club || '';
+  document.getElementById('f-niveau').value = s.niveau || '';
+  document.getElementById('s-matchs').value = s.matchs_joues ?? '';
+  document.getElementById('s-titu').value = s.titularisations ?? '';
+  document.getElementById('s-buts').value = s.buts ?? '';
+  document.getElementById('s-passes').value = s.passes_decisives ?? '';
+  document.getElementById('s-encaisses').value = s.buts_encaisses_avec ?? '';
+  document.getElementById('s-cleansheets').value = s.clean_sheets ?? '';
+  document.getElementById('s-minutes').value = s.minutes_jouees ?? '';
+  document.getElementById('s-cartj').value = s.cartons_jaunes ?? '';
+  document.getElementById('s-cartr').value = s.cartons_rouges ?? '';
 }
 
 async function changeEmail() {
@@ -405,10 +454,19 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
   btn.disabled = true;
   btn.textContent = 'Enregistrement...';
 
-  const updates = {
-    club: document.getElementById('f-club').value.trim() || null,
-    niveau: document.getElementById('f-niveau').value || null,
-    saison: document.getElementById('f-saison').value,
+  let selectedSaison = document.getElementById('f-saison').value;
+  if (selectedSaison === '__new__') {
+    selectedSaison = document.getElementById('f-new-saison').value.trim();
+    if (!selectedSaison) {
+      btn.disabled = false;
+      btn.textContent = 'Enregistrer';
+      msg.classList.add('error');
+      msg.textContent = 'Indique le nom de la nouvelle saison (ex: 2024-2025).';
+      return;
+    }
+  }
+
+  const playerUpdates = {
     poste: document.getElementById('f-poste').value,
     poste_secondaire: document.getElementById('f-poste2').value || null,
     pied_fort: document.getElementById('f-pied').value || null,
@@ -416,6 +474,12 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     nationalite: document.getElementById('f-nationalite').value.trim() || null,
     bio: document.getElementById('f-bio').value.trim() || null,
     video_url: document.getElementById('f-video-url').value.trim() || null,
+    profil_public: true,
+  };
+
+  const seasonUpdates = {
+    club: document.getElementById('f-club').value.trim() || null,
+    niveau: document.getElementById('f-niveau').value || null,
     matchs_joues: parseInt(document.getElementById('s-matchs').value) || 0,
     titularisations: parseInt(document.getElementById('s-titu').value) || 0,
     buts: parseInt(document.getElementById('s-buts').value) || 0,
@@ -425,10 +489,20 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     minutes_jouees: parseInt(document.getElementById('s-minutes').value) || 0,
     cartons_jaunes: parseInt(document.getElementById('s-cartj').value) || 0,
     cartons_rouges: parseInt(document.getElementById('s-cartr').value) || 0,
-    profil_public: true,
   };
 
-  const { error } = await db.from('joueurs').update(updates).eq('id', joueur.id);
+  const isCurrentSeason = selectedSaison === (joueur.saison || '2026-2027');
+  let error;
+
+  if (isCurrentSeason) {
+    ({ error } = await db.from('joueurs').update({ ...playerUpdates, ...seasonUpdates, saison: selectedSaison }).eq('id', joueur.id));
+  } else {
+    ({ error } = await db.from('joueurs').update(playerUpdates).eq('id', joueur.id));
+    if (!error) {
+      ({ error } = await db.from('stats_saisons')
+        .upsert({ joueur_id: joueur.id, saison: selectedSaison, ...seasonUpdates }, { onConflict: 'joueur_id,saison' }));
+    }
+  }
 
   btn.disabled = false;
   btn.textContent = 'Enregistrer';
