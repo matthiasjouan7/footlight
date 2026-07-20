@@ -357,7 +357,7 @@ async function renderProfil(j, isOwner) {
           <span class="tag ${j.badge==='elite'?'gold':j.badge==='video'||j.badge==='gps'?'green':''}">${BADGES[j.badge]||'⚪ Déclaratif'}</span>
         </div>
         ${j.bio ? `<div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${j.bio}</div>` : ''}
-        ${isOwner ? `<div class="btn-row"><button class="btn primary" onclick="window.location.href='footlight-saisie-match.html'">Saisir mes stats</button><button class="btn outline">Modifier mon profil</button></div>` : ''}
+        ${isOwner ? `<div class="btn-row"><button class="btn primary" onclick="window.location.href='footlight-saisie-match.html'">Saisir mes stats</button><button class="btn outline" onclick="window.location.href='footlight-modifier-profil.html'">Modifier mon profil</button></div>` : ''}
       </div>
       <div class="profile-score">
         <div class="score-big" style="color:${scoreColor}">${score}</div>

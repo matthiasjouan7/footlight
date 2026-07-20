@@ -242,6 +242,25 @@ body {
   text-decoration: underline; margin-top: 4px; display: inline-block;
 }
 
+/* ── RECONNAISSANCE PROFIL EXISTANT ── */
+.claim-card {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 14px; padding: 16px; margin-bottom: 10px;
+  transition: border-color .15s;
+}
+.claim-card-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+.claim-card-info { font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
+.claim-card-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border: none; padding: 9px 18px; border-radius: 10px;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+.claim-card-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.claim-skip {
+  font-size: 0.82rem; color: var(--muted); cursor: pointer;
+  text-decoration: underline; text-align: center; display: block; margin-top: 18px;
+}
+
 /* ── RECAP ── */
 .recap-card {
   background: var(--bg3); border: 1px solid var(--border2);
@@ -475,6 +494,17 @@ body {
       <input class="field-input" type="password" id="f-password" placeholder="8 caractères minimum"/>
       <div class="field-error" id="err-password">8 caractères minimum</div>
     </div>
+  </div>
+
+  <!-- ════════════════ RECONNAISSANCE — PROFIL DÉJÀ IMPORTÉ ════════════════ -->
+  <div class="step-panel" id="step-claim">
+    <div class="step-header">
+      <div class="step-num">On a peut-être déjà tes stats</div>
+      <div class="step-title">C'est toi ?</div>
+      <div class="step-sub">Un profil avec ce nom existe déjà dans notre base (import de club). Récupère-le pour garder tes stats au lieu d'en créer un nouveau.</div>
+    </div>
+    <div id="claim-list"></div>
+    <span class="claim-skip" onclick="skipClaim()">Aucun de ces profils n'est le mien, créer un nouveau profil →</span>
   </div>
 
   <!-- ════════════════ ÉTAPE 2 — PROFIL SPORTIF ════════════════ -->
@@ -810,8 +840,24 @@ const stepLabels = [
 ];
 
 // ── NAVIGATION ──
-function nextStep() {
+let claimChecked = false;
+
+async function nextStep() {
   if (!validateStep(currentStep)) return;
+
+  if (currentStep === 1 && !claimChecked) {
+    claimChecked = true;
+    const btn = document.getElementById('btn-next');
+    btn.disabled = true;
+    btn.textContent = 'Vérification...';
+    const candidates = await searchExistingProfile();
+    btn.disabled = false;
+    btn.textContent = 'Continuer →';
+    if (candidates.length) {
+      showClaimPanel(candidates);
+      return;
+    }
+  }
 
   if (currentStep === TOTAL) {
     submitForm();
@@ -832,6 +878,86 @@ function nextStep() {
     document.getElementById('btn-next').textContent = 'Continuer →';
     document.getElementById('btn-next').classList.remove('success');
   }
+}
+
+// ── RECONNAISSANCE PROFIL EXISTANT ──
+async function searchExistingProfile() {
+  const prenom = document.getElementById('f-prenom').value.trim();
+  const nom = document.getElementById('f-nom').value.trim();
+  if (!prenom || !nom) return [];
+  const { data } = await db.from('joueurs')
+    .select('id, prenom, nom, club, niveau, poste')
+    .ilike('prenom', prenom)
+    .ilike('nom', nom)
+    .like('email', '%@scoute.footlight.fr')
+    .limit(5);
+  return data || [];
+}
+
+function showClaimPanel(list) {
+  const wrap = document.getElementById('claim-list');
+  wrap.innerHTML = list.map(c => `
+    <div class="claim-card">
+      <div class="claim-card-name">${c.prenom} ${c.nom}</div>
+      <div class="claim-card-info">${(c.poste||'').replace(/_/g,' ')} · ${c.club||'—'} · ${c.niveau||'—'}</div>
+      <button type="button" class="claim-card-btn" onclick="claimProfile('${c.id}', this)">Oui, c'est moi →</button>
+    </div>
+  `).join('');
+  document.getElementById('step-1').classList.remove('active');
+  document.getElementById('step-claim').classList.add('active');
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('bottom-bar').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function skipClaim() {
+  document.getElementById('step-claim').classList.remove('active');
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('bottom-bar').style.display = 'flex';
+  currentStep = 2;
+  document.getElementById('step-2').classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function claimProfile(id, btn) {
+  const email    = document.getElementById('f-email').value.trim();
+  const password = document.getElementById('f-password').value;
+  const prenom   = document.getElementById('f-prenom').value.trim();
+  const nom      = document.getElementById('f-nom').value.trim();
+  const naiss    = document.getElementById('f-naissance').value;
+  const nationalite = document.getElementById('f-nationalite').value.trim();
+
+  document.querySelectorAll('.claim-card-btn').forEach(b => { b.disabled = true; });
+  btn.textContent = 'Récupération...';
+
+  const { error: authError } = await db.auth.signUp({
+    email, password,
+    options: { data: { prenom, nom, type: 'joueur' } }
+  });
+  if (authError) {
+    alert('Erreur : ' + authError.message);
+    document.querySelectorAll('.claim-card-btn').forEach(b => { b.disabled = false; });
+    btn.textContent = "Oui, c'est moi →";
+    return;
+  }
+
+  const { error: updateError } = await db.from('joueurs')
+    .update({
+      email,
+      date_naissance: naiss || null,
+      nationalite: nationalite || null,
+      profil_public: true
+    })
+    .eq('id', id);
+
+  if (updateError) {
+    alert("Ton compte a été créé, mais la récupération automatique du profil a échoué (" + updateError.message + "). Connecte-toi puis contacte-nous pour qu'on relie ton profil.");
+    window.location.href = 'footlight-connexion.html';
+    return;
+  }
+
+  window.location.href = 'footlight-modifier-profil.html?bienvenue=1';
 }
 
 function prevStep() {

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Modifier mon profil</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --blue:#1f6feb;--blue-l:#79c0ff;
+  --gold:#d29922;--gold-l:#e3b341;
+  --green:#238636;--green-l:#56d364;
+  --red:#da3633;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-links{display:flex;gap:16px;align-items:center;}
+.nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.nav-links a:hover{color:var(--text);}
+
+.page{max-width:640px;margin:0 auto;padding:76px 24px 60px;}
+
+.loading{text-align:center;padding:80px 20px;color:var(--muted);}
+.loading-spin{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.page-title{font-size:1.5rem;font-weight:800;margin-bottom:4px;}
+.page-sub{font-size:0.85rem;color:var(--muted);margin-bottom:24px;}
+
+.welcome-banner{background:rgba(35,134,54,0.1);border:1px solid rgba(35,134,54,0.3);border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:0.85rem;color:var(--green-l);}
+
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;}
+.section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+.field{margin-bottom:14px;}
+.field-label{font-size:0.75rem;color:var(--muted);margin-bottom:6px;display:block;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field-input,.field-select,.field-textarea{
+  width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--bg4);
+  border-radius:10px;color:var(--text);font-size:0.9rem;outline:none;transition:border-color .2s;
+  font-family:inherit;
+}
+.field-input:focus,.field-select:focus,.field-textarea:focus{border-color:var(--blue);}
+.field-select option{background:var(--bg3);}
+.field-textarea{resize:vertical;min-height:80px;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:500px){.stat-grid{grid-template-columns:repeat(2,1fr);}.field-row{grid-template-columns:1fr;}}
+
+.btn-row{display:flex;gap:10px;margin-top:8px;}
+.btn{padding:12px 22px;border-radius:10px;font-size:0.88rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn.primary{background:var(--blue);color:#fff;flex:1;}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn:hover{opacity:0.85;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+.msg{font-size:0.82rem;margin-top:10px;padding:10px 14px;border-radius:8px;display:none;}
+.msg.error{background:rgba(218,54,51,0.1);color:#ff7b72;display:block;}
+.msg.success{background:rgba(35,134,54,0.1);color:var(--green-l);display:block;}
+
+.not-auth{text-align:center;padding:80px 20px;}
+.not-auth h2{font-size:1.3rem;margin-bottom:10px;}
+.not-auth p{color:var(--muted);margin-bottom:20px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+  <div class="nav-links">
+    <a href="footlight-profil.html">Mon profil</a>
+    <a href="footlight-espace.html">Mon espace</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="loading" id="loading">
+    <div class="loading-spin"></div>
+    <p>Chargement...</p>
+  </div>
+
+  <div id="not-auth" class="not-auth" style="display:none;">
+    <h2>Connexion requise</h2>
+    <p>Connecte-toi pour modifier ton profil.</p>
+    <a href="footlight-connexion.html"><button class="btn primary">Se connecter</button></a>
+  </div>
+
+  <div id="form-content" style="display:none;">
+    <div class="page-title">Modifier mon profil</div>
+    <div class="page-sub">Mets à jour ton club, ton niveau et tes stats — surtout utile si ça a changé depuis l'import de ton profil.</div>
+    <div class="welcome-banner" id="welcome-banner" style="display:none;">
+      🎉 Ton profil a été retrouvé et récupéré ! Vérifie et complète les infos ci-dessous.
+    </div>
+
+    <form id="edit-form">
+      <div class="section">
+        <div class="section-title">Club & niveau</div>
+        <div class="field">
+          <label class="field-label">Club actuel</label>
+          <input class="field-input" type="text" id="f-club" placeholder="VFC La Roche-sur-Yon"/>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Niveau</label>
+            <select class="field-select" id="f-niveau">
+              <option value="">—</option>
+              <option value="N1">N1</option>
+              <option value="N2">N2</option>
+              <option value="R1">R1</option>
+              <option value="R2">R2</option>
+              <option value="R3">R3</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Saison</label>
+            <select class="field-select" id="f-saison">
+              <option value="2026-2027">2026-2027</option>
+              <option value="2025-2026">2025-2026</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Profil sportif</div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Poste principal</label>
+            <select class="field-select" id="f-poste">
+              <option value="gardien">Gardien</option>
+              <option value="defenseur_central">Défenseur central</option>
+              <option value="lateral_droit">Latéral droit</option>
+              <option value="lateral_gauche">Latéral gauche</option>
+              <option value="milieu_defensif">Milieu défensif</option>
+              <option value="milieu_central">Milieu central</option>
+              <option value="milieu_offensif">Milieu offensif</option>
+              <option value="milieu_gauche">Milieu gauche</option>
+              <option value="ailier_droit">Ailier droit</option>
+              <option value="ailier_gauche">Ailier gauche</option>
+              <option value="attaquant">Attaquant</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Poste secondaire</label>
+            <select class="field-select" id="f-poste2">
+              <option value="">Aucun</option>
+              <option value="gardien">Gardien</option>
+              <option value="defenseur_central">Défenseur central</option>
+              <option value="lateral_droit">Latéral droit</option>
+              <option value="lateral_gauche">Latéral gauche</option>
+              <option value="milieu_defensif">Milieu défensif</option>
+              <option value="milieu_central">Milieu central</option>
+              <option value="milieu_offensif">Milieu offensif</option>
+              <option value="milieu_gauche">Milieu gauche</option>
+              <option value="ailier_droit">Ailier droit</option>
+              <option value="ailier_gauche">Ailier gauche</option>
+              <option value="attaquant">Attaquant</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Pied fort</label>
+            <select class="field-select" id="f-pied">
+              <option value="">—</option>
+              <option value="Droit">Droit</option>
+              <option value="Gauche">Gauche</option>
+              <option value="Les deux">Les deux</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Taille (cm)</label>
+            <input class="field-input" type="number" id="f-taille" min="140" max="220"/>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Nationalité</label>
+          <input class="field-input" type="text" id="f-nationalite"/>
+        </div>
+        <div class="field">
+          <label class="field-label">À propos de toi</label>
+          <textarea class="field-textarea" id="f-bio" placeholder="Ton style de jeu, tes qualités, tes objectifs..."></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Lien vidéo (YouTube, Vimeo...)</label>
+          <input class="field-input" type="url" id="f-video-url" placeholder="https://youtube.com/..."/>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Stats de la saison en cours</div>
+        <div class="stat-grid">
+          <div class="field"><label class="field-label">Matchs joués</label><input class="field-input" type="number" id="s-matchs" min="0"/></div>
+          <div class="field"><label class="field-label">Titularisations</label><input class="field-input" type="number" id="s-titu" min="0"/></div>
+          <div class="field"><label class="field-label">Buts</label><input class="field-input" type="number" id="s-buts" min="0"/></div>
+          <div class="field"><label class="field-label">Passes déc.</label><input class="field-input" type="number" id="s-passes" min="0"/></div>
+          <div class="field"><label class="field-label">Minutes</label><input class="field-input" type="number" id="s-minutes" min="0"/></div>
+          <div class="field"><label class="field-label">Cartons jaunes</label><input class="field-input" type="number" id="s-cartj" min="0"/></div>
+          <div class="field"><label class="field-label">Cartons rouges</label><input class="field-input" type="number" id="s-cartr" min="0"/></div>
+        </div>
+      </div>
+
+      <div class="msg" id="form-msg"></div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn primary" id="btn-save">Enregistrer</button>
+        <button type="button" class="btn outline" onclick="window.location.href='footlight-profil.html'">Annuler</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let joueur = null;
+
+async function init() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-auth').style.display = 'block';
+    return;
+  }
+
+  const { data, error } = await db.from('joueurs').select('*').eq('email', user.email).single();
+  if (error || !data) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-auth').innerHTML = '<h2>Aucun profil joueur</h2><p>Ce compte n\'est pas un compte joueur.</p><a href="footlight-espace.html"><button class="btn primary">Mon espace</button></a>';
+    document.getElementById('not-auth').style.display = 'block';
+    return;
+  }
+
+  joueur = data;
+  fillForm(joueur);
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('bienvenue') === '1') {
+    document.getElementById('welcome-banner').style.display = 'block';
+  }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('form-content').style.display = 'block';
+}
+
+function fillForm(j) {
+  document.getElementById('f-club').value = j.club || '';
+  document.getElementById('f-niveau').value = j.niveau || '';
+  document.getElementById('f-saison').value = j.saison || '2026-2027';
+  document.getElementById('f-poste').value = j.poste || 'autre';
+  document.getElementById('f-poste2').value = j.poste_secondaire || '';
+  document.getElementById('f-pied').value = j.pied_fort || '';
+  document.getElementById('f-taille').value = j.taille || '';
+  document.getElementById('f-nationalite').value = j.nationalite || '';
+  document.getElementById('f-bio').value = j.bio || '';
+  document.getElementById('f-video-url').value = j.video_url || '';
+  document.getElementById('s-matchs').value = j.matchs_joues ?? '';
+  document.getElementById('s-titu').value = j.titularisations ?? '';
+  document.getElementById('s-buts').value = j.buts ?? '';
+  document.getElementById('s-passes').value = j.passes_decisives ?? '';
+  document.getElementById('s-minutes').value = j.minutes_jouees ?? '';
+  document.getElementById('s-cartj').value = j.cartons_jaunes ?? '';
+  document.getElementById('s-cartr').value = j.cartons_rouges ?? '';
+}
+
+document.getElementById('edit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('btn-save');
+  const msg = document.getElementById('form-msg');
+  msg.className = 'msg';
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement...';
+
+  const updates = {
+    club: document.getElementById('f-club').value.trim() || null,
+    niveau: document.getElementById('f-niveau').value || null,
+    saison: document.getElementById('f-saison').value,
+    poste: document.getElementById('f-poste').value,
+    poste_secondaire: document.getElementById('f-poste2').value || null,
+    pied_fort: document.getElementById('f-pied').value || null,
+    taille: document.getElementById('f-taille').value ? parseInt(document.getElementById('f-taille').value) : null,
+    nationalite: document.getElementById('f-nationalite').value.trim() || null,
+    bio: document.getElementById('f-bio').value.trim() || null,
+    video_url: document.getElementById('f-video-url').value.trim() || null,
+    matchs_joues: parseInt(document.getElementById('s-matchs').value) || 0,
+    titularisations: parseInt(document.getElementById('s-titu').value) || 0,
+    buts: parseInt(document.getElementById('s-buts').value) || 0,
+    passes_decisives: parseInt(document.getElementById('s-passes').value) || 0,
+    minutes_jouees: parseInt(document.getElementById('s-minutes').value) || 0,
+    cartons_jaunes: parseInt(document.getElementById('s-cartj').value) || 0,
+    cartons_rouges: parseInt(document.getElementById('s-cartr').value) || 0,
+    profil_public: true,
+  };
+
+  const { error } = await db.from('joueurs').update(updates).eq('id', joueur.id);
+
+  btn.disabled = false;
+  btn.textContent = 'Enregistrer';
+
+  if (error) {
+    msg.classList.add('error');
+    msg.textContent = 'Erreur lors de l\'enregistrement : ' + error.message;
+    return;
+  }
+
+  msg.classList.add('success');
+  msg.textContent = 'Profil mis à jour !';
+  setTimeout(() => { window.location.href = 'footlight-profil.html'; }, 900);
+});
+
+init();
+</script>
+</body>
+</html>
