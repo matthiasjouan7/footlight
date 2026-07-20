@@ -881,17 +881,26 @@ async function nextStep() {
 }
 
 // ── RECONNAISSANCE PROFIL EXISTANT ──
+function normalizeName(s) {
+  return (s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // enleve les accents
+    .toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
 async function searchExistingProfile() {
   const prenom = document.getElementById('f-prenom').value.trim();
   const nom = document.getElementById('f-nom').value.trim();
   if (!prenom || !nom) return [];
+  // On récupère tous les profils importés pas encore réclamés et on compare
+  // les noms en ignorant accents/casse/espaces (ilike seul est trop strict :
+  // "Matteo" ne matche pas "Mattéo").
   const { data } = await db.from('joueurs')
     .select('id, prenom, nom, club, niveau, poste')
-    .ilike('prenom', prenom)
-    .ilike('nom', nom)
     .like('email', '%@scoute.footlight.fr')
-    .limit(5);
-  return data || [];
+    .limit(1000);
+  if (!data) return [];
+  const np = normalizeName(prenom), nn = normalizeName(nom);
+  return data.filter(c => normalizeName(c.nom) === nn && normalizeName(c.prenom) === np);
 }
 
 function showClaimPanel(list) {
