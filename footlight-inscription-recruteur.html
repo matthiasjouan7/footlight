@@ -135,7 +135,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     </div>
     <div class="popts">
       <div class="popt" id="pfree" onclick="selPlan('free')"><div><div class="pname" style="color:var(--muted)">Gratuit</div><div class="pprice">0 euro / mois</div><div class="ptrial" style="color:var(--muted)">Acces immediat</div></div><div class="pcheck" id="cpfree"></div></div>
-      <div class="popt" id="ppro" onclick="selPlan('pro')"><div><div class="pname" style="color:#60a5fa">Pro</div><div class="pprice">14€ / mois</div><div class="ptrial">1 jour gratuit</div></div><div class="pcheck" id="cppro"></div></div>
+      <div class="popt" id="ppro" onclick="selPlan('pro')"><div><div class="pname" style="color:#60a5fa">Pro</div><div class="pprice">14€ / mois</div><div class="ptrial" style="color:var(--muted)">Dès 9€/mois selon engagement</div></div><div class="pcheck" id="cppro"></div></div>
       <div class="popt" id="ppremium" onclick="selPlan('premium')"><div><div class="pname" style="color:var(--gold)">Premium</div><div class="pprice">29€ / mois</div><div class="ptrial">1 jour gratuit</div></div><div class="pcheck" id="cppremium"></div></div>
     </div>
     <div class="err" id="e-plan">Selectionnez un plan</div>
