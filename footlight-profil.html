@@ -163,7 +163,7 @@ async function loadProfil() {
     // Si pas d'ID et connecté, charger son propre profil
     if (user) {
       const { data: joueur } = await db.from('joueurs').select('*').eq('email', user.email).single();
-      if (joueur) { renderProfil(joueur, true); return; }
+      if (joueur) { await renderProfil(joueur, true); return; }
     }
     document.getElementById('loading').style.display = 'none';
     document.getElementById('not-found').style.display = 'block';
@@ -198,7 +198,7 @@ async function loadProfil() {
       document.getElementById('not-found').style.display = 'block';
       return;
     }
-    renderProfil(joueur, false);
+    await renderProfil(joueur, false);
     return;
   }
 
@@ -212,10 +212,16 @@ async function loadProfil() {
     return;
   }
 
-  renderProfil(joueur, user && user.email === joueur.email);
+  await renderProfil(joueur, user && user.email === joueur.email);
 }
 
-function renderProfil(j, isOwner) {
+async function renderProfil(j, isOwner) {
+  const { data: historique } = await db
+    .from('stats_saisons')
+    .select('*')
+    .eq('joueur_id', j.id)
+    .order('saison', { ascending: false });
+
   const poste_raw = j.poste || 'autre';
   const couleur = COULEURS[poste_raw] || '#6e7681';
   const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
@@ -291,6 +297,17 @@ function renderProfil(j, isOwner) {
       ${j.taille ? `<div class="info-row"><span class="info-key">Taille</span><span class="info-val">${j.taille} cm</span></div>` : ''}
       ${j.nationalite ? `<div class="info-row"><span class="info-key">Nationalité</span><span class="info-val">${j.nationalite}</span></div>` : ''}
     </div>
+
+    ${historique && historique.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Historique des saisons</div>
+      ${historique.map(h => `
+        <div class="info-row">
+          <span class="info-key">${h.saison}${h.club ? ' · ' + h.club : ''}${h.niveau ? ' · ' + h.niveau : ''}</span>
+          <span class="info-val">${h.matchs_joues||0} matchs · ${h.buts||0} buts · ${h.passes_decisives||0} passes</span>
+        </div>
+      `).join('')}
+    </div>` : ''}
 
     ${(function() {
       const canImpact = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
