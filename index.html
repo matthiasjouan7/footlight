@@ -331,6 +331,9 @@
     .plan-price { font-size: 2.2rem; font-weight: 900; color: var(--text); margin: 12px 0 4px; }
     .plan-price span { font-size: 0.85rem; font-weight: 400; color: var(--muted); }
     .plan-annual { font-size: 0.75rem; color: var(--green-light); margin-bottom: 20px; }
+    .plan-tiers { font-size: 0.78rem; margin: 4px 0 20px; }
+    .plan-tiers .tier-row { display: flex; justify-content: space-between; padding: 4px 0; color: var(--muted); }
+    .plan-tiers .tier-row .tv { color: var(--text); font-weight: 600; }
     .plan-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     .plan-features { list-style: none; }
     .plan-features li {
@@ -800,7 +803,12 @@ document.addEventListener('DOMContentLoaded', async function() {
       <div class="plan-popular">Le plus populaire</div>
       <div class="plan-name pro">Pro</div>
       <div class="plan-price">14€ <span>/mois</span></div>
-      <div class="plan-annual"> </div>
+      <div class="plan-annual">Dès 9€/mois selon engagement</div>
+      <div class="plan-tiers">
+        <div class="tier-row"><span>1 à 3 mois</span><span class="tv">14€/mois</span></div>
+        <div class="tier-row"><span>4 à 6 mois</span><span class="tv">11€/mois</span></div>
+        <div class="tier-row"><span>6 mois et +</span><span class="tv">9€/mois</span></div>
+      </div>
       <hr class="plan-divider">
       <ul class="plan-features">
         <li><span class="check">✓</span><span class="main">Recherche & profils illimités</span></li>
@@ -819,7 +827,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     <div class="plan">
       <div class="plan-name premium">Premium</div>
       <div class="plan-price">29€ <span>/mois</span></div>
-      <div class="plan-annual"> </div>
+      <div class="plan-annual">Dès 19€/mois selon engagement</div>
+      <div class="plan-tiers">
+        <div class="tier-row"><span>1 à 3 mois</span><span class="tv">29€/mois</span></div>
+        <div class="tier-row"><span>4 à 6 mois</span><span class="tv">23€/mois</span></div>
+        <div class="tier-row"><span>6 mois et +</span><span class="tv">19€/mois</span></div>
+      </div>
       <hr class="plan-divider">
       <ul class="plan-features">
         <li><span class="check">✓</span><span class="main">Tout le plan Pro inclus</span></li>
