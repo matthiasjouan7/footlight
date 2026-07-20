@@ -642,13 +642,21 @@ body {
           <div class="stat-input-label">⚽ Matchs joués</div>
           <input class="stat-number-input" type="number" id="s-matchs" placeholder="0" min="0"/>
         </div>
-        <div class="stat-input-card">
+        <div class="stat-input-card" id="field-buts">
           <div class="stat-input-label">🎯 Buts</div>
           <input class="stat-number-input" type="number" id="s-buts" placeholder="0" min="0"/>
         </div>
-        <div class="stat-input-card">
+        <div class="stat-input-card" id="field-passes">
           <div class="stat-input-label">🔑 Passes déc.</div>
           <input class="stat-number-input" type="number" id="s-passes" placeholder="0" min="0"/>
+        </div>
+        <div class="stat-input-card" id="field-encaisses" style="display:none;">
+          <div class="stat-input-label">🥅 Buts encaissés</div>
+          <input class="stat-number-input" type="number" id="s-encaisses" placeholder="0" min="0"/>
+        </div>
+        <div class="stat-input-card" id="field-cleansheets" style="display:none;">
+          <div class="stat-input-label">🛡️ Clean sheets</div>
+          <input class="stat-number-input" type="number" id="s-cleansheets" placeholder="0" min="0"/>
         </div>
         <div class="stat-input-card">
           <div class="stat-input-label">⏱️ Minutes</div>
@@ -1055,11 +1063,22 @@ function checkPassword() {
 }
 
 // ── SÉLECTEURS ──
+const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral','milieu_defensif'];
+
 function selectPoste(val, el) {
   selectedPoste = val;
   document.querySelectorAll('.pos-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   document.getElementById('err-poste').classList.remove('visible');
+  toggleDefenseFields();
+}
+
+function toggleDefenseFields() {
+  const isDef = POSTES_DEFENSIFS.includes(selectedPoste);
+  document.getElementById('field-buts').style.display = isDef ? 'none' : '';
+  document.getElementById('field-passes').style.display = isDef ? 'none' : '';
+  document.getElementById('field-encaisses').style.display = isDef ? '' : 'none';
+  document.getElementById('field-cleansheets').style.display = isDef ? '' : 'none';
 }
 
 function toggleChip(el, group) {
@@ -1192,6 +1211,8 @@ async function submitForm() {
       matchs_joues: parseInt(document.getElementById('s-matchs').value) || 0,
       buts: parseInt(document.getElementById('s-buts').value) || 0,
       passes_decisives: parseInt(document.getElementById('s-passes').value) || 0,
+      buts_encaisses_avec: document.getElementById('s-encaisses').value ? parseInt(document.getElementById('s-encaisses').value) : null,
+      clean_sheets: document.getElementById('s-cleansheets').value ? parseInt(document.getElementById('s-cleansheets').value) : null,
       minutes_jouees: parseInt(document.getElementById('s-minutes').value) || 0,
       cartons_jaunes: parseInt(document.getElementById('s-cartj').value) || 0,
       cartons_rouges: parseInt(document.getElementById('s-cartr').value) || 0,
