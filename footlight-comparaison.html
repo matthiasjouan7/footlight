@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Comparer des joueurs</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --blue:#1f6feb;--blue-l:#79c0ff;
+  --gold:#d29922;--gold-l:#e3b341;
+  --green:#238636;--green-l:#56d364;
+  --red:#da3633;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-links{display:flex;gap:16px;align-items:center;}
+.nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.nav-links a:hover{color:var(--text);}
+
+.page{max-width:900px;margin:0 auto;padding:76px 24px 60px;}
+.page-title{font-size:1.5rem;font-weight:800;margin-bottom:4px;}
+.page-sub{font-size:0.85rem;color:var(--muted);margin-bottom:24px;}
+
+.pickers{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start;margin-bottom:24px;}
+@media(max-width:640px){.pickers{grid-template-columns:1fr;}}
+.vs-badge{align-self:center;font-size:0.8rem;font-weight:800;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;margin-top:14px;}
+
+.picker{position:relative;}
+.picker-input{width:100%;padding:11px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.9rem;outline:none;}
+.picker-input:focus{border-color:var(--blue);}
+.picker-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:10px;max-height:260px;overflow-y:auto;z-index:20;display:none;}
+.picker-item{padding:10px 14px;font-size:0.85rem;cursor:pointer;border-bottom:1px solid var(--bg3);}
+.picker-item:last-child{border-bottom:none;}
+.picker-item:hover{background:var(--bg3);}
+.picker-item-sub{color:var(--muted);font-size:0.75rem;margin-left:6px;}
+.picker-empty{padding:10px 14px;font-size:0.82rem;color:var(--muted);}
+
+.picked-card{margin-top:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+.picked-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;flex-shrink:0;}
+.picked-name{font-weight:700;font-size:0.88rem;}
+.picked-sub{font-size:0.75rem;color:var(--muted);}
+.picked-clear{margin-left:auto;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem;}
+.picked-clear:hover{color:var(--red);}
+
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;overflow-x:auto;}
+.section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.cmp-table{width:100%;border-collapse:collapse;min-width:480px;}
+.cmp-table th{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;text-align:center;padding:6px 8px;}
+.cmp-table th:first-child{text-align:left;}
+.cmp-row td{padding:9px 8px;font-size:0.85rem;border-top:1px solid var(--bg3);text-align:center;}
+.cmp-row td:first-child{text-align:left;color:var(--muted);}
+.cmp-row td.win{color:var(--green-l);font-weight:700;}
+
+.empty-hint{text-align:center;color:var(--muted);font-size:0.88rem;padding:40px 20px;}
+
+.locked-box{background:rgba(31,111,235,0.06);border:1px solid rgba(31,111,235,0.2);border-radius:12px;padding:20px;text-align:center;}
+.locked-box p{font-size:0.85rem;color:var(--blue-l);margin-bottom:12px;}
+.btn{padding:10px 20px;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn.primary{background:var(--blue);color:#fff;}
+.btn:hover{opacity:0.85;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+  <div class="nav-links">
+    <a href="index.html">Accueil</a>
+    <a href="footlight-recherche.html">Recherche</a>
+    <a href="footlight-comparaison.html">Comparer</a>
+    <a href="footlight-connexion.html" id="nav-auth">Connexion</a>
+  </div>
+</nav>
+
+<!-- BLOQUÉ -->
+<div id="access-blocked" style="display:none; max-width:480px; margin:120px auto 0; text-align:center; padding:0 20px;">
+  <div style="font-size:2.5rem; margin-bottom:16px;">🔒</div>
+  <h2 style="margin-bottom:10px;">Réservé aux recruteurs</h2>
+  <p style="color:var(--muted); margin-bottom:20px; font-size:0.9rem;">
+    La comparaison de joueurs est réservée aux comptes recruteur connectés.
+  </p>
+  <a href="footlight-connexion.html"><button class="btn primary">Se connecter</button></a>
+</div>
+
+<div class="page" id="page" style="display:none;">
+  <div class="page-title">Comparer deux joueurs</div>
+  <div class="page-sub">Choisis deux joueurs pour comparer leurs stats côte à côte.</div>
+
+  <div class="pickers">
+    <div class="picker">
+      <input class="picker-input" type="text" id="search-a" placeholder="Rechercher le joueur A..." autocomplete="off" oninput="onSearchInput('a')"/>
+      <div class="picker-results" id="results-a"></div>
+      <div class="picked-card" id="picked-a" style="display:none;"></div>
+    </div>
+    <div class="vs-badge">VS</div>
+    <div class="picker">
+      <input class="picker-input" type="text" id="search-b" placeholder="Rechercher le joueur B..." autocomplete="off" oninput="onSearchInput('b')"/>
+      <div class="picker-results" id="results-b"></div>
+      <div class="picked-card" id="picked-b" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="comparison-content"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const COULEURS = {
+  'gardien':'#1f6feb','defenseur_central':'#da3633',
+  'lateral_droit':'#8957e5','lateral_gauche':'#8957e5',
+  'milieu_central':'#238636','milieu_offensif':'#238636',
+  'milieu_defensif':'#238636','milieu_gauche':'#238636',
+  'ailier_droit':'#d29922','ailier_gauche':'#d29922',
+  'attaquant':'#d29922','autre':'#6e7681'
+};
+
+function normalizeName(s) {
+  return (s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+let viewerRole = 'anonyme';
+let viewerPlan = 'free';
+let allPlayers = [];
+let picked = { a: null, b: null };
+
+const ROWS_BASE = [
+  { label: 'Club', get: j => j.club || '—' },
+  { label: 'Niveau', get: j => j.niveau || '—' },
+  { label: 'Poste', get: j => (j.poste || '').replace(/_/g, ' ') || '—' },
+  { label: 'Matchs joués', get: j => j.matchs_joues || 0, better: 'high' },
+  { label: 'Titularisations', get: j => j.titularisations || 0, better: 'high' },
+  { label: 'Buts', get: j => j.buts || 0, better: 'high' },
+  { label: 'Passes décisives', get: j => j.passes_decisives || 0, better: 'high' },
+  { label: 'Buts / match', get: j => j.matchs_joues > 0 ? (j.buts || 0) / j.matchs_joues : null, fmt: v => v == null ? '—' : v.toFixed(2), better: 'high' },
+  { label: 'Buts + passes', get: j => (j.buts || 0) + (j.passes_decisives || 0), better: 'high' },
+  { label: 'Minutes jouées', get: j => j.minutes_jouees || 0, better: 'high' },
+  { label: '% temps de jeu', get: j => j.matchs_joues > 0 ? Math.round((j.minutes_jouees || 0) / (j.matchs_joues * 90) * 100) : 0, fmt: v => v + '%', better: 'high' },
+  { label: 'Cartons jaunes', get: j => j.cartons_jaunes || 0, better: 'low' },
+  { label: 'Cartons rouges', get: j => j.cartons_rouges || 0, better: 'low' },
+];
+
+const ROWS_IMPACT = [
+  { label: "Différentiel d'impact", get: j => j.impact_differentiel, fmt: v => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2), better: 'high' },
+  { label: '% matchs avec but', get: j => j.pct_matchs_avec_but, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'high' },
+  { label: 'Points avec (%)', get: j => j.pct_points_avec, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'high' },
+  { label: 'Points sans (%)', get: j => j.pct_points_sans, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'low' },
+];
+
+const ROWS_GPS = [
+  { label: 'Vitesse max (km/h)', get: j => j.vitesse_max_kmh, better: 'high' },
+  { label: 'VMA (km/h)', get: j => j.vma_kmh, better: 'high' },
+  { label: 'Distance moy. / match (km)', get: j => j.distance_moyenne_km, better: 'high' },
+  { label: 'Sprints / match', get: j => j.sprints_match, better: 'high' },
+];
+
+async function loadJoueurs() {
+  const { data } = await db.from('joueurs')
+    .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,impact_differentiel,pct_matchs_avec_but,points_avec,points_sans,pct_points_avec,pct_points_sans,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match')
+    .eq('profil_public', true)
+    .order('nom');
+  allPlayers = data || [];
+  renderComparison();
+}
+
+function onSearchInput(slot) {
+  const raw = document.getElementById('search-' + slot).value;
+  const box = document.getElementById('results-' + slot);
+  const q = normalizeName(raw);
+  if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const other = slot === 'a' ? picked.b : picked.a;
+  const matches = allPlayers
+    .filter(j => normalizeName(j.prenom + ' ' + j.nom).includes(q))
+    .filter(j => !other || j.id !== other.id)
+    .slice(0, 8);
+  box.innerHTML = matches.length
+    ? matches.map(j => `<div class="picker-item" onclick="pickPlayer('${slot}','${j.id}')">${j.prenom} ${j.nom}<span class="picker-item-sub">${j.club || '—'} · ${j.niveau || '—'}</span></div>`).join('')
+    : '<div class="picker-empty">Aucun résultat</div>';
+  box.style.display = 'block';
+}
+
+function pickPlayer(slot, id) {
+  picked[slot] = allPlayers.find(p => p.id === id) || null;
+  document.getElementById('search-' + slot).value = '';
+  document.getElementById('results-' + slot).style.display = 'none';
+  renderPicked(slot);
+  renderComparison();
+}
+
+function clearPicked(slot) {
+  picked[slot] = null;
+  renderPicked(slot);
+  renderComparison();
+}
+
+function renderPicked(slot) {
+  const el = document.getElementById('picked-' + slot);
+  const j = picked[slot];
+  if (!j) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const couleur = COULEURS[j.poste || 'autre'] || '#6e7681';
+  const initiales = ((j.prenom || '?')[0] + (j.nom || '?')[0]).toUpperCase();
+  el.style.display = 'flex';
+  el.innerHTML = `
+    <div class="picked-avatar" style="background:linear-gradient(135deg,${couleur},${couleur}88)">${initiales}</div>
+    <div>
+      <div class="picked-name">${j.prenom} ${j.nom}</div>
+      <div class="picked-sub">${(j.poste || '').replace(/_/g, ' ')} · ${j.club || '—'}</div>
+    </div>
+    <button class="picked-clear" onclick="clearPicked('${slot}')">✕</button>
+  `;
+}
+
+function buildRowsTable(rows, a, b) {
+  return `
+    <table class="cmp-table">
+      <thead><tr><th></th><th>${a.prenom} ${a.nom}</th><th>${b.prenom} ${b.nom}</th></tr></thead>
+      <tbody>
+        ${rows.map(r => {
+          const va = r.get(a), vb = r.get(b);
+          const fmt = r.fmt || (v => v);
+          const numeric = typeof va === 'number' && typeof vb === 'number';
+          let winA = false, winB = false;
+          if (numeric && r.better && va !== vb) {
+            if (r.better === 'high') { winA = va > vb; winB = vb > va; }
+            else { winA = va < vb; winB = vb < va; }
+          }
+          return `<tr class="cmp-row">
+            <td>${r.label}</td>
+            <td class="${winA ? 'win' : ''}">${fmt(va)}</td>
+            <td class="${winB ? 'win' : ''}">${fmt(vb)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderComparison() {
+  const el = document.getElementById('comparison-content');
+  const a = picked.a, b = picked.b;
+  if (!a || !b) {
+    el.innerHTML = '<div class="empty-hint">Choisis deux joueurs ci-dessus pour lancer la comparaison.</div>';
+    return;
+  }
+
+  const canImpact = viewerPlan === 'pro' || viewerPlan === 'premium';
+  const canGPS = viewerPlan === 'premium';
+
+  el.innerHTML = `
+    <div class="section">
+      <div class="section-title">Statistiques</div>
+      ${buildRowsTable(ROWS_BASE, a, b)}
+    </div>
+
+    <div class="section">
+      <div class="section-title">Impact collectif</div>
+      ${canImpact ? buildRowsTable(ROWS_IMPACT, a, b) : `
+        <div class="locked-box">
+          <p>🔒 Réservé aux recruteurs Pro et Premium</p>
+          <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+        </div>`}
+    </div>
+
+    <div class="section">
+      <div class="section-title">Données GPS</div>
+      ${canGPS ? buildRowsTable(ROWS_GPS, a, b) : `
+        <div class="locked-box">
+          <p>🔒 Réservé aux recruteurs Premium</p>
+          <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+        </div>`}
+    </div>
+  `;
+}
+
+async function checkSession() {
+  const { data: { user } } = await db.auth.getUser();
+  if (user) {
+    document.getElementById('nav-auth').textContent = 'Mon espace';
+    document.getElementById('nav-auth').href = 'footlight-espace.html';
+
+    const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
+    if (recruteur) {
+      viewerRole = 'recruteur';
+      viewerPlan = recruteur.plan || 'free';
+    } else {
+      const { data: joueur } = await db.from('joueurs').select('id').eq('email', user.email).single();
+      viewerRole = joueur ? 'joueur' : 'nouveau';
+    }
+  }
+
+  if (viewerRole !== 'recruteur') {
+    document.getElementById('access-blocked').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('page').style.display = 'block';
+  loadJoueurs();
+}
+
+document.addEventListener('click', (e) => {
+  ['a', 'b'].forEach(slot => {
+    const box = document.getElementById('results-' + slot);
+    const input = document.getElementById('search-' + slot);
+    if (box && !box.contains(e.target) && e.target !== input) box.style.display = 'none';
+  });
+});
+
+checkSession();
+</script>
+</body>
+</html>

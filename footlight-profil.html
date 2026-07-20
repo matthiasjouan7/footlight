@@ -97,6 +97,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
   <div class="nav-links">
     <a href="index.html">Accueil</a>
     <a href="footlight-recherche.html">Recherche</a>
+    <a href="footlight-comparaison.html">Comparer</a>
     <a href="footlight-connexion.html" id="nav-auth">Connexion</a>
   </div>
 </nav>
@@ -306,6 +307,8 @@ async function renderProfil(j, isOwner) {
     const hasImpactData = s.impact_differentiel != null || s.pct_matchs_avec_but != null || s.points_avec != null;
     const hasGPS = s.vitesse_max_kmh != null || s.vma_kmh != null || s.distance_moyenne_km != null || s.sprints_match != null;
     const round1 = (v) => v == null ? v : Math.round(v*10)/10;
+    const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
+    const contribution = (s.buts||0) + (s.passes_decisives||0);
 
     return `
       <div class="stats-grid">
@@ -317,6 +320,8 @@ async function renderProfil(j, isOwner) {
         <div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${s.cartons_jaunes||0}</div><div class="stat-lbl">Cartons jaunes</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.cartons_rouges||0}</div><div class="stat-lbl">Cartons rouges</div></div>
         <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
+        ${ratioButsMatch != null ? `<div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${ratioButsMatch.toFixed(2)}</div><div class="stat-lbl">Buts / match</div></div>` : ''}
+        <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${contribution}</div><div class="stat-lbl">Buts + passes</div></div>
       </div>
 
       <div class="section">
