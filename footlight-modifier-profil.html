@@ -91,13 +91,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
   </div>
 
   <div id="form-content" style="display:none;">
-    <div class="page-title">Modifier mon profil</div>
-    <div class="page-sub">Mets à jour ton club, ton niveau et tes stats — surtout utile si ça a changé depuis l'import de ton profil.</div>
+    <div class="page-title" id="page-title">Modifier mon profil</div>
+    <div class="page-sub" id="page-sub">Mets à jour ton club, ton niveau et tes stats — surtout utile si ça a changé depuis l'import de ton profil.</div>
     <div class="welcome-banner" id="welcome-banner" style="display:none;">
       🎉 Ton profil a été retrouvé et récupéré ! Vérifie et complète les infos ci-dessous.
     </div>
+    <div class="welcome-banner" id="recruteur-banner" style="display:none; background:rgba(210,153,34,0.1); border-color:rgba(210,153,34,0.3); color:var(--gold-l);"></div>
 
-    <div class="section">
+    <div class="section" id="account-section">
       <div class="section-title">Compte</div>
       <div class="field">
         <label class="field-label">Email de connexion</label>
@@ -223,7 +224,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 
       <div class="btn-row">
         <button type="submit" class="btn primary" id="btn-save">Enregistrer</button>
-        <button type="button" class="btn outline" onclick="window.location.href='footlight-profil.html'">Annuler</button>
+        <button type="button" class="btn outline" onclick="cancelEdit()">Annuler</button>
       </div>
     </form>
   </div>
@@ -263,11 +264,47 @@ async function findOwnJoueur(user) {
   return relinked || null;
 }
 
+let isRecruiterEditing = false;
+
 async function init() {
   const { data: { user } } = await db.auth.getUser();
   if (!user) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('not-auth').style.display = 'block';
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const targetId = params.get('id');
+
+  if (targetId) {
+    // Un recruteur veut compléter la fiche d'un autre joueur.
+    const { data: recruteur } = await db.from('recruteurs').select('id').eq('email', user.email).single();
+    if (!recruteur) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('not-auth').innerHTML = '<h2>Réservé aux recruteurs</h2><p>Seul un compte recruteur peut compléter la fiche d\'un autre joueur.</p><a href="footlight-espace.html"><button class="btn primary">Mon espace</button></a>';
+      document.getElementById('not-auth').style.display = 'block';
+      return;
+    }
+
+    const { data: target } = await db.from('joueurs').select('*').eq('id', targetId).single();
+    if (!target) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('not-auth').innerHTML = '<h2>Profil introuvable</h2><a href="footlight-recherche.html"><button class="btn primary">Retour à la recherche</button></a>';
+      document.getElementById('not-auth').style.display = 'block';
+      return;
+    }
+
+    isRecruiterEditing = true;
+    joueur = target;
+    document.getElementById('account-section').style.display = 'none';
+    document.getElementById('page-title').textContent = `Compléter le profil de ${target.prenom} ${target.nom}`;
+    document.getElementById('page-sub').textContent = 'Aide ce joueur à avoir un profil complet en renseignant club, niveau et stats manquantes.';
+    document.getElementById('recruteur-banner').style.display = 'block';
+    document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
+    fillForm(joueur);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('form-content').style.display = 'block';
     return;
   }
 
@@ -284,7 +321,6 @@ async function init() {
   joueur = data;
   fillForm(joueur);
 
-  const params = new URLSearchParams(window.location.search);
   if (params.get('bienvenue') === '1') {
     document.getElementById('welcome-banner').style.display = 'block';
   }
@@ -405,8 +441,14 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
 
   msg.classList.add('success');
   msg.textContent = 'Profil mis à jour !';
-  setTimeout(() => { window.location.href = 'footlight-profil.html'; }, 900);
+  setTimeout(() => {
+    window.location.href = isRecruiterEditing ? `footlight-profil.html?id=${joueur.id}` : 'footlight-profil.html';
+  }, 900);
 });
+
+function cancelEdit() {
+  window.location.href = isRecruiterEditing ? `footlight-profil.html?id=${joueur.id}` : 'footlight-profil.html';
+}
 
 init();
 </script>
