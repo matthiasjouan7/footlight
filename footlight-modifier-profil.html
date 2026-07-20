@@ -97,6 +97,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
       🎉 Ton profil a été retrouvé et récupéré ! Vérifie et complète les infos ci-dessous.
     </div>
 
+    <div class="section">
+      <div class="section-title">Compte</div>
+      <div class="field">
+        <label class="field-label">Email de connexion</label>
+        <input class="field-input" type="email" id="f-account-email"/>
+      </div>
+      <div class="msg" id="email-msg"></div>
+      <button type="button" class="btn outline" id="btn-change-email" onclick="changeEmail()" style="width:100%;">Mettre à jour mon email</button>
+    </div>
+
     <form id="edit-form">
       <div class="section">
         <div class="section-title">Club & niveau</div>
@@ -224,6 +234,33 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let joueur = null;
 
+function normalizeName(s) {
+  return (s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+// Si l'email de connexion a changé (via changeEmail ci-dessous) et a été
+// confirmé, la fiche joueurs a encore l'ancien email : on la retrouve par
+// nom et on la relie automatiquement au nouvel email.
+async function findOwnJoueur(user) {
+  const { data: exact } = await db.from('joueurs').select('*').eq('email', user.email).single();
+  if (exact) return exact;
+
+  const prenom = user.user_metadata && user.user_metadata.prenom;
+  const nom = user.user_metadata && user.user_metadata.nom;
+  if (!prenom || !nom) return null;
+
+  const { data: candidates } = await db.from('joueurs').select('*').neq('email', user.email).limit(1000);
+  if (!candidates) return null;
+  const np = normalizeName(prenom), nn = normalizeName(nom);
+  const match = candidates.find(c => normalizeName(c.prenom) === np && normalizeName(c.nom) === nn);
+  if (!match) return null;
+
+  const { data: relinked } = await db.from('joueurs').update({ email: user.email }).eq('id', match.id).select().single();
+  return relinked || null;
+}
+
 async function init() {
   const { data: { user } } = await db.auth.getUser();
   if (!user) {
@@ -232,8 +269,10 @@ async function init() {
     return;
   }
 
-  const { data, error } = await db.from('joueurs').select('*').eq('email', user.email).single();
-  if (error || !data) {
+  document.getElementById('f-account-email').value = user.email;
+
+  const data = await findOwnJoueur(user);
+  if (!data) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('not-auth').innerHTML = '<h2>Aucun profil joueur</h2><p>Ce compte n\'est pas un compte joueur.</p><a href="footlight-espace.html"><button class="btn primary">Mon espace</button></a>';
     document.getElementById('not-auth').style.display = 'block';
@@ -270,6 +309,41 @@ function fillForm(j) {
   document.getElementById('s-minutes').value = j.minutes_jouees ?? '';
   document.getElementById('s-cartj').value = j.cartons_jaunes ?? '';
   document.getElementById('s-cartr').value = j.cartons_rouges ?? '';
+}
+
+async function changeEmail() {
+  const msg = document.getElementById('email-msg');
+  const btn = document.getElementById('btn-change-email');
+  msg.className = 'msg';
+
+  const newEmail = document.getElementById('f-account-email').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+    msg.classList.add('error');
+    msg.textContent = 'Email invalide.';
+    return;
+  }
+
+  const { data: { user } } = await db.auth.getUser();
+  if (newEmail === user.email) {
+    msg.classList.add('error');
+    msg.textContent = "C'est déjà ton email actuel.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Envoi...';
+  const { error } = await db.auth.updateUser({ email: newEmail });
+  btn.disabled = false;
+  btn.textContent = 'Mettre à jour mon email';
+
+  if (error) {
+    msg.classList.add('error');
+    msg.textContent = 'Erreur : ' + error.message;
+    return;
+  }
+
+  msg.classList.add('success');
+  msg.textContent = 'Vérifie ta boîte mail : un lien de confirmation a été envoyé à ' + newEmail + '. Une fois cliqué, reconnecte-toi — ta fiche joueur sera reliée automatiquement à ton nouvel email.';
 }
 
 document.getElementById('edit-form').addEventListener('submit', async (e) => {
