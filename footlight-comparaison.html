@@ -134,16 +134,31 @@ let viewerPlan = 'free';
 let allPlayers = [];
 let picked = { a: null, b: null };
 
-const ROWS_BASE = [
+const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
+
+const ROWS_COMMON_TOP = [
   { label: 'Club', get: j => j.club || '—' },
   { label: 'Niveau', get: j => j.niveau || '—' },
   { label: 'Poste', get: j => (j.poste || '').replace(/_/g, ' ') || '—' },
   { label: 'Matchs joués', get: j => j.matchs_joues || 0, better: 'high' },
   { label: 'Titularisations', get: j => j.titularisations || 0, better: 'high' },
+];
+
+const ROWS_OFFENSE = [
   { label: 'Buts', get: j => j.buts || 0, better: 'high' },
   { label: 'Passes décisives', get: j => j.passes_decisives || 0, better: 'high' },
   { label: 'Buts / match', get: j => j.matchs_joues > 0 ? (j.buts || 0) / j.matchs_joues : null, fmt: v => v == null ? '—' : v.toFixed(2), better: 'high' },
   { label: 'Buts + passes', get: j => (j.buts || 0) + (j.passes_decisives || 0), better: 'high' },
+];
+
+const ROWS_DEFENSE = [
+  { label: 'Buts encaissés', get: j => j.buts_encaisses_avec, fmt: v => v == null ? '—' : v, better: 'low' },
+  { label: 'Buts encaissés / match', get: j => (j.matchs_joues > 0 && j.buts_encaisses_avec != null) ? j.buts_encaisses_avec / j.matchs_joues : null, fmt: v => v == null ? '—' : v.toFixed(2), better: 'low' },
+  { label: 'Clean sheets', get: j => j.clean_sheets, fmt: v => v == null ? '—' : v, better: 'high' },
+  { label: '% clean sheet', get: j => (j.matchs_joues > 0 && j.clean_sheets != null) ? Math.round(j.clean_sheets / j.matchs_joues * 100) : null, fmt: v => v == null ? '—' : v + '%', better: 'high' },
+];
+
+const ROWS_COMMON_BOTTOM = [
   { label: 'Minutes jouées', get: j => j.minutes_jouees || 0, better: 'high' },
   { label: '% temps de jeu', get: j => j.matchs_joues > 0 ? Math.round((j.minutes_jouees || 0) / (j.matchs_joues * 90) * 100) : 0, fmt: v => v + '%', better: 'high' },
   { label: 'Cartons jaunes', get: j => j.cartons_jaunes || 0, better: 'low' },
@@ -152,9 +167,12 @@ const ROWS_BASE = [
 
 const ROWS_IMPACT = [
   { label: "Différentiel d'impact", get: j => j.impact_differentiel, fmt: v => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2), better: 'high' },
-  { label: '% matchs avec but', get: j => j.pct_matchs_avec_but, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'high' },
   { label: 'Points avec (%)', get: j => j.pct_points_avec, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'high' },
   { label: 'Points sans (%)', get: j => j.pct_points_sans, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'low' },
+];
+
+const ROWS_OFFENSE_IMPACT = [
+  { label: '% matchs avec but', get: j => j.pct_matchs_avec_but, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'high' },
 ];
 
 const ROWS_GPS = [
@@ -166,7 +184,7 @@ const ROWS_GPS = [
 
 async function loadJoueurs() {
   const { data } = await db.from('joueurs')
-    .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,impact_differentiel,pct_matchs_avec_but,points_avec,points_sans,pct_points_avec,pct_points_sans,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match')
+    .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,impact_differentiel,pct_matchs_avec_but,points_avec,points_sans,pct_points_avec,pct_points_sans,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
     .eq('profil_public', true)
     .order('nom');
   allPlayers = data || [];
@@ -256,15 +274,28 @@ function renderComparison() {
   const canImpact = viewerPlan === 'pro' || viewerPlan === 'premium';
   const canGPS = viewerPlan === 'premium';
 
+  const aDef = POSTES_DEFENSIFS.includes(a.poste);
+  const bDef = POSTES_DEFENSIFS.includes(b.poste);
+  const anyOffense = !aDef || !bDef;
+  const anyDefense = aDef || bDef;
+
+  let statRows = ROWS_COMMON_TOP.slice();
+  if (anyOffense) statRows = statRows.concat(ROWS_OFFENSE);
+  if (anyDefense) statRows = statRows.concat(ROWS_DEFENSE);
+  statRows = statRows.concat(ROWS_COMMON_BOTTOM);
+
+  let impactRows = ROWS_IMPACT.slice();
+  if (anyOffense) impactRows = impactRows.concat(ROWS_OFFENSE_IMPACT);
+
   el.innerHTML = `
     <div class="section">
       <div class="section-title">Statistiques</div>
-      ${buildRowsTable(ROWS_BASE, a, b)}
+      ${buildRowsTable(statRows, a, b)}
     </div>
 
     <div class="section">
       <div class="section-title">Impact collectif</div>
-      ${canImpact ? buildRowsTable(ROWS_IMPACT, a, b) : `
+      ${canImpact ? buildRowsTable(impactRows, a, b) : `
         <div class="locked-box">
           <p>🔒 Réservé aux recruteurs Pro et Premium</p>
           <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>

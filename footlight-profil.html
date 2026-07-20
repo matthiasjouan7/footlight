@@ -144,6 +144,8 @@ const BADGES = {
 let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
 let viewerPlan = 'free';
 
+const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
+
 function normalizeName(s) {
   return (s || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -265,6 +267,7 @@ async function renderProfil(j, isOwner) {
 
   const canImpact = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
   const canGPS = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
+  const isDefensif = POSTES_DEFENSIFS.includes(poste_raw);
 
   // ── Saisons : saison actuelle (joueurs) + historique (stats_saisons) ──
   const currentSeason = {
@@ -277,6 +280,7 @@ async function renderProfil(j, isOwner) {
     pct_points_avec: j.pct_points_avec, pct_points_sans: j.pct_points_sans,
     vitesse_max_kmh: j.vitesse_max_kmh, vma_kmh: j.vma_kmh,
     distance_moyenne_km: j.distance_moyenne_km, sprints_match: j.sprints_match,
+    buts_encaisses_avec: j.buts_encaisses_avec, clean_sheets: j.clean_sheets,
     isCurrent: true
   };
   const seasonsData = [currentSeason, ...historique].sort((a,b) => (b.saison||'').localeCompare(a.saison||''));
@@ -297,7 +301,8 @@ async function renderProfil(j, isOwner) {
     pct_points_avec: avgKey(seasonsData,'pct_points_avec'), pct_points_sans: avgKey(seasonsData,'pct_points_sans'),
     vitesse_max_kmh: (() => { const v = seasonsData.map(s=>s.vitesse_max_kmh).filter(x=>x!=null); return v.length ? Math.max(...v) : null; })(),
     vma_kmh: avgKey(seasonsData,'vma_kmh'), distance_moyenne_km: avgKey(seasonsData,'distance_moyenne_km'),
-    sprints_match: avgKey(seasonsData,'sprints_match')
+    sprints_match: avgKey(seasonsData,'sprints_match'),
+    buts_encaisses_avec: sumKey(seasonsData,'buts_encaisses_avec'), clean_sheets: sumKey(seasonsData,'clean_sheets')
   };
 
   function renderSeasonBlock(s) {
@@ -309,19 +314,32 @@ async function renderProfil(j, isOwner) {
     const round1 = (v) => v == null ? v : Math.round(v*10)/10;
     const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
     const contribution = (s.buts||0) + (s.passes_decisives||0);
+    const ratioEncaissesMatch = (s.matchs_joues > 0 && s.buts_encaisses_avec != null) ? s.buts_encaisses_avec / s.matchs_joues : null;
+    const pctCleanSheet = (s.matchs_joues > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.matchs_joues * 100) : null;
+    const hasDefenseData = s.buts_encaisses_avec != null || s.clean_sheets != null;
 
     return `
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-val">${s.matchs_joues||0}</div><div class="stat-lbl">Matchs joués</div></div>
+        ${isDefensif ? `
+        <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.buts_encaisses_avec ?? '—'}</div><div class="stat-lbl">Buts encaissés</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.clean_sheets ?? '—'}</div><div class="stat-lbl">Clean sheets</div></div>
+        ` : `
         <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.buts||0}</div><div class="stat-lbl">Buts</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${s.passes_decisives||0}</div><div class="stat-lbl">Passes déc.</div></div>
+        `}
         <div class="stat-card"><div class="stat-val">${s.minutes_jouees||0}</div><div class="stat-lbl">Minutes</div></div>
         <div class="stat-card"><div class="stat-val">${s.titularisations||0}</div><div class="stat-lbl">Titularisations</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${s.cartons_jaunes||0}</div><div class="stat-lbl">Cartons jaunes</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.cartons_rouges||0}</div><div class="stat-lbl">Cartons rouges</div></div>
         <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
+        ${isDefensif ? `
+        ${ratioEncaissesMatch != null ? `<div class="stat-card"><div class="stat-val" style="color:var(--red)">${ratioEncaissesMatch.toFixed(2)}</div><div class="stat-lbl">Buts encaissés / match</div></div>` : ''}
+        ${pctCleanSheet != null ? `<div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${pctCleanSheet}%</div><div class="stat-lbl">% clean sheet</div></div>` : ''}
+        ` : `
         ${ratioButsMatch != null ? `<div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${ratioButsMatch.toFixed(2)}</div><div class="stat-lbl">Buts / match</div></div>` : ''}
         <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${contribution}</div><div class="stat-lbl">Buts + passes</div></div>
+        `}
       </div>
 
       <div class="section">
@@ -339,7 +357,7 @@ async function renderProfil(j, isOwner) {
           <div class="bar-label-row"><span class="k">Différentiel d'impact</span><span class="v" style="color:${diff>=0?'var(--green-l)':'var(--red)'}">${diff>=0?'+':''}${Number(diff).toFixed(2)}</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:${diffPct}%;background:${diff>=0?'var(--green-l)':'var(--red)'}"></div></div>
         </div>` : ''}
-        ${s.pct_matchs_avec_but != null ? `
+        ${(!isDefensif && s.pct_matchs_avec_but != null) ? `
         <div class="bar-item">
           <div class="bar-label-row"><span class="k">% matchs avec but</span><span class="v" style="color:var(--gold-l)">${Math.round(s.pct_matchs_avec_but)}%</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,s.pct_matchs_avec_but)}%;background:var(--gold-l)"></div></div>
