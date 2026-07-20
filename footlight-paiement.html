@@ -469,8 +469,8 @@ const PLANS_DATA = {
   },
   pro: {
     name: 'Pro', price: '14€', priceNum: 19,
-    color: '#4f8ef7', trial: true, trialText: '1 jour gratuit · Engagement 3 mois requise aujourd\'hui',
-    today: '0,00€', puis: '14€ / mois',
+    color: '#4f8ef7', trial: false, trialText: 'Engagement 3 mois minimum · débité aujourd\'hui',
+    today: '14€', puis: '14€ / mois',
     features: [
       {on:true,  txt:'Illimité'},
       {on:true,  txt:'Impact collectif'},
@@ -591,8 +591,10 @@ function renderPlan(planKey) {
   const btn = document.getElementById('btn-text');
   if (planKey === 'free') {
     btn.textContent = 'Créer mon compte gratuit';
-  } else {
+  } else if (p.trial) {
     btn.textContent = `Démarrer l'essai gratuit · ${p.name}`;
+  } else {
+    btn.textContent = `S'abonner · ${p.name}`;
   }
 }
 
@@ -691,7 +693,9 @@ function showSuccess(planKey) {
   const p = PLANS_DATA[planKey];
   const sub = planKey === 'free'
     ? 'Votre compte gratuit est actif. Découvrez FootLight avec 10 profils par mois.'
-    : `Votre essai ${p.name} d'1 jour est activé. Engagement 3 mois minimum montant débité aujourd'hui.`;
+    : p.trial
+      ? `Votre essai ${p.name} d'1 jour est activé. Engagement 3 mois minimum, montant débité après l'essai.`
+      : `Votre abonnement ${p.name} est activé. Engagement 3 mois minimum, montant débité aujourd'hui.`;
   document.getElementById('suc-sub').textContent = sub;
   document.getElementById('success-overlay').classList.add('visible');
 }
