@@ -82,6 +82,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 /* Verrou plan */
 .locked-box{background:rgba(31,111,235,0.06);border:1px solid rgba(31,111,235,0.2);border-radius:12px;padding:20px;text-align:center;}
 .locked-box p{font-size:0.85rem;color:var(--blue-l);margin-bottom:12px;}
+
+/* Sélecteur de saison */
+.season-select-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.season-select-row label{font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.season-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;}
+.season-select:focus{outline:1px solid var(--blue);}
 </style>
 </head>
 <body>
@@ -216,18 +222,127 @@ async function loadProfil() {
 }
 
 async function renderProfil(j, isOwner) {
-  const { data: historique } = await db
+  const { data: historiqueRaw } = await db
     .from('stats_saisons')
     .select('*')
     .eq('joueur_id', j.id)
     .order('saison', { ascending: false });
+  const historique = historiqueRaw || [];
 
   const poste_raw = j.poste || 'autre';
   const couleur = COULEURS[poste_raw] || '#6e7681';
   const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
   const score = j.score || 50;
   const scoreColor = score >= 75 ? '#56d364' : score >= 60 ? '#e3b341' : '#8b949e';
-  const pct_tps = j.matchs_joues > 0 ? Math.round((j.minutes_jouees||0) / (j.matchs_joues * 90) * 100) : 0;
+
+  const canImpact = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
+  const canGPS = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
+
+  // ── Saisons : saison actuelle (joueurs) + historique (stats_saisons) ──
+  const currentSeason = {
+    saison: j.saison || '2026-2027', club: j.club, niveau: j.niveau,
+    matchs_joues: j.matchs_joues, titularisations: j.titularisations, buts: j.buts,
+    passes_decisives: j.passes_decisives, minutes_jouees: j.minutes_jouees,
+    cartons_jaunes: j.cartons_jaunes, cartons_rouges: j.cartons_rouges,
+    impact_differentiel: j.impact_differentiel, pct_matchs_avec_but: j.pct_matchs_avec_but,
+    points_avec: j.points_avec, points_sans: j.points_sans,
+    pct_points_avec: j.pct_points_avec, pct_points_sans: j.pct_points_sans,
+    vitesse_max_kmh: j.vitesse_max_kmh, vma_kmh: j.vma_kmh,
+    distance_moyenne_km: j.distance_moyenne_km, sprints_match: j.sprints_match,
+    isCurrent: true
+  };
+  const seasonsData = [currentSeason, ...historique].sort((a,b) => (b.saison||'').localeCompare(a.saison||''));
+
+  const sumKey = (list,k) => list.reduce((a,s)=>a+(Number(s[k])||0),0);
+  const avgKey = (list,k) => { const v = list.map(s=>s[k]).filter(x=>x!=null); return v.length ? v.reduce((a,b)=>a+Number(b),0)/v.length : null; };
+
+  const globalSeason = {
+    saison: 'global', isGlobal: true, nbSaisons: seasonsData.length,
+    club: [...new Set(seasonsData.map(s=>s.club).filter(Boolean))].join(', ') || '—',
+    niveau: [...new Set(seasonsData.map(s=>s.niveau).filter(Boolean))].join(', ') || '—',
+    matchs_joues: sumKey(seasonsData,'matchs_joues'), titularisations: sumKey(seasonsData,'titularisations'),
+    buts: sumKey(seasonsData,'buts'), passes_decisives: sumKey(seasonsData,'passes_decisives'),
+    minutes_jouees: sumKey(seasonsData,'minutes_jouees'), cartons_jaunes: sumKey(seasonsData,'cartons_jaunes'),
+    cartons_rouges: sumKey(seasonsData,'cartons_rouges'),
+    impact_differentiel: avgKey(seasonsData,'impact_differentiel'), pct_matchs_avec_but: avgKey(seasonsData,'pct_matchs_avec_but'),
+    points_avec: sumKey(seasonsData,'points_avec'), points_sans: sumKey(seasonsData,'points_sans'),
+    pct_points_avec: avgKey(seasonsData,'pct_points_avec'), pct_points_sans: avgKey(seasonsData,'pct_points_sans'),
+    vitesse_max_kmh: (() => { const v = seasonsData.map(s=>s.vitesse_max_kmh).filter(x=>x!=null); return v.length ? Math.max(...v) : null; })(),
+    vma_kmh: avgKey(seasonsData,'vma_kmh'), distance_moyenne_km: avgKey(seasonsData,'distance_moyenne_km'),
+    sprints_match: avgKey(seasonsData,'sprints_match')
+  };
+
+  function renderSeasonBlock(s) {
+    const pct_tps = s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0;
+    const diff = s.impact_differentiel;
+    const diffPct = diff == null ? 0 : Math.max(0, Math.min(100, 50 + diff * 50));
+    const hasImpactData = s.impact_differentiel != null || s.pct_matchs_avec_but != null || s.points_avec != null;
+    const hasGPS = s.vitesse_max_kmh != null || s.vma_kmh != null || s.distance_moyenne_km != null || s.sprints_match != null;
+    const round1 = (v) => v == null ? v : Math.round(v*10)/10;
+
+    return `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val">${s.matchs_joues||0}</div><div class="stat-lbl">Matchs joués</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.buts||0}</div><div class="stat-lbl">Buts</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${s.passes_decisives||0}</div><div class="stat-lbl">Passes déc.</div></div>
+        <div class="stat-card"><div class="stat-val">${s.minutes_jouees||0}</div><div class="stat-lbl">Minutes</div></div>
+        <div class="stat-card"><div class="stat-val">${s.titularisations||0}</div><div class="stat-lbl">Titularisations</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${s.cartons_jaunes||0}</div><div class="stat-lbl">Cartons jaunes</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.cartons_rouges||0}</div><div class="stat-lbl">Cartons rouges</div></div>
+        <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${s.isGlobal ? `Informations · cumul sur ${s.nbSaisons} saison${s.nbSaisons>1?'s':''}` : 'Informations'}</div>
+        <div class="info-row"><span class="info-key">Club</span><span class="info-val">${s.club||'—'}</span></div>
+        <div class="info-row"><span class="info-key">Niveau</span><span class="info-val">${s.niveau||'—'}</span></div>
+        ${!s.isGlobal ? `<div class="info-row"><span class="info-key">Saison</span><span class="info-val">${s.saison}${s.isCurrent?' (actuelle)':''}</span></div>` : ''}
+      </div>
+
+      ${!hasImpactData ? '' : canImpact ? `
+      <div class="section">
+        <div class="section-title">Impact collectif</div>
+        ${diff != null ? `
+        <div class="bar-item">
+          <div class="bar-label-row"><span class="k">Différentiel d'impact</span><span class="v" style="color:${diff>=0?'var(--green-l)':'var(--red)'}">${diff>=0?'+':''}${Number(diff).toFixed(2)}</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${diffPct}%;background:${diff>=0?'var(--green-l)':'var(--red)'}"></div></div>
+        </div>` : ''}
+        ${s.pct_matchs_avec_but != null ? `
+        <div class="bar-item">
+          <div class="bar-label-row"><span class="k">% matchs avec but</span><span class="v" style="color:var(--gold-l)">${Math.round(s.pct_matchs_avec_but)}%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,s.pct_matchs_avec_but)}%;background:var(--gold-l)"></div></div>
+        </div>` : ''}
+        ${s.points_avec != null && s.points_sans != null ? `
+        <div class="info-row"><span class="info-key">Points pris avec le joueur</span><span class="info-val">${s.points_avec}${s.pct_points_avec!=null?' ('+Math.round(s.pct_points_avec)+'%)':''}</span></div>
+        <div class="info-row"><span class="info-key">Points pris sans le joueur</span><span class="info-val">${s.points_sans}${s.pct_points_sans!=null?' ('+Math.round(s.pct_points_sans)+'%)':''}</span></div>` : ''}
+      </div>` : `
+      <div class="section">
+        <div class="section-title">Impact collectif</div>
+        <div class="locked-box">
+          <p>🔒 Réservé aux recruteurs Pro et Premium</p>
+          <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+        </div>
+      </div>`}
+
+      ${!hasGPS ? '' : canGPS ? `
+      <div class="section">
+        <div class="section-title">Données GPS</div>
+        <div class="stats-grid" style="margin-bottom:0;">
+          ${s.vitesse_max_kmh!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${round1(s.vitesse_max_kmh)}</div><div class="stat-lbl">Vitesse max km/h</div></div>`:''}
+          ${s.vma_kmh!=null?`<div class="stat-card"><div class="stat-val">${round1(s.vma_kmh)}</div><div class="stat-lbl">VMA km/h</div></div>`:''}
+          ${s.distance_moyenne_km!=null?`<div class="stat-card"><div class="stat-val">${round1(s.distance_moyenne_km)}</div><div class="stat-lbl">Km/match moy.</div></div>`:''}
+          ${s.sprints_match!=null?`<div class="stat-card"><div class="stat-val">${round1(s.sprints_match)}</div><div class="stat-lbl">Sprints/match</div></div>`:''}
+        </div>
+      </div>` : `
+      <div class="section">
+        <div class="section-title">Données GPS</div>
+        <div class="locked-box">
+          <p>🔒 Réservé aux recruteurs Premium</p>
+          <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+        </div>
+      </div>`}
+    `;
+  }
 
   const html = `
     <div class="profile-header">
@@ -242,7 +357,7 @@ async function renderProfil(j, isOwner) {
           <span class="tag ${j.badge==='elite'?'gold':j.badge==='video'||j.badge==='gps'?'green':''}">${BADGES[j.badge]||'⚪ Déclaratif'}</span>
         </div>
         ${j.bio ? `<div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${j.bio}</div>` : ''}
-        ${isOwner ? `<div class="btn-row"><button class="btn primary" onclick="window.location.href='footlight-saisie-match.html'">Saisir mes stats</button><button class="btn outline">Modifier mon profil</button></div>` : ''}
+        ${isOwner ? `<div class="btn-row"><button class="btn primary" onclick="window.location.href='footlight-saisie-match.html'">Saisir mes stats</button><button class="btn outline" onclick="window.location.href='footlight-modifier-profil.html'">Modifier mon profil</button></div>` : ''}
       </div>
       <div class="profile-score">
         <div class="score-big" style="color:${scoreColor}">${score}</div>
@@ -251,135 +366,25 @@ async function renderProfil(j, isOwner) {
       </div>
     </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-val">${j.matchs_joues||0}</div>
-        <div class="stat-lbl">Matchs joués</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" style="color:var(--green-l)">${j.buts||0}</div>
-        <div class="stat-lbl">Buts</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" style="color:var(--blue-l)">${j.passes_decisives||0}</div>
-        <div class="stat-lbl">Passes déc.</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val">${j.minutes_jouees||0}</div>
-        <div class="stat-lbl">Minutes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val">${j.titularisations||0}</div>
-        <div class="stat-lbl">Titularisations</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" style="color:var(--gold-l)">${j.cartons_jaunes||0}</div>
-        <div class="stat-lbl">Cartons jaunes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" style="color:var(--red)">${j.cartons_rouges||0}</div>
-        <div class="stat-lbl">Cartons rouges</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val">${pct_tps}%</div>
-        <div class="stat-lbl">Temps de jeu</div>
-      </div>
-    </div>
+    ${historique.length > 0 ? `
+    <div class="season-select-row">
+      <label for="season-select">Saison</label>
+      <select id="season-select" class="season-select">
+        ${seasonsData.map(s => `<option value="${s.saison}" ${s.isCurrent?'selected':''}>${s.saison}${s.isCurrent?' (actuelle)':''}</option>`).join('')}
+        <option value="global">🌐 Toutes les saisons (cumul)</option>
+      </select>
+    </div>` : ''}
+
+    <div id="season-block">${renderSeasonBlock(currentSeason)}</div>
 
     <div class="section">
-      <div class="section-title">Informations</div>
-      <div class="info-row"><span class="info-key">Club</span><span class="info-val">${j.club||'—'}</span></div>
-      <div class="info-row"><span class="info-key">Niveau</span><span class="info-val">${j.niveau||'—'}</span></div>
-      <div class="info-row"><span class="info-key">Saison</span><span class="info-val">${j.saison||'2024-2025'}</span></div>
+      <div class="section-title">Profil</div>
       <div class="info-row"><span class="info-key">Poste</span><span class="info-val">${poste_raw.replace(/_/g,' ')}</span></div>
       ${j.poste_secondaire ? `<div class="info-row"><span class="info-key">Poste secondaire</span><span class="info-val">${j.poste_secondaire.replace(/_/g,' ')}</span></div>` : ''}
       <div class="info-row"><span class="info-key">Pied fort</span><span class="info-val">${j.pied_fort||'—'}</span></div>
       ${j.taille ? `<div class="info-row"><span class="info-key">Taille</span><span class="info-val">${j.taille} cm</span></div>` : ''}
       ${j.nationalite ? `<div class="info-row"><span class="info-key">Nationalité</span><span class="info-val">${j.nationalite}</span></div>` : ''}
     </div>
-
-    ${historique && historique.length > 0 ? `
-    <div class="section">
-      <div class="section-title">Historique des saisons</div>
-      ${historique.map(h => {
-        const canImpactHist = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
-        const canGPSHist = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
-        const extras = [];
-        if (canImpactHist && h.impact_differentiel != null) extras.push(`Impact ${h.impact_differentiel>=0?'+':''}${Number(h.impact_differentiel).toFixed(2)}`);
-        if (canImpactHist && h.pct_matchs_avec_but != null) extras.push(`${Math.round(h.pct_matchs_avec_but)}% matchs avec but`);
-        if (canGPSHist && h.vitesse_max_kmh != null) extras.push(`${h.vitesse_max_kmh} km/h max`);
-        if (canGPSHist && h.vma_kmh != null) extras.push(`VMA ${h.vma_kmh} km/h`);
-        return `
-        <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
-          <div style="display:flex;justify-content:space-between;width:100%;">
-            <span class="info-key">${h.saison}${h.club ? ' · ' + h.club : ''}${h.niveau ? ' · ' + h.niveau : ''}</span>
-            <span class="info-val">${h.matchs_joues||0} matchs · ${h.buts||0} buts · ${h.passes_decisives||0} passes</span>
-          </div>
-          ${extras.length ? `<div style="font-size:0.75rem;color:var(--muted);">${extras.join(' · ')}</div>` : ''}
-        </div>`;
-      }).join('')}
-    </div>` : ''}
-
-    ${(function() {
-      const canImpact = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
-      const hasImpactData = j.impact_differentiel != null || j.pct_matchs_avec_but != null || j.points_avec != null;
-      if (!hasImpactData) return '';
-      if (!canImpact) {
-        return `
-        <div class="section">
-          <div class="section-title">Impact collectif</div>
-          <div class="locked-box">
-            <p>🔒 Réservé aux recruteurs Pro et Premium</p>
-            <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
-          </div>
-        </div>`;
-      }
-      const diff = j.impact_differentiel;
-      const diffPct = diff == null ? 0 : Math.max(0, Math.min(100, 50 + diff * 50));
-      return `
-        <div class="section">
-          <div class="section-title">Impact collectif</div>
-          ${diff != null ? `
-          <div class="bar-item">
-            <div class="bar-label-row"><span class="k">Différentiel d'impact</span><span class="v" style="color:${diff>=0?'var(--green-l)':'var(--red)'}">${diff>=0?'+':''}${diff.toFixed(2)}</span></div>
-            <div class="bar-track"><div class="bar-fill" style="width:${diffPct}%;background:${diff>=0?'var(--green-l)':'var(--red)'}"></div></div>
-          </div>` : ''}
-          ${j.pct_matchs_avec_but != null ? `
-          <div class="bar-item">
-            <div class="bar-label-row"><span class="k">% matchs avec but</span><span class="v" style="color:var(--gold-l)">${Math.round(j.pct_matchs_avec_but)}%</span></div>
-            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,j.pct_matchs_avec_but)}%;background:var(--gold-l)"></div></div>
-          </div>` : ''}
-          ${j.points_avec != null && j.points_sans != null ? `
-          <div class="info-row"><span class="info-key">Points pris avec le joueur</span><span class="info-val">${j.points_avec}${j.pct_points_avec!=null?' ('+Math.round(j.pct_points_avec)+'%)':''}</span></div>
-          <div class="info-row"><span class="info-key">Points pris sans le joueur</span><span class="info-val">${j.points_sans}${j.pct_points_sans!=null?' ('+Math.round(j.pct_points_sans)+'%)':''}</span></div>` : ''}
-        </div>`;
-    })()}
-
-    ${(function() {
-      const canGPS = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
-      const hasGPS = j.vitesse_max_kmh != null || j.vma_kmh != null || j.distance_moyenne_km != null || j.sprints_match != null;
-      if (!hasGPS) return '';
-      if (!canGPS) {
-        return `
-        <div class="section">
-          <div class="section-title">Données GPS</div>
-          <div class="locked-box">
-            <p>🔒 Réservé aux recruteurs Premium</p>
-            <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
-          </div>
-        </div>`;
-      }
-      return `
-        <div class="section">
-          <div class="section-title">Données GPS</div>
-          <div class="stats-grid" style="margin-bottom:0;">
-            ${j.vitesse_max_kmh!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${j.vitesse_max_kmh}</div><div class="stat-lbl">Vitesse max km/h</div></div>`:''}
-            ${j.vma_kmh!=null?`<div class="stat-card"><div class="stat-val">${j.vma_kmh}</div><div class="stat-lbl">VMA km/h</div></div>`:''}
-            ${j.distance_moyenne_km!=null?`<div class="stat-card"><div class="stat-val">${j.distance_moyenne_km}</div><div class="stat-lbl">Km/match moy.</div></div>`:''}
-            ${j.sprints_match!=null?`<div class="stat-card"><div class="stat-val">${j.sprints_match}</div><div class="stat-lbl">Sprints/match</div></div>`:''}
-          </div>
-        </div>`;
-    })()}
 
     ${j.video_url ? (isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium') ? `
     <div class="section">
@@ -409,6 +414,15 @@ async function renderProfil(j, isOwner) {
   document.getElementById('profil-content').innerHTML = html;
   document.getElementById('profil-content').style.display = 'block';
   document.title = `FootLight — ${j.prenom} ${j.nom}`;
+
+  const seasonSelect = document.getElementById('season-select');
+  if (seasonSelect) {
+    seasonSelect.addEventListener('change', () => {
+      const val = seasonSelect.value;
+      const s = val === 'global' ? globalSeason : (seasonsData.find(x => x.saison === val) || currentSeason);
+      document.getElementById('season-block').innerHTML = renderSeasonBlock(s);
+    });
+  }
 }
 
 loadProfil();
