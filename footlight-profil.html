@@ -301,12 +301,23 @@ async function renderProfil(j, isOwner) {
     ${historique && historique.length > 0 ? `
     <div class="section">
       <div class="section-title">Historique des saisons</div>
-      ${historique.map(h => `
-        <div class="info-row">
-          <span class="info-key">${h.saison}${h.club ? ' · ' + h.club : ''}${h.niveau ? ' · ' + h.niveau : ''}</span>
-          <span class="info-val">${h.matchs_joues||0} matchs · ${h.buts||0} buts · ${h.passes_decisives||0} passes</span>
-        </div>
-      `).join('')}
+      ${historique.map(h => {
+        const canImpactHist = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
+        const canGPSHist = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
+        const extras = [];
+        if (canImpactHist && h.impact_differentiel != null) extras.push(`Impact ${h.impact_differentiel>=0?'+':''}${Number(h.impact_differentiel).toFixed(2)}`);
+        if (canImpactHist && h.pct_matchs_avec_but != null) extras.push(`${Math.round(h.pct_matchs_avec_but)}% matchs avec but`);
+        if (canGPSHist && h.vitesse_max_kmh != null) extras.push(`${h.vitesse_max_kmh} km/h max`);
+        if (canGPSHist && h.vma_kmh != null) extras.push(`VMA ${h.vma_kmh} km/h`);
+        return `
+        <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <div style="display:flex;justify-content:space-between;width:100%;">
+            <span class="info-key">${h.saison}${h.club ? ' · ' + h.club : ''}${h.niveau ? ' · ' + h.niveau : ''}</span>
+            <span class="info-val">${h.matchs_joues||0} matchs · ${h.buts||0} buts · ${h.passes_decisives||0} passes</span>
+          </div>
+          ${extras.length ? `<div style="font-size:0.75rem;color:var(--muted);">${extras.join(' · ')}</div>` : ''}
+        </div>`;
+      }).join('')}
     </div>` : ''}
 
     ${(function() {
