@@ -726,19 +726,9 @@ body {
     </div>
 
     <div class="field" style="margin-top:20px">
-      <div class="field-label">Vidéo de match</div>
-      <div style="background:var(--bg3);border:1px dashed var(--border2);border-radius:14px;padding:24px;text-align:center;cursor:pointer;" onclick="document.getElementById('video-input').click()">
-        <div style="font-size:2rem;margin-bottom:8px">🎬</div>
-        <div style="font-size:0.85rem;color:var(--muted)">Clique pour uploader une vidéo</div>
-        <div style="font-size:0.72rem;color:var(--muted2);margin-top:4px">MP4, MOV · 500 Mo max</div>
-        <input type="file" id="video-input" accept="video/*" style="display:none" onchange="handleVideo(this)"/>
-      </div>
-      <div class="field-hint">Optionnel — débloque le badge 🎥 Vérifié vidéo</div>
-    </div>
-
-    <div class="field" style="margin-top:16px">
-      <div class="field-label">Lien vidéo (YouTube, Vimeo...)</div>
+      <div class="field-label">Lien vidéo (YouTube, TikTok, Instagram, Vimeo...)</div>
       <input class="field-input" type="url" id="f-video-url" placeholder="https://youtube.com/..."/>
+      <div class="field-hint">Optionnel — débloque le badge 🎥 Vérifié vidéo</div>
     </div>
 
     <div class="field" style="margin-top:16px">
@@ -1146,15 +1136,6 @@ function handlePhoto(input) {
   }
 }
 
-function handleVideo(input) {
-  if (input.files && input.files[0]) {
-    const zone = input.closest('div[style]');
-    zone.innerHTML = `<div style="font-size:1.5rem;margin-bottom:6px">✅</div>
-      <div style="font-size:0.85rem;color:var(--green)">${input.files[0].name}</div>
-      <div style="font-size:0.72rem;color:var(--muted2);margin-top:4px">Vidéo prête à l'envoi</div>`;
-  }
-}
-
 // ── RÉCAP ──
 function fillRecap() {
   const prenom = document.getElementById('f-prenom').value.trim();
@@ -1175,7 +1156,7 @@ function fillRecap() {
   document.getElementById('recap-minutes').textContent= document.getElementById('s-minutes').value || '0';
 
   // Badge upgrade si vidéo ou GPS
-  const hasVideo = document.getElementById('f-video-url').value || document.getElementById('video-input').files?.length;
+  const hasVideo = document.getElementById('f-video-url').value;
   const hasGPS   = selectedGPS && selectedGPS !== 'Aucun' && selectedGPS !== 'Pas de GPS';
   if (hasVideo) {
     document.querySelector('.badge-icon').textContent = '🎥';
