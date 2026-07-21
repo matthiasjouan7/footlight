@@ -208,8 +208,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
           <textarea class="field-textarea" id="f-bio" placeholder="Ton style de jeu, tes qualités, tes objectifs..."></textarea>
         </div>
         <div class="field">
-          <label class="field-label">Lien vidéo (YouTube, TikTok, Instagram, Vimeo...)</label>
-          <input class="field-input" type="url" id="f-video-url" placeholder="https://youtube.com/..."/>
+          <label class="field-label">Liens vidéo (YouTube, TikTok, Instagram, Vimeo...)</label>
+          <div id="video-links-list"></div>
+          <span onclick="addVideoLinkField()" style="font-size:0.78rem;color:var(--blue-l);cursor:pointer;text-decoration:underline;display:inline-block;margin-top:4px;">+ Ajouter un lien</span>
         </div>
       </div>
 
@@ -400,8 +401,30 @@ function fillPlayerFields(j) {
   document.getElementById('f-poids').value = j.poids || '';
   document.getElementById('f-nationalite').value = j.nationalite || '';
   document.getElementById('f-bio').value = j.bio || '';
-  document.getElementById('f-video-url').value = j.video_url || '';
+
+  document.getElementById('video-links-list').innerHTML = '';
+  const links = (j.video_urls && j.video_urls.length) ? j.video_urls : (j.video_url ? [j.video_url] : []);
+  if (links.length) links.forEach(l => addVideoLinkField(l));
+  else addVideoLinkField();
+
   toggleDefenseFields();
+}
+
+function addVideoLinkField(value) {
+  const list = document.getElementById('video-links-list');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `
+    <input class="field-input video-link-input" type="url" placeholder="https://youtube.com/..." value="${value ? value.replace(/"/g,'&quot;') : ''}" style="flex:1;"/>
+    <span onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--muted);font-size:1rem;flex-shrink:0;">✕</span>
+  `;
+  list.appendChild(row);
+}
+
+function getVideoLinks() {
+  return Array.from(document.querySelectorAll('.video-link-input'))
+    .map(i => i.value.trim())
+    .filter(Boolean);
 }
 
 function fillSeasonFields(s) {
@@ -481,7 +504,8 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     poids: document.getElementById('f-poids').value ? parseInt(document.getElementById('f-poids').value) : null,
     nationalite: document.getElementById('f-nationalite').value.trim() || null,
     bio: document.getElementById('f-bio').value.trim() || null,
-    video_url: document.getElementById('f-video-url').value.trim() || null,
+    video_url: getVideoLinks()[0] || null,
+    video_urls: getVideoLinks().length ? getVideoLinks() : null,
     profil_public: true,
   };
 

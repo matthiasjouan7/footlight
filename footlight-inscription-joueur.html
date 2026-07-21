@@ -726,8 +726,9 @@ body {
     </div>
 
     <div class="field" style="margin-top:20px">
-      <div class="field-label">Lien vidéo (YouTube, TikTok, Instagram, Vimeo...)</div>
-      <input class="field-input" type="url" id="f-video-url" placeholder="https://youtube.com/..."/>
+      <div class="field-label">Liens vidéo (YouTube, TikTok, Instagram, Vimeo...)</div>
+      <div id="video-links-list"></div>
+      <span onclick="addVideoLinkField()" style="font-size:0.78rem;color:var(--accent);cursor:pointer;text-decoration:underline;display:inline-block;margin-top:4px;">+ Ajouter un lien</span>
       <div class="field-hint">Optionnel — débloque le badge 🎥 Vérifié vidéo</div>
     </div>
 
@@ -849,6 +850,25 @@ async function checkExistingSession() {
   banner.style.display = 'block';
 }
 checkExistingSession();
+
+// ── LIENS VIDÉO (multi) ──
+function addVideoLinkField(value) {
+  const list = document.getElementById('video-links-list');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `
+    <input class="field-input video-link-input" type="url" placeholder="https://youtube.com/..." value="${value ? value.replace(/"/g,'&quot;') : ''}" style="flex:1;"/>
+    <span onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--muted);font-size:1rem;flex-shrink:0;">✕</span>
+  `;
+  list.appendChild(row);
+}
+addVideoLinkField();
+
+function getVideoLinks() {
+  return Array.from(document.querySelectorAll('.video-link-input'))
+    .map(i => i.value.trim())
+    .filter(Boolean);
+}
 
 const stepLabels = [
   'Identité',
@@ -1156,7 +1176,7 @@ function fillRecap() {
   document.getElementById('recap-minutes').textContent= document.getElementById('s-minutes').value || '0';
 
   // Badge upgrade si vidéo ou GPS
-  const hasVideo = document.getElementById('f-video-url').value;
+  const hasVideo = getVideoLinks().length > 0;
   const hasGPS   = selectedGPS && selectedGPS !== 'Aucun' && selectedGPS !== 'Pas de GPS';
   if (hasVideo) {
     document.querySelector('.badge-icon').textContent = '🎥';
@@ -1191,7 +1211,7 @@ async function submitForm() {
     const taille   = document.getElementById('f-taille').value;
     const poids    = document.getElementById('f-poids').value;
     const bio      = document.getElementById('f-bio').value.trim();
-    const videoUrl = document.getElementById('f-video-url').value.trim();
+    const videoLinks = getVideoLinks();
 
     // 1. Créer le compte auth Supabase (sauf si déjà connecté, ex: via Google)
     if (existingUser) {
@@ -1219,7 +1239,8 @@ async function submitForm() {
       poids: poids ? parseInt(poids) : null,
       club, niveau, saison,
       bio: bio || null,
-      video_url: videoUrl || null,
+      video_url: videoLinks[0] || null,
+      video_urls: videoLinks.length ? videoLinks : null,
       gps_type: selectedGPS || null,
       matchs_joues: parseInt(document.getElementById('s-matchs').value) || 0,
       buts: parseInt(document.getElementById('s-buts').value) || 0,
@@ -1229,7 +1250,7 @@ async function submitForm() {
       minutes_jouees: parseInt(document.getElementById('s-minutes').value) || 0,
       cartons_jaunes: parseInt(document.getElementById('s-cartj').value) || 0,
       cartons_rouges: parseInt(document.getElementById('s-cartr').value) || 0,
-      badge: videoUrl ? 'video' : selectedGPS && selectedGPS !== 'Aucun' ? 'gps' : 'declaratif',
+      badge: videoLinks.length ? 'video' : selectedGPS && selectedGPS !== 'Aucun' ? 'gps' : 'declaratif',
       score: 50,
       profil_public: true,
     }]);
