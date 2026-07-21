@@ -373,8 +373,18 @@ async function login() {
       return;
     }
 
-    // Connexion réussie - rediriger vers la recherche par défaut
-    window.location.href = 'footlight-recherche.html';
+    // Connexion réussie - rediriger selon le vrai type de compte (pas l'onglet cliqué)
+    const { data: recruteur } = await db.from('recruteurs').select('id').eq('email', email).single();
+    if (recruteur) {
+      window.location.href = 'footlight-recherche.html';
+      return;
+    }
+    const { data: joueur } = await db.from('joueurs').select('id').eq('email', email).single();
+    if (joueur) {
+      window.location.href = 'footlight-profil.html';
+      return;
+    }
+    window.location.href = 'footlight-espace.html';
   } catch(err) {
     btn.classList.remove('loading');
     btn.disabled = false;
