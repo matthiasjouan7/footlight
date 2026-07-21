@@ -193,9 +193,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
             <input class="field-input" type="number" id="f-taille" min="140" max="220"/>
           </div>
         </div>
-        <div class="field">
-          <label class="field-label">Nationalité</label>
-          <input class="field-input" type="text" id="f-nationalite"/>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Poids (kg)</label>
+            <input class="field-input" type="number" id="f-poids" min="40" max="150"/>
+          </div>
+          <div class="field">
+            <label class="field-label">Nationalité</label>
+            <input class="field-input" type="text" id="f-nationalite"/>
+          </div>
         </div>
         <div class="field">
           <label class="field-label">À propos de toi</label>
@@ -391,6 +397,7 @@ function fillPlayerFields(j) {
   document.getElementById('f-poste2').value = j.poste_secondaire || '';
   document.getElementById('f-pied').value = j.pied_fort || '';
   document.getElementById('f-taille').value = j.taille || '';
+  document.getElementById('f-poids').value = j.poids || '';
   document.getElementById('f-nationalite').value = j.nationalite || '';
   document.getElementById('f-bio').value = j.bio || '';
   document.getElementById('f-video-url').value = j.video_url || '';
@@ -471,6 +478,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     poste_secondaire: document.getElementById('f-poste2').value || null,
     pied_fort: document.getElementById('f-pied').value || null,
     taille: document.getElementById('f-taille').value ? parseInt(document.getElementById('f-taille').value) : null,
+    poids: document.getElementById('f-poids').value ? parseInt(document.getElementById('f-poids').value) : null,
     nationalite: document.getElementById('f-nationalite').value.trim() || null,
     bio: document.getElementById('f-bio').value.trim() || null,
     video_url: document.getElementById('f-video-url').value.trim() || null,
