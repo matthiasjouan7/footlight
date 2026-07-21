@@ -732,10 +732,23 @@ body {
       <div class="field-hint">Optionnel — débloque le badge 🎥 Vérifié vidéo</div>
     </div>
 
+    <div class="field" style="margin-top:20px">
+      <div class="field-label">Points forts</div>
+      <div id="points-forts-list"></div>
+      <span onclick="addPointFortField()" style="font-size:0.78rem;color:var(--accent);cursor:pointer;text-decoration:underline;display:inline-block;margin-top:4px;">+ Ajouter un point fort</span>
+      <div class="field-hint">Ex: "Devant le but" avec un lien vers une vidéo de tes buts (optionnel)</div>
+    </div>
+
     <div class="field" style="margin-top:16px">
       <div class="field-label">À propos de toi</div>
       <textarea class="field-textarea" id="f-bio"
         placeholder="Décris ton style de jeu, tes qualités, tes objectifs... (optionnel)"></textarea>
+    </div>
+
+    <div class="field" style="margin-top:16px">
+      <div class="field-label">Points d'amélioration</div>
+      <textarea class="field-textarea" id="f-points-amelioration"
+        placeholder="Ce sur quoi tu travailles pour progresser... (optionnel)"></textarea>
     </div>
   </div>
 
@@ -868,6 +881,26 @@ function getVideoLinks() {
   return Array.from(document.querySelectorAll('.video-link-input'))
     .map(i => i.value.trim())
     .filter(Boolean);
+}
+
+// ── POINTS FORTS (label + vidéo optionnelle) ──
+function addPointFortField(label, video) {
+  const list = document.getElementById('points-forts-list');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `
+    <input class="field-input point-fort-label" type="text" placeholder="Ex: Devant le but" value="${label ? label.replace(/"/g,'&quot;') : ''}" style="flex:1;"/>
+    <input class="field-input point-fort-video" type="url" placeholder="Lien vidéo (optionnel)" value="${video ? video.replace(/"/g,'&quot;') : ''}" style="flex:1;"/>
+    <span onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--muted);font-size:1rem;flex-shrink:0;">✕</span>
+  `;
+  list.appendChild(row);
+}
+
+function getPointsForts() {
+  return Array.from(document.querySelectorAll('#points-forts-list > div')).map(row => ({
+    label: row.querySelector('.point-fort-label').value.trim(),
+    video_url: row.querySelector('.point-fort-video').value.trim() || null,
+  })).filter(p => p.label);
 }
 
 const stepLabels = [
@@ -1211,7 +1244,9 @@ async function submitForm() {
     const taille   = document.getElementById('f-taille').value;
     const poids    = document.getElementById('f-poids').value;
     const bio      = document.getElementById('f-bio').value.trim();
+    const pointsAmelioration = document.getElementById('f-points-amelioration').value.trim();
     const videoLinks = getVideoLinks();
+    const pointsForts = getPointsForts();
 
     // 1. Créer le compte auth Supabase (sauf si déjà connecté, ex: via Google)
     if (existingUser) {
@@ -1239,6 +1274,8 @@ async function submitForm() {
       poids: poids ? parseInt(poids) : null,
       club, niveau, saison,
       bio: bio || null,
+      points_amelioration: pointsAmelioration || null,
+      points_forts: pointsForts.length ? pointsForts : null,
       video_url: videoLinks[0] || null,
       video_urls: videoLinks.length ? videoLinks : null,
       gps_type: selectedGPS || null,
