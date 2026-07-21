@@ -438,18 +438,27 @@ async function renderProfil(j, isOwner) {
       ${j.nationalite ? `<div class="info-row"><span class="info-key">Nationalité</span><span class="info-val">${j.nationalite}</span></div>` : ''}
     </div>
 
-    ${j.video_url ? (isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium') ? `
-    <div class="section">
-      <div class="section-title">Vidéo de match</div>
-      <a href="${j.video_url}" target="_blank" style="color:var(--blue-l);font-size:0.85rem;">🎥 Voir la vidéo →</a>
-    </div>` : `
-    <div class="section">
-      <div class="section-title">Vidéo de match</div>
-      <div class="locked-box">
-        <p>🔒 Réservé aux recruteurs Premium</p>
-        <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
-      </div>
-    </div>`) : ''}
+    ${(function() {
+      const links = (j.video_urls && j.video_urls.length) ? j.video_urls : (j.video_url ? [j.video_url] : []);
+      if (!links.length) return '';
+      if (isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium')) {
+        return `
+        <div class="section">
+          <div class="section-title">Vidéo${links.length > 1 ? 's' : ''} de match</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${links.map((l,i) => `<a href="${l}" target="_blank" style="color:var(--blue-l);font-size:0.85rem;">🎥 ${links.length > 1 ? `Vidéo ${i+1}` : 'Voir la vidéo'} →</a>`).join('')}
+          </div>
+        </div>`;
+      }
+      return `
+        <div class="section">
+          <div class="section-title">Vidéo${links.length > 1 ? 's' : ''} de match</div>
+          <div class="locked-box">
+            <p>🔒 Réservé aux recruteurs Premium</p>
+            <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+          </div>
+        </div>`;
+    })()}
 
     <div class="section">
       <div class="section-title">Badge de validation</div>
