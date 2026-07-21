@@ -239,6 +239,17 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         </div>
       </div>
 
+      <div class="section">
+        <div class="section-title">Données GPS</div>
+        <div class="stat-grid">
+          <div class="field"><label class="field-label">Vitesse max (km/h)</label><input class="field-input" type="number" step="0.1" id="s-vitmax" min="0"/></div>
+          <div class="field"><label class="field-label">VMA (km/h)</label><input class="field-input" type="number" step="0.1" id="s-vma" min="0"/></div>
+          <div class="field"><label class="field-label">Distance moy./match (km)</label><input class="field-input" type="number" step="0.1" id="s-distance" min="0"/></div>
+          <div class="field"><label class="field-label">Sprints/match</label><input class="field-input" type="number" step="0.1" id="s-sprints" min="0"/></div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">Renseigne ces chiffres depuis ton appli GPS (Garmin Connect, Polar Flow...) — optionnel, débloque la section GPS de ton profil.</div>
+      </div>
+
       <div class="msg" id="form-msg"></div>
 
       <div class="btn-row">
@@ -361,6 +372,8 @@ async function finishInit() {
     buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets,
     minutes_jouees: joueur.minutes_jouees,
     cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
+    vitesse_max_kmh: joueur.vitesse_max_kmh, vma_kmh: joueur.vma_kmh,
+    distance_moyenne_km: joueur.distance_moyenne_km, sprints_match: joueur.sprints_match,
   };
   seasonsData = [currentSeason, ...historique].sort((a,b) => (b.saison||'').localeCompare(a.saison||''));
 
@@ -476,6 +489,10 @@ function fillSeasonFields(s) {
   document.getElementById('s-minutes').value = s.minutes_jouees ?? '';
   document.getElementById('s-cartj').value = s.cartons_jaunes ?? '';
   document.getElementById('s-cartr').value = s.cartons_rouges ?? '';
+  document.getElementById('s-vitmax').value = s.vitesse_max_kmh ?? '';
+  document.getElementById('s-vma').value = s.vma_kmh ?? '';
+  document.getElementById('s-distance').value = s.distance_moyenne_km ?? '';
+  document.getElementById('s-sprints').value = s.sprints_match ?? '';
 }
 
 async function changeEmail() {
@@ -560,6 +577,10 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     minutes_jouees: parseInt(document.getElementById('s-minutes').value) || 0,
     cartons_jaunes: parseInt(document.getElementById('s-cartj').value) || 0,
     cartons_rouges: parseInt(document.getElementById('s-cartr').value) || 0,
+    vitesse_max_kmh: document.getElementById('s-vitmax').value ? parseFloat(document.getElementById('s-vitmax').value) : null,
+    vma_kmh: document.getElementById('s-vma').value ? parseFloat(document.getElementById('s-vma').value) : null,
+    distance_moyenne_km: document.getElementById('s-distance').value ? parseFloat(document.getElementById('s-distance').value) : null,
+    sprints_match: document.getElementById('s-sprints').value ? parseFloat(document.getElementById('s-sprints').value) : null,
   };
 
   const isCurrentSeason = selectedSaison === (joueur.saison || '2026-2027');
