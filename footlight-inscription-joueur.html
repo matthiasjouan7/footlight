@@ -560,19 +560,24 @@ body {
       <div class="field-error" id="err-poste">Sélectionne un poste</div>
     </div>
 
-    <div class="field-row" style="margin-top:16px">
-      <div class="field">
-        <div class="field-label">Pied fort <span class="req">*</span></div>
-        <select class="field-select" id="f-pied">
-          <option value="">—</option>
-          <option value="Droit">Droit</option>
-          <option value="Gauche">Gauche</option>
-          <option value="Les deux">Les deux</option>
-        </select>
-      </div>
+    <div class="field" style="margin-top:16px">
+      <div class="field-label">Pied fort <span class="req">*</span></div>
+      <select class="field-select" id="f-pied">
+        <option value="">—</option>
+        <option value="Droit">Droit</option>
+        <option value="Gauche">Gauche</option>
+        <option value="Les deux">Les deux</option>
+      </select>
+    </div>
+
+    <div class="field-row">
       <div class="field">
         <div class="field-label">Taille (cm)</div>
         <input class="field-input" type="number" id="f-taille" placeholder="178" min="140" max="220"/>
+      </div>
+      <div class="field">
+        <div class="field-label">Poids (kg)</div>
+        <input class="field-input" type="number" id="f-poids" placeholder="72" min="40" max="150"/>
       </div>
     </div>
 
@@ -1203,6 +1208,7 @@ async function submitForm() {
     const saison   = document.getElementById('f-saison').value;
     const pied     = document.getElementById('f-pied').value;
     const taille   = document.getElementById('f-taille').value;
+    const poids    = document.getElementById('f-poids').value;
     const bio      = document.getElementById('f-bio').value.trim();
     const videoUrl = document.getElementById('f-video-url').value.trim();
 
@@ -1229,6 +1235,7 @@ async function submitForm() {
       poste: selectedPoste,
       pied_fort: pied || 'Droit',
       taille: taille ? parseInt(taille) : null,
+      poids: poids ? parseInt(poids) : null,
       club, niveau, saison,
       bio: bio || null,
       video_url: videoUrl || null,
