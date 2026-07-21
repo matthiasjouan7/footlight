@@ -123,9 +123,10 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       <div class="field"><div class="fl">Nom *</div><input class="fi" type="text" id="r-nom" placeholder="Martin"/><div class="err" id="e-nom">Obligatoire</div></div>
     </div>
     <div class="field"><div class="fl">Club / Organisation</div><input class="fi" type="text" id="r-orga" placeholder="FC Exemple"/></div>
-    <div class="field"><div class="fl">Email *</div><input class="fi" type="email" id="r-email" placeholder="jean@fcexemple.fr"/><div class="err" id="e-email">Email invalide</div></div>
+    <div class="fh" id="already-connected-banner" style="display:none;background:rgba(45,216,130,0.08);border:1px solid rgba(45,216,130,0.25);border-radius:12px;padding:12px 14px;color:var(--green);margin-bottom:14px;"></div>
+    <div class="field" id="field-email"><div class="fl">Email *</div><input class="fi" type="email" id="r-email" placeholder="jean@fcexemple.fr"/><div class="err" id="e-email">Email invalide</div></div>
     <div class="field"><div class="fl">Telephone</div><input class="fi" type="tel" id="r-tel" placeholder="+33 6 00 00 00 00"/><div class="fh">Optionnel</div></div>
-    <div class="field"><div class="fl">Mot de passe *</div><input class="fi" type="password" id="r-pass" placeholder="8 caracteres minimum"/><div class="err" id="e-pass">8 caracteres minimum</div></div>
+    <div class="field" id="field-pass"><div class="fl">Mot de passe *</div><input class="fi" type="password" id="r-pass" placeholder="8 caracteres minimum"/><div class="err" id="e-pass">8 caracteres minimum</div></div>
   </div>
   <div class="step" id="step-2">
     <div class="sh">
@@ -167,7 +168,20 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </div>
 </div>
 <script>
-var s=1,sType='',sPlan='',cgvu=false;
+var s=1,sType='',sPlan='',cgvu=false,existingUser=null;
+
+async function checkExistingSession(){
+  var res = await db.auth.getUser();
+  var user = res.data.user;
+  if(!user) return;
+  existingUser = user;
+  document.getElementById('field-email').style.display='none';
+  document.getElementById('field-pass').style.display='none';
+  var banner=document.getElementById('already-connected-banner');
+  banner.textContent='✓ Connecté avec '+user.email+' — pas besoin de créer un mot de passe.';
+  banner.style.display='block';
+}
+checkExistingSession();
 function selType(t){sType=t;['club','agent','scout'].forEach(function(x){document.getElementById('t'+x).classList.remove('sel');});document.getElementById('t'+t).classList.add('sel');document.getElementById('e-type').classList.remove('show');}
 function selPlan(p){sPlan=p;['free','pro','premium'].forEach(function(x){document.getElementById('p'+x).className='popt';});document.getElementById('p'+p).classList.add('sel'+p);document.getElementById('e-plan').classList.remove('show');}
 function togCgvu(){cgvu=!cgvu;var b=document.getElementById('cbox');if(cgvu){b.classList.add('chk');}else{b.classList.remove('chk');}document.getElementById('e-cgvu').classList.remove('show');}
@@ -180,10 +194,12 @@ function v1(){
   if(!p){document.getElementById('e-prenom').classList.add('show');ok=false;}else{document.getElementById('e-prenom').classList.remove('show');}
   var n=document.getElementById('r-nom').value.trim();
   if(!n){document.getElementById('e-nom').classList.add('show');ok=false;}else{document.getElementById('e-nom').classList.remove('show');}
-  var e=document.getElementById('r-email').value.trim();
-  if(!e||e.indexOf('@')<1){document.getElementById('e-email').classList.add('show');ok=false;}else{document.getElementById('e-email').classList.remove('show');}
-  var pw=document.getElementById('r-pass').value;
-  if(pw.length<8){document.getElementById('e-pass').classList.add('show');ok=false;}else{document.getElementById('e-pass').classList.remove('show');}
+  if(!existingUser){
+    var e=document.getElementById('r-email').value.trim();
+    if(!e||e.indexOf('@')<1){document.getElementById('e-email').classList.add('show');ok=false;}else{document.getElementById('e-email').classList.remove('show');}
+    var pw=document.getElementById('r-pass').value;
+    if(pw.length<8){document.getElementById('e-pass').classList.add('show');ok=false;}else{document.getElementById('e-pass').classList.remove('show');}
+  }
   if(!ok)showErr('Veuillez corriger les champs en rouge.');
   return ok;
 }
@@ -192,7 +208,7 @@ function v3(){hideErr();if(!cgvu){document.getElementById('e-cgvu').classList.ad
 function fillRecap(){
   var p=document.getElementById('r-prenom').value.trim();
   var n=document.getElementById('r-nom').value.trim();
-  var e=document.getElementById('r-email').value.trim();
+  var e=existingUser ? existingUser.email : document.getElementById('r-email').value.trim();
   var o=document.getElementById('r-orga').value.trim();
   var plans={free:'Gratuit 0 euro/mois',pro:'Pro 19 euro/mois',premium:'Premium 39 euro/mois'};
   var types={club:'Club amateur',agent:'Agent',scout:'Scout'};
@@ -236,7 +252,7 @@ async function createAcc(){
   var btn=document.getElementById('bnxt');
   btn.disabled=true;
   btn.textContent='Creation...';
-  var email=document.getElementById('r-email').value.trim();
+  var email=existingUser ? existingUser.email : document.getElementById('r-email').value.trim();
   var pass=document.getElementById('r-pass').value;
   var prenom=document.getElementById('r-prenom').value.trim();
   var nom=document.getElementById('r-nom').value.trim();
@@ -244,18 +260,22 @@ async function createAcc(){
   var tel=document.getElementById('r-tel').value.trim();
 
   try {
-    // Créer compte Auth
-    var authResult = await db.auth.signUp({
-      email: email,
-      password: pass,
-      options: { data: { prenom: prenom, nom: nom, type: 'recruteur' } }
-    });
+    if (existingUser) {
+      await db.auth.updateUser({ data: { prenom: prenom, nom: nom, type: 'recruteur' } });
+    } else {
+      // Créer compte Auth
+      var authResult = await db.auth.signUp({
+        email: email,
+        password: pass,
+        options: { data: { prenom: prenom, nom: nom, type: 'recruteur' } }
+      });
 
-    if (authResult.error) {
-      btn.disabled=false;
-      btn.textContent='Creer mon compte';
-      alert('Erreur: ' + authResult.error.message);
-      return;
+      if (authResult.error) {
+        btn.disabled=false;
+        btn.textContent='Creer mon compte';
+        alert('Erreur: ' + authResult.error.message);
+        return;
+      }
     }
 
     // Sauvegarder dans table recruteurs
