@@ -121,16 +121,6 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
   </div>
 </nav>
 
-<!-- BLOQUÉ POUR LES JOUEURS -->
-<div id="joueur-blocked" style="display:none; max-width:480px; margin:120px auto 0; text-align:center; padding:0 20px;">
-  <div style="font-size:2.5rem; margin-bottom:16px;">🔒</div>
-  <h2 style="margin-bottom:10px;">Réservé aux recruteurs</h2>
-  <p style="color:var(--muted); margin-bottom:20px; font-size:0.9rem;">
-    La recherche de joueurs est réservée aux comptes recruteur (club, agent, scout). En tant que joueur, gère ton profil depuis ton espace.
-  </p>
-  <a href="footlight-espace.html" style="display:inline-block; padding:10px 20px; border-radius:10px; background:var(--blue); color:#fff; text-decoration:none; font-size:0.9rem; font-weight:600;">Aller à mon espace</a>
-</div>
-
 <div class="layout" id="layout">
 
   <!-- SIDEBAR -->
@@ -382,11 +372,15 @@ function renderCards(players) {
           '<span class="ctag">'+clubCourt+'</span>' +
           '<span class="ctag '+(j.niveau==='N1'?'blue':'')+'">'+( j.niveau||'N1')+'</span>' +
         '</div>' +
-        (isConnected ?
+        (canBrowseFull ?
           '<div class="card-stats">' +
             '<div class="cs"><div class="cs-val">'+(j.matchs_joues||0)+'</div><div class="cs-lbl">Matchs</div></div>' +
             '<div class="cs"><div class="cs-val" style="color:var(--green-l)">'+(j.buts||0)+'</div><div class="cs-lbl">Buts</div></div>' +
             '<div class="cs"><div class="cs-val" style="color:var(--blue-l)">'+(j.passes_decisives||0)+'</div><div class="cs-lbl">Passes</div></div>' +
+          '</div>'
+        : viewerRole === 'joueur' ?
+          '<div style="background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.15);border-radius:10px;padding:12px;text-align:center;margin-bottom:8px;">' +
+            '<div style="font-size:0.78rem;color:var(--blue-l);">🔒 Stats et profils complets réservés aux recruteurs</div>' +
           '</div>'
         :
           '<div style="background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.15);border-radius:10px;padding:12px;text-align:center;margin-bottom:8px;">' +
@@ -396,7 +390,11 @@ function renderCards(players) {
         ) +
         '<div class="card-actions">' +
           '<button class="ca-btn" onclick="toggleShortlist(this,event,'+"'"+j.id+"'"+')">☆ Shortlist</button>' +
-          '<button class="ca-btn primary" onclick="window.location.href=\'footlight-profil.html?id='+j.id+'\'">Voir profil</button>' +
+          (canBrowseFull ?
+            '<button class="ca-btn primary" onclick="window.location.href=\'footlight-profil.html?id='+j.id+'\'">Voir profil</button>'
+          :
+            '<button class="ca-btn primary" disabled style="opacity:0.5;cursor:not-allowed;" title="Réservé aux recruteurs">🔒 Voir profil</button>'
+          ) +
         '</div>' +
       '</div>';
 
@@ -563,13 +561,12 @@ async function saveAddPlayer() {
 let isConnected = false;
 let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
 let viewerPlan = 'free';
+let canBrowseFull = false;
 
 async function checkSession() {
   try {
     const { data: { user } } = await db.auth.getUser();
     isConnected = !!user;
-    const bandeau = document.getElementById('bandeau-non-connecte');
-    if (bandeau) bandeau.style.display = isConnected ? 'none' : 'flex';
     if (user) {
       // Déterminer le rôle : recruteur ou joueur ?
       const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
@@ -610,11 +607,25 @@ async function checkSession() {
     }
   } catch(e) {}
 
-  // Un compte joueur ne peut pas parcourir les autres joueurs
-  if (viewerRole === 'joueur') {
-    document.getElementById('layout').style.display = 'none';
-    document.getElementById('joueur-blocked').style.display = 'block';
-    return;
+  // Les joueurs peuvent parcourir la liste (aperçu limité) mais pas accéder
+  // aux stats complètes ni aux profils détaillés — seuls les recruteurs le peuvent.
+  canBrowseFull = viewerRole === 'recruteur';
+
+  const bandeau = document.getElementById('bandeau-non-connecte');
+  if (bandeau) {
+    const btn = bandeau.querySelector('button');
+    if (!isConnected) {
+      bandeau.style.display = 'flex';
+      bandeau.querySelector('span').textContent = '👀 Vous consultez en mode aperçu — Connectez-vous pour accéder aux stats complètes et aux profils détaillés.';
+      btn.textContent = 'Se connecter';
+      btn.onclick = () => window.location.href = 'footlight-connexion.html';
+    } else if (viewerRole === 'joueur') {
+      bandeau.style.display = 'flex';
+      bandeau.querySelector('span').textContent = '👀 Vous consultez en mode aperçu — les stats complètes et les profils détaillés sont réservés aux comptes recruteur.';
+      btn.style.display = 'none';
+    } else {
+      bandeau.style.display = 'none';
+    }
   }
 
   loadJoueurs();
