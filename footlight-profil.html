@@ -438,6 +438,22 @@ async function renderProfil(j, isOwner) {
       ${j.nationalite ? `<div class="info-row"><span class="info-key">Nationalité</span><span class="info-val">${j.nationalite}</span></div>` : ''}
     </div>
 
+    ${(j.points_forts && j.points_forts.length) ? `
+    <div class="section">
+      <div class="section-title">Points forts</div>
+      ${j.points_forts.map(p => `
+      <div class="info-row">
+        <span class="info-key">${p.label}</span>
+        ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color:var(--blue-l);font-size:0.82rem;">🎥 Voir la vidéo →</a>` : `<span class="info-val">—</span>`}
+      </div>`).join('')}
+    </div>` : ''}
+
+    ${j.points_amelioration ? `
+    <div class="section">
+      <div class="section-title">Points d'amélioration</div>
+      <div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${j.points_amelioration}</div>
+    </div>` : ''}
+
     ${(function() {
       const links = (j.video_urls && j.video_urls.length) ? j.video_urls : (j.video_url ? [j.video_url] : []);
       if (!links.length) return '';
