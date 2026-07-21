@@ -482,14 +482,16 @@ body {
       </div>
     </div>
 
-    <div class="field">
+    <div class="field-hint" id="already-connected-banner" style="display:none;background:rgba(45,216,130,0.08);border:1px solid rgba(45,216,130,0.25);border-radius:12px;padding:12px 14px;color:var(--green);margin-bottom:16px;"></div>
+
+    <div class="field" id="field-email">
       <div class="field-label">Email <span class="req">*</span></div>
       <input class="field-input" type="email" id="f-email" placeholder="thomas.dupont@email.com"/>
       <div class="field-hint">Utilisé pour te connecter. Non visible publiquement.</div>
       <div class="field-error" id="err-email">Email invalide</div>
     </div>
 
-    <div class="field">
+    <div class="field" id="field-password">
       <div class="field-label">Mot de passe <span class="req">*</span></div>
       <input class="field-input" type="password" id="f-password" placeholder="8 caractères minimum"/>
       <div class="field-error" id="err-password">8 caractères minimum</div>
@@ -838,6 +840,20 @@ const TOTAL = 5;
 let selectedPoste = '';
 let rgpdChecked = false;
 let selectedGPS = '';
+let existingUser = null;
+
+// Si déjà connecté (ex: via Google), pas besoin de redemander email/mot de passe.
+async function checkExistingSession() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  existingUser = user;
+  document.getElementById('field-email').style.display = 'none';
+  document.getElementById('field-password').style.display = 'none';
+  const banner = document.getElementById('already-connected-banner');
+  banner.textContent = `✓ Connecté avec ${user.email} — pas besoin de créer un mot de passe.`;
+  banner.style.display = 'block';
+}
+checkExistingSession();
 
 const stepLabels = [
   'Identité',
@@ -938,7 +954,7 @@ function skipClaim() {
 }
 
 async function claimProfile(id, btn) {
-  const email    = document.getElementById('f-email').value.trim();
+  const email    = existingUser ? existingUser.email : document.getElementById('f-email').value.trim();
   const password = document.getElementById('f-password').value;
   const prenom   = document.getElementById('f-prenom').value.trim();
   const nom      = document.getElementById('f-nom').value.trim();
@@ -948,15 +964,19 @@ async function claimProfile(id, btn) {
   document.querySelectorAll('.claim-card-btn').forEach(b => { b.disabled = true; });
   btn.textContent = 'Récupération...';
 
-  const { error: authError } = await db.auth.signUp({
-    email, password,
-    options: { data: { prenom, nom, type: 'joueur' } }
-  });
-  if (authError) {
-    alert('Erreur : ' + authError.message);
-    document.querySelectorAll('.claim-card-btn').forEach(b => { b.disabled = false; });
-    btn.textContent = "Oui, c'est moi →";
-    return;
+  if (existingUser) {
+    await db.auth.updateUser({ data: { prenom, nom, type: 'joueur' } });
+  } else {
+    const { error: authError } = await db.auth.signUp({
+      email, password,
+      options: { data: { prenom, nom, type: 'joueur' } }
+    });
+    if (authError) {
+      alert('Erreur : ' + authError.message);
+      document.querySelectorAll('.claim-card-btn').forEach(b => { b.disabled = false; });
+      btn.textContent = "Oui, c'est moi →";
+      return;
+    }
   }
 
   const { error: updateError } = await db.from('joueurs')
@@ -1008,8 +1028,10 @@ function validateStep(step) {
     ok = checkRequired('f-prenom','err-prenom') & ok;
     ok = checkRequired('f-nom','err-nom') & ok;
     ok = checkRequired('f-naissance','err-naissance') & ok;
-    ok = checkEmail() & ok;
-    ok = checkPassword() & ok;
+    if (!existingUser) {
+      ok = checkEmail() & ok;
+      ok = checkPassword() & ok;
+    }
   }
   if (step === 2) {
     if (!selectedPoste) {
@@ -1136,7 +1158,7 @@ function fillRecap() {
   const age    = naiss ? Math.floor((new Date() - new Date(naiss)) / 31557600000) : '—';
 
   document.getElementById('recap-nom').textContent    = `${prenom} ${nom}`;
-  document.getElementById('recap-email').textContent  = document.getElementById('f-email').value;
+  document.getElementById('recap-email').textContent  = existingUser ? existingUser.email : document.getElementById('f-email').value;
   document.getElementById('recap-age').textContent    = age + ' ans';
   document.getElementById('recap-poste').textContent  = selectedPoste.replace(/_/g,' ');
   document.getElementById('recap-pied').textContent   = document.getElementById('f-pied').value || '—';
@@ -1171,7 +1193,7 @@ async function submitForm() {
   btn.textContent = 'Création en cours...';
 
   try {
-    const email    = document.getElementById('f-email').value.trim();
+    const email    = existingUser ? existingUser.email : document.getElementById('f-email').value.trim();
     const password = document.getElementById('f-password').value;
     const prenom   = document.getElementById('f-prenom').value.trim();
     const nom      = document.getElementById('f-nom').value.trim();
@@ -1184,17 +1206,20 @@ async function submitForm() {
     const bio      = document.getElementById('f-bio').value.trim();
     const videoUrl = document.getElementById('f-video-url').value.trim();
 
-    // 1. Créer le compte auth Supabase
-    const { data: authData, error: authError } = await db.auth.signUp({
-      email, password,
-      options: { data: { prenom, nom, type: 'joueur' } }
-    });
-
-    if (authError) {
-      btn.disabled = false;
-      btn.textContent = 'Créer mon profil ✓';
-      alert('Erreur : ' + authError.message);
-      return;
+    // 1. Créer le compte auth Supabase (sauf si déjà connecté, ex: via Google)
+    if (existingUser) {
+      await db.auth.updateUser({ data: { prenom, nom, type: 'joueur' } });
+    } else {
+      const { error: authError } = await db.auth.signUp({
+        email, password,
+        options: { data: { prenom, nom, type: 'joueur' } }
+      });
+      if (authError) {
+        btn.disabled = false;
+        btn.textContent = 'Créer mon profil ✓';
+        alert('Erreur : ' + authError.message);
+        return;
+      }
     }
 
     // 2. Créer le profil joueur dans la table
