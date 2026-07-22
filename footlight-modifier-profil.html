@@ -204,6 +204,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
           </div>
         </div>
         <div class="field">
+          <label class="field-label">Téléphone (optionnel)</label>
+          <input class="field-input" type="tel" id="f-telephone" placeholder="06 12 34 56 78"/>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Uniquement visible par les recruteurs en offre Premium. Sans numéro, ils utilisent ton email de compte.</div>
+        </div>
+        <div class="field">
           <label class="field-label">À propos de toi</label>
           <textarea class="field-textarea" id="f-bio" placeholder="Ton style de jeu, tes qualités, tes objectifs..."></textarea>
         </div>
@@ -506,6 +511,7 @@ function fillPlayerFields(j) {
   document.getElementById('f-taille').value = j.taille || '';
   document.getElementById('f-poids').value = j.poids || '';
   document.getElementById('f-nationalite').value = j.nationalite || '';
+  document.getElementById('f-telephone').value = j.telephone || '';
   document.getElementById('f-bio').value = j.bio || '';
   document.getElementById('f-points-amelioration').value = j.points_amelioration || '';
 
@@ -675,6 +681,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     taille: document.getElementById('f-taille').value ? parseInt(document.getElementById('f-taille').value) : null,
     poids: document.getElementById('f-poids').value ? parseInt(document.getElementById('f-poids').value) : null,
     nationalite: document.getElementById('f-nationalite').value.trim() || null,
+    telephone: document.getElementById('f-telephone').value.trim() || null,
     bio: document.getElementById('f-bio').value.trim() || null,
     points_amelioration: document.getElementById('f-points-amelioration').value.trim() || null,
     points_forts: getPointsForts().length ? getPointsForts() : null,
