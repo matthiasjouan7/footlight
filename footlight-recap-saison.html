@@ -123,6 +123,13 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
 
+function evolutionTier(pct) {
+  if (pct > 15) return { color: 'var(--green-l)', label: '🟢 Progression' };
+  if (pct >= -15) return { color: 'var(--green-l)', label: '🟢 Stable — bonne adaptabilité' };
+  if (pct >= -45) return { color: 'var(--gold-l)', label: '🟠 Baisse notable — niveau plus élevé ou changement de contexte à vérifier' };
+  return { color: 'var(--red)', label: '🔴 Grosse baisse — à examiner de près' };
+}
+
 function ratioCard(displayVal, label, rawValue, tiers, invert) {
   let cls = 'blue';
   if (rawValue != null) {
@@ -224,8 +231,13 @@ function renderRecap(saison) {
   const pctButsEquipe = (s.buts_equipe > 0) ? Math.round((s.buts||0) / s.buts_equipe * 100) : null;
   const pctMatchsAvecBut = matchs.length > 0 ? Math.round(matchs.filter(m => (m.buts||0) > 0).length / matchs.length * 100) : null;
   const ratioEncaissesMatch = (s.matchs_joues > 0 && s.buts_encaisses_avec != null) ? s.buts_encaisses_avec / s.matchs_joues : null;
-  const pctCleanSheet = (s.matchs_joues > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.matchs_joues * 100) : null;
-  const hasRatios = isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null);
+  const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
+  const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
+  const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
+  const prevSeason = sIndex >= 0 ? seasonsData[sIndex + 1] : null;
+  const prevRatioButsMatch = (prevSeason && prevSeason.matchs_joues > 0) ? (prevSeason.buts||0) / prevSeason.matchs_joues : null;
+  const evolutionPct = (ratioButsMatch != null && prevRatioButsMatch > 0) ? Math.round((ratioButsMatch - prevRatioButsMatch) / prevRatioButsMatch * 100) : null;
+  const hasRatios = (isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null)) || ratioCartons != null;
 
   let meilleurMatch = null;
   if (matchs.length) {
@@ -268,7 +280,7 @@ function renderRecap(saison) {
       <div class="ratio-grid">
         ${isDefensif ? `
         ${ratioEncaissesMatch != null ? ratioCard(ratioEncaissesMatch.toFixed(2), 'Buts encaissés / match', ratioEncaissesMatch, {elite:0.5, gold:1.0}, true) : ''}
-        ${pctCleanSheet != null ? ratioCard(pctCleanSheet+'%', '% clean sheet', pctCleanSheet, {elite:50, gold:30}, false) : ''}
+        ${pctCleanSheet != null ? ratioCard(pctCleanSheet+'%', '% clean sheet (titularisations)', pctCleanSheet, {elite:40, gold:30}, false) : ''}
         ` : `
         ${ratioButsMatch != null ? ratioCard(ratioButsMatch.toFixed(2), 'Buts / match', ratioButsMatch, {elite:0.7, gold:0.4}, false) : ''}
         ${pctMatchsAvecBut != null ? ratioCard(pctMatchsAvecBut+'%', '% matchs avec but', pctMatchsAvecBut, {elite:65, gold:40}, false) : ''}
@@ -276,8 +288,16 @@ function renderRecap(saison) {
         ${ratioCard(contribution, 'Buts + passes décisives', s.matchs_joues > 0 ? contribution / s.matchs_joues : null, {elite:1.0, gold:0.6}, false)}
         ${pctButsEquipe != null ? ratioCard(pctButsEquipe+'%', "Part des buts de l'équipe", pctButsEquipe, {elite:35, gold:20}, false) : ''}
         `}
+        ${ratioCartons != null ? ratioCard(ratioCartons.toFixed(2), 'Cartons / match (discipline)', ratioCartons, {elite:0.15, gold:0.30}, true) : ''}
       </div>
     </div>`}
+
+    ${(evolutionPct != null && !isDefensif) ? `
+    <div class="section">
+      <div class="section-title">Évolution vs saison précédente</div>
+      <div class="info-row"><span class="info-key">Buts/match : ${prevRatioButsMatch.toFixed(2)} (${prevSeason.saison}) → ${ratioButsMatch.toFixed(2)} (${s.saison})</span><span class="info-val" style="color:${evolutionTier(evolutionPct).color}">${evolutionPct>=0?'+':''}${evolutionPct}%</span></div>
+      <div style="font-size:0.78rem;color:${evolutionTier(evolutionPct).color};margin-top:6px;">${evolutionTier(evolutionPct).label}${(s.niveau && prevSeason.niveau && s.niveau !== prevSeason.niveau) ? ` (changement de niveau : ${prevSeason.niveau} → ${s.niveau})` : ''}</div>
+    </div>` : ''}
 
     ${meilleurMatch ? `
     <div class="section">
