@@ -248,6 +248,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
           <div class="field"><label class="field-label">Sprints/match</label><input class="field-input" type="number" step="0.1" id="s-sprints" min="0"/></div>
         </div>
         <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">Renseigne ces chiffres depuis ton appli GPS (Garmin Connect, Polar Flow...) — optionnel, débloque la section GPS de ton profil.</div>
+
+        <div class="field" style="margin-top:14px;">
+          <label class="field-label">Preuve (capture d'écran de ton appli GPS)</label>
+          <div id="preuve-gps-zone" style="background:var(--bg3);border:1px dashed var(--bg4);border-radius:10px;padding:16px;text-align:center;cursor:pointer;" onclick="document.getElementById('f-preuve-gps-file').click()">
+            <div style="font-size:0.82rem;color:var(--muted);">Clique pour joindre une image ou un PDF</div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-top:2px;">JPG, PNG, PDF · 10 Mo max</div>
+            <input type="file" id="f-preuve-gps-file" accept="image/*,application/pdf" style="display:none;" onchange="handlePreuveGpsFile(this)"/>
+          </div>
+          <div id="preuve-gps-existing" style="margin-top:6px;font-size:0.78rem;"></div>
+        </div>
       </div>
 
       <div class="msg" id="form-msg"></div>
@@ -374,6 +384,7 @@ async function finishInit() {
     cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
     vitesse_max_kmh: joueur.vitesse_max_kmh, vma_kmh: joueur.vma_kmh,
     distance_moyenne_km: joueur.distance_moyenne_km, sprints_match: joueur.sprints_match,
+    preuve_gps_url: joueur.preuve_gps_url,
   };
   seasonsData = [currentSeason, ...historique].sort((a,b) => (b.saison||'').localeCompare(a.saison||''));
 
@@ -477,6 +488,30 @@ function getVideoLinks() {
     .filter(Boolean);
 }
 
+let selectedPreuveGpsFile = null;
+let currentPreuveGpsUrl = null;
+
+function handlePreuveGpsFile(input) {
+  if (input.files && input.files[0]) {
+    selectedPreuveGpsFile = input.files[0];
+    document.getElementById('preuve-gps-zone').innerHTML =
+      `<div style="font-size:0.82rem;color:var(--green-l);">✅ ${input.files[0].name} prêt à l'envoi</div>`;
+  }
+}
+
+async function uploadPreuveGpsIfNeeded() {
+  if (!selectedPreuveGpsFile) return currentPreuveGpsUrl;
+  const ext = selectedPreuveGpsFile.name.split('.').pop();
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await db.storage.from('preuves').upload(path, selectedPreuveGpsFile, { upsert: true });
+  if (error) {
+    alert("Erreur lors de l'envoi de la preuve : " + error.message);
+    return currentPreuveGpsUrl;
+  }
+  const { data } = db.storage.from('preuves').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 function fillSeasonFields(s) {
   document.getElementById('f-club').value = s.club || '';
   document.getElementById('f-niveau').value = s.niveau || '';
@@ -493,6 +528,17 @@ function fillSeasonFields(s) {
   document.getElementById('s-vma').value = s.vma_kmh ?? '';
   document.getElementById('s-distance').value = s.distance_moyenne_km ?? '';
   document.getElementById('s-sprints').value = s.sprints_match ?? '';
+
+  selectedPreuveGpsFile = null;
+  currentPreuveGpsUrl = s.preuve_gps_url || null;
+  document.getElementById('preuve-gps-zone').innerHTML = `
+    <div style="font-size:0.82rem;color:var(--muted);">Clique pour joindre une image ou un PDF</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-top:2px;">JPG, PNG, PDF · 10 Mo max</div>
+    <input type="file" id="f-preuve-gps-file" accept="image/*,application/pdf" style="display:none;" onchange="handlePreuveGpsFile(this)"/>
+  `;
+  document.getElementById('preuve-gps-existing').innerHTML = currentPreuveGpsUrl
+    ? `<a href="${currentPreuveGpsUrl}" target="_blank" style="color:var(--blue-l);">📎 Voir la preuve actuelle</a>`
+    : '';
 }
 
 async function changeEmail() {
@@ -565,6 +611,8 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     profil_public: true,
   };
 
+  const preuveGpsUrl = await uploadPreuveGpsIfNeeded();
+
   const seasonUpdates = {
     club: document.getElementById('f-club').value.trim() || null,
     niveau: document.getElementById('f-niveau').value || null,
@@ -581,6 +629,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     vma_kmh: document.getElementById('s-vma').value ? parseFloat(document.getElementById('s-vma').value) : null,
     distance_moyenne_km: document.getElementById('s-distance').value ? parseFloat(document.getElementById('s-distance').value) : null,
     sprints_match: document.getElementById('s-sprints').value ? parseFloat(document.getElementById('s-sprints').value) : null,
+    preuve_gps_url: preuveGpsUrl,
   };
 
   const isCurrentSeason = selectedSaison === (joueur.saison || '2026-2027');
@@ -615,6 +664,50 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
 function cancelEdit() {
   window.location.href = isRecruiterEditing ? `footlight-profil.html?id=${joueur.id}` : 'footlight-profil.html';
 }
+
+// ── BOUTONS +/- SUR LES CHAMPS DE STATS (la saisie manuelle reste possible) ──
+function setupStatSteppers() {
+  document.querySelectorAll('.stat-grid input[type="number"]').forEach(input => {
+    if (input.dataset.stepperReady) return;
+    input.dataset.stepperReady = '1';
+    const step = input.step && input.step !== 'any' ? parseFloat(input.step) : 1;
+    const minVal = input.min !== '' ? parseFloat(input.min) : null;
+    const btnStyle = 'width:28px;height:28px;flex-shrink:0;border-radius:8px;border:1px solid var(--bg4);background:var(--bg3);color:var(--text);cursor:pointer;font-size:0.9rem;';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'display:flex;align-items:center;gap:6px;';
+
+    const minus = document.createElement('button');
+    minus.type = 'button';
+    minus.textContent = '−';
+    minus.style.cssText = btnStyle;
+    minus.onclick = () => {
+      const cur = parseFloat(input.value) || 0;
+      let next = Math.round((cur - step) * 100) / 100;
+      if (minVal !== null) next = Math.max(minVal, next);
+      input.value = next;
+    };
+
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.textContent = '+';
+    plus.style.cssText = btnStyle;
+    plus.onclick = () => {
+      const cur = parseFloat(input.value) || 0;
+      input.value = Math.round((cur + step) * 100) / 100;
+    };
+
+    input.parentNode.insertBefore(wrapper, input);
+    input.style.textAlign = 'center';
+    input.style.width = '0';
+    input.style.flex = '1 1 auto';
+    input.style.minWidth = '0';
+    wrapper.appendChild(minus);
+    wrapper.appendChild(input);
+    wrapper.appendChild(plus);
+  });
+}
+setupStatSteppers();
 
 init();
 </script>
