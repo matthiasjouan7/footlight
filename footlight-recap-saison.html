@@ -44,6 +44,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 .stat-val{font-size:1.6rem;font-weight:800;margin-bottom:4px;}
 .stat-lbl{font-size:0.72rem;color:var(--muted);}
 
+.ratio-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+@media(max-width:600px){.ratio-grid{grid-template-columns:1fr;}}
+.ratio-card{border-radius:14px;padding:18px;text-align:center;border:1px solid;}
+.ratio-card.gold{background:rgba(210,153,34,0.1);border-color:rgba(210,153,34,0.35);}
+.ratio-card.blue{background:rgba(31,111,235,0.1);border-color:rgba(31,111,235,0.35);}
+.ratio-val{font-size:2rem;font-weight:900;margin-bottom:4px;}
+.ratio-card.gold .ratio-val{color:var(--gold-l);}
+.ratio-card.blue .ratio-val{color:var(--blue-l);}
+.ratio-lbl{font-size:0.78rem;color:var(--muted);font-weight:600;}
+
 .section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;}
 .section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg3);font-size:0.85rem;}
@@ -71,9 +81,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
   nav,.no-print{display:none !important;}
   body{background:#fff !important;color:#111 !important;}
   .page{padding:10px 0;max-width:100%;}
-  .hero,.section,.stat-card{background:#fff !important;border:1px solid #ccc !important;}
-  .hero-name,.stat-val,.info-val{color:#111 !important;}
-  .info-key,.stat-lbl,.section-title{color:#555 !important;}
+  .hero,.section,.stat-card,.ratio-card{background:#fff !important;border:1px solid #ccc !important;}
+  .hero-name,.stat-val,.info-val,.ratio-val{color:#111 !important;}
+  .info-key,.stat-lbl,.section-title,.ratio-lbl{color:#555 !important;}
   .progress-track{background:#eee !important;}
 }
 </style>
@@ -157,7 +167,7 @@ async function init() {
     saison: joueur.saison || '2026-2027', isCurrent: true,
     club: joueur.club, niveau: joueur.niveau,
     matchs_joues: joueur.matchs_joues, titularisations: joueur.titularisations,
-    buts: joueur.buts, passes_decisives: joueur.passes_decisives,
+    buts: joueur.buts, passes_decisives: joueur.passes_decisives, buts_equipe: joueur.buts_equipe,
     buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets,
     minutes_jouees: joueur.minutes_jouees,
     cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
@@ -190,6 +200,13 @@ function renderRecap(saison) {
   const isDefensif = POSTES_DEFENSIFS.includes(joueur.poste || 'autre');
   const matchs = matchsAll.filter(m => m.saison === s.saison);
   const pct_tps = s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0;
+  const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
+  const contribution = (s.buts||0) + (s.passes_decisives||0);
+  const ratioMinBut = (s.buts > 0) ? Math.round((s.minutes_jouees||0) / s.buts) : null;
+  const pctButsEquipe = (s.buts_equipe > 0) ? Math.round((s.buts||0) / s.buts_equipe * 100) : null;
+  const ratioEncaissesMatch = (s.matchs_joues > 0 && s.buts_encaisses_avec != null) ? s.buts_encaisses_avec / s.matchs_joues : null;
+  const pctCleanSheet = (s.matchs_joues > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.matchs_joues * 100) : null;
+  const hasRatios = isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null);
 
   let meilleurMatch = null;
   if (matchs.length) {
@@ -225,6 +242,22 @@ function renderRecap(saison) {
       `}
       <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
     </div>
+
+    ${!hasRatios ? '' : `
+    <div class="section">
+      <div class="section-title">Ratios & performance</div>
+      <div class="ratio-grid">
+        ${isDefensif ? `
+        ${ratioEncaissesMatch != null ? `<div class="ratio-card blue"><div class="ratio-val">${ratioEncaissesMatch.toFixed(2)}</div><div class="ratio-lbl">Buts encaissés / match</div></div>` : ''}
+        ${pctCleanSheet != null ? `<div class="ratio-card gold"><div class="ratio-val">${pctCleanSheet}%</div><div class="ratio-lbl">% clean sheet</div></div>` : ''}
+        ` : `
+        ${ratioButsMatch != null ? `<div class="ratio-card gold"><div class="ratio-val">${ratioButsMatch.toFixed(2)}</div><div class="ratio-lbl">Buts / match</div></div>` : ''}
+        <div class="ratio-card blue"><div class="ratio-val">${contribution}</div><div class="ratio-lbl">Buts + passes décisives</div></div>
+        ${ratioMinBut != null ? `<div class="ratio-card gold"><div class="ratio-val">${ratioMinBut}'</div><div class="ratio-lbl">Minutes par but</div></div>` : ''}
+        ${pctButsEquipe != null ? `<div class="ratio-card blue"><div class="ratio-val">${pctButsEquipe}%</div><div class="ratio-lbl">Part des buts de l'équipe</div></div>` : ''}
+        `}
+      </div>
+    </div>`}
 
     ${meilleurMatch ? `
     <div class="section">
