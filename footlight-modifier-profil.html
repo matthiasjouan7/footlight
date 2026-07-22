@@ -235,12 +235,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
           <div class="field"><label class="field-label">Titularisations</label><input class="field-input" type="number" id="s-titu" min="0"/></div>
           <div class="field" id="field-buts"><label class="field-label">Buts</label><input class="field-input" type="number" id="s-buts" min="0"/></div>
           <div class="field" id="field-passes"><label class="field-label">Passes déc.</label><input class="field-input" type="number" id="s-passes" min="0"/></div>
+          <div class="field" id="field-buts-equipe"><label class="field-label">Buts de l'équipe (saison)</label><input class="field-input" type="number" id="s-buts-equipe" min="0"/></div>
           <div class="field" id="field-encaisses" style="display:none;"><label class="field-label">Buts encaissés</label><input class="field-input" type="number" id="s-encaisses" min="0"/></div>
           <div class="field" id="field-cleansheets" style="display:none;"><label class="field-label">Clean sheets</label><input class="field-input" type="number" id="s-cleansheets" min="0"/></div>
           <div class="field"><label class="field-label">Minutes</label><input class="field-input" type="number" id="s-minutes" min="0"/></div>
           <div class="field"><label class="field-label">Cartons jaunes</label><input class="field-input" type="number" id="s-cartj" min="0"/></div>
           <div class="field"><label class="field-label">Cartons rouges</label><input class="field-input" type="number" id="s-cartr" min="0"/></div>
         </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">Renseigne le nombre de buts marqués par ton équipe cette saison pour débloquer le calcul de ta part dans les buts collectifs.</div>
       </div>
 
       <div class="section">
@@ -443,7 +445,7 @@ async function finishInit() {
     saison: joueur.saison || '2026-2027', isCurrent: true,
     club: joueur.club, niveau: joueur.niveau,
     matchs_joues: joueur.matchs_joues, titularisations: joueur.titularisations,
-    buts: joueur.buts, passes_decisives: joueur.passes_decisives,
+    buts: joueur.buts, passes_decisives: joueur.passes_decisives, buts_equipe: joueur.buts_equipe,
     buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets,
     minutes_jouees: joueur.minutes_jouees,
     cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
@@ -506,6 +508,7 @@ function toggleDefenseFields() {
   const isDef = POSTES_DEFENSIFS.includes(document.getElementById('f-poste').value);
   document.getElementById('field-buts').style.display = isDef ? 'none' : '';
   document.getElementById('field-passes').style.display = isDef ? 'none' : '';
+  document.getElementById('field-buts-equipe').style.display = isDef ? 'none' : '';
   document.getElementById('field-encaisses').style.display = isDef ? '' : 'none';
   document.getElementById('field-cleansheets').style.display = isDef ? '' : 'none';
   document.getElementById('m-field-buts').style.display = isDef ? 'none' : '';
@@ -607,6 +610,7 @@ function fillSeasonFields(s) {
   document.getElementById('s-titu').value = s.titularisations ?? '';
   document.getElementById('s-buts').value = s.buts ?? '';
   document.getElementById('s-passes').value = s.passes_decisives ?? '';
+  document.getElementById('s-buts-equipe').value = s.buts_equipe ?? '';
   document.getElementById('s-encaisses').value = s.buts_encaisses_avec ?? '';
   document.getElementById('s-cleansheets').value = s.clean_sheets ?? '';
   document.getElementById('s-minutes').value = s.minutes_jouees ?? '';
@@ -709,6 +713,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     titularisations: parseInt(document.getElementById('s-titu').value) || 0,
     buts: parseInt(document.getElementById('s-buts').value) || 0,
     passes_decisives: parseInt(document.getElementById('s-passes').value) || 0,
+    buts_equipe: document.getElementById('s-buts-equipe').value ? parseInt(document.getElementById('s-buts-equipe').value) : null,
     buts_encaisses_avec: document.getElementById('s-encaisses').value ? parseInt(document.getElementById('s-encaisses').value) : null,
     clean_sheets: document.getElementById('s-cleansheets').value ? parseInt(document.getElementById('s-cleansheets').value) : null,
     minutes_jouees: parseInt(document.getElementById('s-minutes').value) || 0,

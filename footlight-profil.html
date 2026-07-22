@@ -47,6 +47,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 .stat-val{font-size:1.6rem;font-weight:800;margin-bottom:4px;}
 .stat-lbl{font-size:0.72rem;color:var(--muted);}
 
+.ratio-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+@media(max-width:600px){.ratio-grid{grid-template-columns:1fr;}}
+.ratio-card{border-radius:14px;padding:18px;text-align:center;border:1px solid;}
+.ratio-card.gold{background:rgba(210,153,34,0.1);border-color:rgba(210,153,34,0.35);}
+.ratio-card.blue{background:rgba(31,111,235,0.1);border-color:rgba(31,111,235,0.35);}
+.ratio-val{font-size:2rem;font-weight:900;margin-bottom:4px;}
+.ratio-card.gold .ratio-val{color:var(--gold-l);}
+.ratio-card.blue .ratio-val{color:var(--blue-l);}
+.ratio-lbl{font-size:0.78rem;color:var(--muted);font-weight:600;}
+
 /* Section */
 .section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;}
 .section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
@@ -292,7 +302,7 @@ async function renderProfil(j, isOwner) {
   const currentSeason = {
     saison: j.saison || '2026-2027', club: j.club, niveau: j.niveau,
     matchs_joues: j.matchs_joues, titularisations: j.titularisations, buts: j.buts,
-    passes_decisives: j.passes_decisives, minutes_jouees: j.minutes_jouees,
+    passes_decisives: j.passes_decisives, minutes_jouees: j.minutes_jouees, buts_equipe: j.buts_equipe,
     cartons_jaunes: j.cartons_jaunes, cartons_rouges: j.cartons_rouges,
     impact_differentiel: j.impact_differentiel, pct_matchs_avec_but: j.pct_matchs_avec_but,
     points_avec: j.points_avec, points_sans: j.points_sans,
@@ -313,7 +323,7 @@ async function renderProfil(j, isOwner) {
     club: [...new Set(seasonsData.map(s=>s.club).filter(Boolean))].join(', ') || '—',
     niveau: [...new Set(seasonsData.map(s=>s.niveau).filter(Boolean))].join(', ') || '—',
     matchs_joues: sumKey(seasonsData,'matchs_joues'), titularisations: sumKey(seasonsData,'titularisations'),
-    buts: sumKey(seasonsData,'buts'), passes_decisives: sumKey(seasonsData,'passes_decisives'),
+    buts: sumKey(seasonsData,'buts'), passes_decisives: sumKey(seasonsData,'passes_decisives'), buts_equipe: sumKey(seasonsData,'buts_equipe'),
     minutes_jouees: sumKey(seasonsData,'minutes_jouees'), cartons_jaunes: sumKey(seasonsData,'cartons_jaunes'),
     cartons_rouges: sumKey(seasonsData,'cartons_rouges'),
     impact_differentiel: avgKey(seasonsData,'impact_differentiel'), pct_matchs_avec_but: avgKey(seasonsData,'pct_matchs_avec_but'),
@@ -335,9 +345,12 @@ async function renderProfil(j, isOwner) {
     const round1 = (v) => v == null ? v : Math.round(v*10)/10;
     const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
     const contribution = (s.buts||0) + (s.passes_decisives||0);
+    const ratioMinBut = (s.buts > 0) ? Math.round((s.minutes_jouees||0) / s.buts) : null;
+    const pctButsEquipe = (s.buts_equipe > 0) ? Math.round((s.buts||0) / s.buts_equipe * 100) : null;
     const ratioEncaissesMatch = (s.matchs_joues > 0 && s.buts_encaisses_avec != null) ? s.buts_encaisses_avec / s.matchs_joues : null;
     const pctCleanSheet = (s.matchs_joues > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.matchs_joues * 100) : null;
     const hasDefenseData = s.buts_encaisses_avec != null || s.clean_sheets != null;
+    const hasRatios = isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null);
 
     return `
       <div class="stats-grid">
@@ -354,14 +367,24 @@ async function renderProfil(j, isOwner) {
         <div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${s.cartons_jaunes||0}</div><div class="stat-lbl">Cartons jaunes</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.cartons_rouges||0}</div><div class="stat-lbl">Cartons rouges</div></div>
         <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
-        ${isDefensif ? `
-        ${ratioEncaissesMatch != null ? `<div class="stat-card"><div class="stat-val" style="color:var(--red)">${ratioEncaissesMatch.toFixed(2)}</div><div class="stat-lbl">Buts encaissés / match</div></div>` : ''}
-        ${pctCleanSheet != null ? `<div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${pctCleanSheet}%</div><div class="stat-lbl">% clean sheet</div></div>` : ''}
-        ` : `
-        ${ratioButsMatch != null ? `<div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${ratioButsMatch.toFixed(2)}</div><div class="stat-lbl">Buts / match</div></div>` : ''}
-        <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${contribution}</div><div class="stat-lbl">Buts + passes</div></div>
-        `}
       </div>
+
+      ${!hasRatios ? '' : `
+      <div class="section">
+        <div class="section-title">Ratios & performance</div>
+        <div class="ratio-grid">
+          ${isDefensif ? `
+          ${ratioEncaissesMatch != null ? `<div class="ratio-card blue"><div class="ratio-val">${ratioEncaissesMatch.toFixed(2)}</div><div class="ratio-lbl">Buts encaissés / match</div></div>` : ''}
+          ${pctCleanSheet != null ? `<div class="ratio-card gold"><div class="ratio-val">${pctCleanSheet}%</div><div class="ratio-lbl">% clean sheet</div></div>` : ''}
+          ` : `
+          ${ratioButsMatch != null ? `<div class="ratio-card gold"><div class="ratio-val">${ratioButsMatch.toFixed(2)}</div><div class="ratio-lbl">Buts / match</div></div>` : ''}
+          <div class="ratio-card blue"><div class="ratio-val">${contribution}</div><div class="ratio-lbl">Buts + passes décisives</div></div>
+          ${ratioMinBut != null ? `<div class="ratio-card gold"><div class="ratio-val">${ratioMinBut}'</div><div class="ratio-lbl">Minutes par but</div></div>` : ''}
+          ${pctButsEquipe != null ? `<div class="ratio-card blue"><div class="ratio-val">${pctButsEquipe}%</div><div class="ratio-lbl">Part des buts de l'équipe</div></div>` : ''}
+          `}
+        </div>
+        ${(!isDefensif && pctButsEquipe == null) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:12px;">Renseigne les buts marqués par l'équipe cette saison (dans "Modifier mon profil") pour débloquer la part des buts de l'équipe.</div>` : ''}
+      </div>`}
 
       <div class="section">
         <div class="section-title">${s.isGlobal ? `Informations · cumul sur ${s.nbSaisons} saison${s.nbSaisons>1?'s':''}` : 'Informations'}</div>
