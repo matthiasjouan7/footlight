@@ -480,11 +480,11 @@ function sortCards(val) {
 // ── SHORTLIST ──
 async function toggleShortlist(btn, e, id) {
   e.stopPropagation();
-  if (viewerRole !== 'recruteur') return;
+  if (viewerRole !== 'recruteur' || !viewerRecruteurId) return;
   btn.disabled = true;
 
   if (shortlist.has(id)) {
-    const { error } = await db.from('shortlist').delete().eq('recruteur_email', viewerEmail).eq('joueur_id', id);
+    const { error } = await db.from('shortlist').delete().eq('recruteur_id', viewerRecruteurId).eq('joueur_id', id);
     if (!error) {
       shortlist.delete(id);
       btn.textContent = '☆ Shortlist';
@@ -493,7 +493,7 @@ async function toggleShortlist(btn, e, id) {
       if (shortlistOnly) applyFilters();
     }
   } else {
-    const { error } = await db.from('shortlist').insert({ recruteur_email: viewerEmail, joueur_id: id });
+    const { error } = await db.from('shortlist').insert({ recruteur_id: viewerRecruteurId, joueur_id: id });
     if (!error) {
       shortlist.add(id);
       btn.textContent = '★ Ajouté';
@@ -586,11 +586,12 @@ let isConnected = false;
 let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
 let viewerPlan = 'free';
 let viewerEmail = null;
+let viewerRecruteurId = null;
 let canAdvancedFilters = false;
 
 async function loadShortlist() {
-  if (viewerRole !== 'recruteur') return;
-  const { data } = await db.from('shortlist').select('joueur_id').eq('recruteur_email', viewerEmail);
+  if (viewerRole !== 'recruteur' || !viewerRecruteurId) return;
+  const { data } = await db.from('shortlist').select('joueur_id').eq('recruteur_id', viewerRecruteurId);
   (data || []).forEach(row => shortlist.add(row.joueur_id));
 }
 
@@ -610,10 +611,11 @@ async function checkSession() {
     if (user) {
       viewerEmail = user.email;
       // Déterminer le rôle : recruteur ou joueur ?
-      const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
+      const { data: recruteur } = await db.from('recruteurs').select('id, plan').eq('email', user.email).single();
       if (recruteur) {
         viewerRole = 'recruteur';
         viewerPlan = recruteur.plan || 'free';
+        viewerRecruteurId = recruteur.id;
         canAdvancedFilters = viewerPlan === 'pro' || viewerPlan === 'premium';
       } else {
         const { data: joueur } = await db.from('joueurs').select('id').eq('email', user.email).single();
