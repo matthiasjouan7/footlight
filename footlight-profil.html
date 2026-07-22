@@ -467,7 +467,7 @@ async function renderProfil(j, isOwner) {
           <span class="tag ${j.badge==='elite'?'gold':j.badge==='video'||j.badge==='gps'?'green':''}">${BADGES[j.badge]||'⚪ Déclaratif'}</span>
         </div>
         ${j.bio ? `<div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${j.bio}</div>` : ''}
-        ${isOwner ? `<div class="btn-row no-print"><button class="btn primary" onclick="window.location.href='footlight-modifier-profil.html'">Modifier mon profil</button></div>` : ''}
+        ${isOwner ? `<div class="btn-row no-print"><button class="btn primary" onclick="window.location.href='footlight-modifier-profil.html'">Modifier mon profil</button><button class="btn outline" onclick="window.location.href='footlight-recap-saison.html'">📄 Récap de ma saison</button></div>` : ''}
         ${(!isOwner && viewerRole === 'recruteur') ? `<div class="btn-row no-print"><button class="btn outline" onclick="window.location.href='footlight-modifier-profil.html?id=${j.id}'">✏️ Compléter ce profil</button></div>` : ''}
         ${canExport ? `<div class="btn-row no-print"><button class="btn outline" onclick="window.print()">📄 Télécharger la fiche (PDF)</button></div>` : ''}
         ${(!isOwner && viewerRole === 'recruteur' && viewerPlan !== 'premium') ? `<div class="btn-row no-print"><a href="footlight-paiement.html?plan=premium" style="font-size:0.78rem;color:var(--blue-l);align-self:center;">🔒 Export PDF réservé au plan Premium</a></div>` : ''}
