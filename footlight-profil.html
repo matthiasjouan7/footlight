@@ -290,6 +290,7 @@ async function renderProfil(j, isOwner) {
   const canImpact = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
   const canGPS = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
   const canExport = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
+  const canHistory = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
   const isDefensif = POSTES_DEFENSIFS.includes(poste_raw);
 
   // ── Saisons : saison actuelle (joueurs) + historique (stats_saisons) ──
@@ -478,13 +479,18 @@ async function renderProfil(j, isOwner) {
       </div>
     </div>
 
-    ${historique.length > 0 ? `
+    ${(historique.length > 0 && canHistory) ? `
     <div class="season-select-row no-print">
       <label for="season-select">Saison</label>
       <select id="season-select" class="season-select">
         ${seasonsData.map(s => `<option value="${s.saison}" ${s.isCurrent?'selected':''}>${s.saison}${s.isCurrent?' (actuelle)':''}</option>`).join('')}
         <option value="global">🌐 Toutes les saisons (cumul)</option>
       </select>
+    </div>` : ''}
+    ${(historique.length > 0 && !canHistory) ? `
+    <div class="season-select-row no-print" style="justify-content:space-between;">
+      <span style="font-size:0.78rem;color:var(--muted);">Saison actuelle uniquement</span>
+      <a href="footlight-paiement.html?plan=pro" style="font-size:0.78rem;color:var(--blue-l);">🔒 Historique complet réservé aux recruteurs Pro et Premium</a>
     </div>` : ''}
 
     <div id="season-block">${renderSeasonBlock(currentSeason)}</div>
