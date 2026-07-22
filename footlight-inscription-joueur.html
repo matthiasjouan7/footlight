@@ -870,6 +870,10 @@ async function checkExistingSession() {
 }
 checkExistingSession();
 
+// Préremplit l'email si transmis en paramètre (ex: depuis le formulaire d'accueil)
+const prefillEmail = new URLSearchParams(window.location.search).get('email');
+if (prefillEmail) document.getElementById('f-email').value = prefillEmail;
+
 // ── LIENS VIDÉO (multi) ──
 function addVideoLinkField(value) {
   const list = document.getElementById('video-links-list');

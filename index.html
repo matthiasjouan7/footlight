@@ -891,8 +891,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     <h2>Prêt à rejoindre FootLight ?</h2>
     <p>Inscription gratuite pour les joueurs. Engagement 3 mois minimum sur Pro & Premium.</p>
     <div class="cta-inputs">
-      <input class="cta-input" type="email" placeholder="Votre adresse email" />
-      <button class="btn-primary">Créer mon compte</button>
+      <input class="cta-input" type="email" id="cta-email" placeholder="Votre adresse email" onkeydown="if(event.key==='Enter')this.nextElementSibling.click()" />
+      <button class="btn-primary" onclick="window.location.href='footlight-inscription-joueur.html' + (document.getElementById('cta-email').value.trim() ? '?email=' + encodeURIComponent(document.getElementById('cta-email').value.trim()) : '')">Créer mon compte</button>
     </div>
     <p class="cta-note">Gratuit pour les joueurs · Engagement 3 mois minimum sur Pro &amp; Premium · RGPD conforme</p>
   </div>
