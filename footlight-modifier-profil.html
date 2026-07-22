@@ -130,6 +130,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
             <label class="field-label">Saison à modifier</label>
             <select class="field-select" id="f-saison" onchange="onSeasonSelectChange()"></select>
             <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Choisis une saison pour voir/corriger ses propres stats — ça ne touche pas les autres saisons.</div>
+            <div id="season-lock-hint" style="display:none;font-size:0.72rem;color:var(--blue-l);margin-top:5px;">🔒 Modifier une saison passée est réservé aux recruteurs Pro et Premium. <a href="footlight-paiement.html?plan=pro" style="color:var(--blue-l);">Passer au plan Pro</a></div>
           </div>
         </div>
         <div class="field" id="new-season-field" style="display:none;">
@@ -367,6 +368,7 @@ async function findOwnJoueur(user) {
 }
 
 let isRecruiterEditing = false;
+let recruiterCanEditHistory = true;
 let seasonsData = [];
 
 async function init() {
@@ -382,13 +384,14 @@ async function init() {
 
   if (targetId) {
     // Un recruteur veut compléter la fiche d'un autre joueur.
-    const { data: recruteur } = await db.from('recruteurs').select('id').eq('email', user.email).single();
+    const { data: recruteur } = await db.from('recruteurs').select('id, plan').eq('email', user.email).single();
     if (!recruteur) {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('not-auth').innerHTML = '<h2>Réservé aux recruteurs</h2><p>Seul un compte recruteur peut compléter la fiche d\'un autre joueur.</p><a href="footlight-espace.html"><button class="btn primary">Mon espace</button></a>';
       document.getElementById('not-auth').style.display = 'block';
       return;
     }
+    recruiterCanEditHistory = recruteur.plan === 'pro' || recruteur.plan === 'premium';
 
     const { data: target } = await db.from('joueurs').select('*').eq('id', targetId).single();
     if (!target) {
@@ -462,6 +465,15 @@ async function finishInit() {
 
 function populateSeasonSelect() {
   const sel = document.getElementById('f-saison');
+  if (isRecruiterEditing && !recruiterCanEditHistory) {
+    const current = seasonsData.find(s => s.isCurrent) || seasonsData[0];
+    sel.innerHTML = `<option value="${current.saison}">${current.saison} (actuelle)</option>`;
+    sel.disabled = true;
+    const hint = document.getElementById('season-lock-hint');
+    if (hint) hint.style.display = 'block';
+    return;
+  }
+  sel.disabled = false;
   sel.innerHTML = seasonsData.map(s =>
     `<option value="${s.saison}">${s.saison}${s.isCurrent ? ' (actuelle)' : ''}</option>`
   ).join('') + `<option value="__new__">+ Ajouter une nouvelle saison</option>`;
