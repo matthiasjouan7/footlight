@@ -39,9 +39,6 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 .tag.blue{border-color:var(--blue);color:var(--blue-l);}
 .tag.green{border-color:var(--green);color:var(--green-l);}
 .tag.gold{border-color:var(--gold);color:var(--gold-l);}
-.profile-score{margin-left:auto;text-align:center;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px 20px;}
-.score-big{font-size:2.4rem;font-weight:900;color:var(--blue-l);}
-.score-lbl{font-size:0.72rem;color:var(--muted);}
 
 /* Stats */
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
@@ -95,7 +92,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
   body{background:#fff !important;color:#111 !important;}
   .page{padding:10px 0;max-width:100%;}
   .profile-header,.section,.stat-card{background:#fff !important;border:1px solid #ccc !important;}
-  .profile-name,.stat-val,.score-big,.info-val{color:#111 !important;}
+  .profile-name,.stat-val,.info-val{color:#111 !important;}
   .info-key,.stat-lbl,.muted,.section-title{color:#555 !important;}
   a{color:#111 !important;}
   .bar-track{background:#eee !important;}
@@ -284,8 +281,6 @@ async function renderProfil(j, isOwner) {
   const poste_raw = j.poste || 'autre';
   const couleur = COULEURS[poste_raw] || '#6e7681';
   const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
-  const score = j.score || 50;
-  const scoreColor = score >= 75 ? '#56d364' : score >= 60 ? '#e3b341' : '#8b949e';
 
   const canImpact = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
   const canGPS = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
@@ -471,11 +466,6 @@ async function renderProfil(j, isOwner) {
         ${(!isOwner && viewerRole === 'recruteur') ? `<div class="btn-row no-print"><button class="btn outline" onclick="window.location.href='footlight-modifier-profil.html?id=${j.id}'">✏️ Compléter ce profil</button></div>` : ''}
         ${canExport ? `<div class="btn-row no-print"><button class="btn outline" onclick="window.print()">📄 Télécharger la fiche (PDF)</button></div>` : ''}
         ${(!isOwner && viewerRole === 'recruteur' && viewerPlan !== 'premium') ? `<div class="btn-row no-print"><a href="footlight-paiement.html?plan=premium" style="font-size:0.78rem;color:var(--blue-l);align-self:center;">🔒 Export PDF réservé au plan Premium</a></div>` : ''}
-      </div>
-      <div class="profile-score">
-        <div class="score-big" style="color:${scoreColor}">${score}</div>
-        <div class="score-lbl">/100</div>
-        <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;">Score FootLight</div>
       </div>
     </div>
 

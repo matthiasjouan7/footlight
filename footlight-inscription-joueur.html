@@ -397,12 +397,6 @@ body {
   border-radius: 16px; padding: 20px; margin-bottom: 24px;
   display: flex; align-items: center; gap: 14px; text-align: left;
 }
-.success-score {
-  background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.2);
-  border-radius: 10px; padding: 8px 14px; text-align: center; margin-left: auto;
-}
-.success-score-num { font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: 700; color: var(--accent); }
-.success-score-lbl { font-size: 0.62rem; color: var(--muted); }
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -520,7 +514,7 @@ body {
     <div class="step-header">
       <div class="step-num">02 — Profil sportif</div>
       <div class="step-title">Ton profil de joueur</div>
-      <div class="step-sub">Ces données déterminent ton score et ta visibilité.</div>
+      <div class="step-sub">Ces données déterminent ta visibilité auprès des recruteurs.</div>
     </div>
 
     <div class="field">
@@ -817,7 +811,7 @@ body {
     <div class="success-title">Bienvenue sur FootLight !</div>
     <div class="success-sub">
       Ton profil est créé et déjà visible pour les recruteurs.<br>
-      Les scores de tes matchs seront récupérés automatiquement via la FFF.
+      Pense à renseigner tes stats au fil de la saison pour un profil complet.
     </div>
 
     <div class="success-profile-preview">
@@ -826,10 +820,6 @@ body {
         <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem" id="success-name">—</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-top:2px" id="success-detail">—</div>
         <div style="font-size:0.72rem;margin-top:4px">⚪ Badge Déclaratif</div>
-      </div>
-      <div class="success-score">
-        <div class="success-score-num">—</div>
-        <div class="success-score-lbl">Score</div>
       </div>
     </div>
 

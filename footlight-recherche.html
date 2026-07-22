@@ -65,9 +65,6 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .card-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:800;color:#fff;flex-shrink:0;}
 .card-name{font-size:0.9rem;font-weight:700;margin-bottom:3px;}
 .card-pos{font-size:0.7rem;padding:2px 8px;border-radius:20px;display:inline-block;}
-.card-score{margin-left:auto;text-align:center;}
-.score-num{font-size:1.2rem;font-weight:900;}
-.score-lbl{font-size:0.6rem;color:var(--muted);}
 .card-body{padding:12px 14px;}
 .card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
 .ctag{font-size:0.68rem;padding:2px 7px;border-radius:20px;border:1px solid var(--border);color:var(--muted);}
@@ -180,14 +177,6 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 
     <div id="advanced-filters">
       <div class="filter-group">
-        <span class="filter-label">Score minimum</span>
-        <div class="range-wrap">
-          <div class="range-row"><span>0</span><span id="score-val">0</span></div>
-          <input type="range" min="0" max="100" value="0" step="5" oninput="document.getElementById('score-val').textContent=this.value;minScore=parseInt(this.value);applyFilters()"/>
-        </div>
-      </div>
-
-      <div class="filter-group">
         <span class="filter-label">Buts minimum</span>
         <div class="range-wrap">
           <div class="range-row"><span>0</span><span id="buts-val">0</span></div>
@@ -230,7 +219,6 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       <div style="display:flex;gap:10px;align-items:center;">
         <button onclick="openAddPlayer()" style="padding:7px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;background:var(--blue);border:none;color:#fff;cursor:pointer;">+ Ajouter un joueur</button>
         <select class="sort-select" onchange="sortCards(this.value)">
-          <option value="score">Trier par score</option>
           <option value="buts">Trier par buts</option>
           <option value="matchs">Trier par matchs</option>
         </select>
@@ -302,7 +290,6 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ── ÉTAT ──
 var allPlayers = [];
 var filters = { poste: 'tous', niveau: 'tous' };
-var minScore = 0;
 var minButs = 0;
 var minMatchs = 0;
 var minAge = null;
@@ -341,9 +328,9 @@ async function loadJoueurs() {
   try {
     const { data, error } = await db
       .from('joueurs')
-      .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,minutes_jouees,badge,pied_fort,date_naissance')
+      .select('id,prenom,nom,poste,club,niveau,buts,passes_decisives,matchs_joues,minutes_jouees,badge,pied_fort,date_naissance')
       .eq('profil_public', true)
-      .order('score', { ascending: false });
+      .order('matchs_joues', { ascending: false });
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('cards-grid').style.display = 'grid';
@@ -373,8 +360,6 @@ function renderCards(players) {
     const poste_display = POSTE_DISPLAY[poste_raw] || 'Milieu';
     const couleur = COULEURS[poste_raw] || '#6e7681';
     const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
-    const score = j.score || 50;
-    const scoreColor = score >= 75 ? 'var(--green-l)' : score >= 60 ? 'var(--gold-l)' : 'var(--muted)';
 
     const isShortlisted = shortlist.has(j.id);
 
@@ -382,7 +367,6 @@ function renderCards(players) {
     card.className = 'player-card';
     card.dataset.poste = poste_display;
     card.dataset.niveau = j.niveau || 'N1';
-    card.dataset.score = score;
     card.dataset.buts = j.buts || 0;
     card.dataset.matchs = j.matchs_joues || 0;
     if (isShortlisted) card.style.borderColor = 'var(--gold)';
@@ -397,7 +381,6 @@ function renderCards(players) {
           '<div class="card-name">'+j.prenom+' '+(j.nom||'')[0]+'.</div>' +
           '<span class="card-pos" style="background:'+couleur+'22;border:1px solid '+couleur+'44;color:'+couleur+'">'+poste_raw.replace(/_/g,' ')+'</span>' +
         '</div>' +
-        '<div class="card-score"><div class="score-num" style="color:'+scoreColor+'">'+score+'</div><div class="score-lbl">/100</div></div>' +
       '</div>' +
       '<div class="card-body">' +
         '<div class="card-tags">' +
@@ -469,7 +452,6 @@ function applyFilters() {
       if (maxAge != null && age > maxAge) return false;
     }
     if (canAdvancedFilters) {
-      if ((j.score||50) < minScore) return false;
       if ((j.buts||0) < minButs) return false;
       if ((j.matchs_joues||0) < minMatchs) return false;
       if (clubQuery.trim() && !(j.club||'').toLowerCase().includes(clubQuery.trim().toLowerCase())) return false;
@@ -486,7 +468,6 @@ function applyFilters() {
 
 function resetFilters() {
   filters = { poste: 'tous', niveau: 'tous' };
-  minScore = 0;
   minButs = 0;
   minMatchs = 0;
   minAge = null;
@@ -497,7 +478,6 @@ function resetFilters() {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   document.querySelectorAll('.chip[data-val="tous"]').forEach(c => c.classList.add('active'));
   document.querySelectorAll('input[type=range]').forEach(r => r.value = 0);
-  if (document.getElementById('score-val')) document.getElementById('score-val').textContent = '0';
   if (document.getElementById('buts-val')) document.getElementById('buts-val').textContent = '0';
   if (document.getElementById('matchs-val')) document.getElementById('matchs-val').textContent = '0';
   if (document.getElementById('f-club')) document.getElementById('f-club').value = '';
@@ -509,7 +489,6 @@ function resetFilters() {
 
 function sortCards(val) {
   var sorted = [...allPlayers].sort(function(a,b) {
-    if (val === 'score') return (b.score||50) - (a.score||50);
     if (val === 'buts') return (b.buts||0) - (a.buts||0);
     if (val === 'matchs') return (b.matchs_joues||0) - (a.matchs_joues||0);
     return 0;
@@ -638,7 +617,7 @@ async function loadShortlist() {
 function lockAdvancedFilters() {
   document.getElementById('advanced-filters').innerHTML = `
     <div style="background:rgba(31,111,235,0.06);border:1px solid rgba(31,111,235,0.2);border-radius:12px;padding:16px;text-align:center;">
-      <p style="font-size:0.8rem;color:var(--blue-l);margin-bottom:10px;">🔒 Filtres avancés (score, buts, matchs, club) réservés aux recruteurs Pro et Premium</p>
+      <p style="font-size:0.8rem;color:var(--blue-l);margin-bottom:10px;">🔒 Filtres avancés (buts, matchs, club) réservés aux recruteurs Pro et Premium</p>
       <a href="footlight-paiement.html?plan=pro"><button style="padding:8px 16px;border-radius:8px;font-size:0.78rem;font-weight:600;background:var(--blue);border:none;color:#fff;cursor:pointer;">Passer au plan Pro</button></a>
     </div>
   `;
