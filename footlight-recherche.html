@@ -159,35 +159,37 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 
     <hr class="fdiv"/>
 
-    <div class="filter-group">
-      <span class="filter-label">Score minimum</span>
-      <div class="range-wrap">
-        <div class="range-row"><span>0</span><span id="score-val">0</span></div>
-        <input type="range" min="0" max="100" value="0" step="5" oninput="document.getElementById('score-val').textContent=this.value;minScore=parseInt(this.value);applyFilters()"/>
+    <div id="advanced-filters">
+      <div class="filter-group">
+        <span class="filter-label">Score minimum</span>
+        <div class="range-wrap">
+          <div class="range-row"><span>0</span><span id="score-val">0</span></div>
+          <input type="range" min="0" max="100" value="0" step="5" oninput="document.getElementById('score-val').textContent=this.value;minScore=parseInt(this.value);applyFilters()"/>
+        </div>
       </div>
-    </div>
 
-    <div class="filter-group">
-      <span class="filter-label">Buts minimum</span>
-      <div class="range-wrap">
-        <div class="range-row"><span>0</span><span id="buts-val">0</span></div>
-        <input type="range" min="0" max="30" value="0" step="1" oninput="document.getElementById('buts-val').textContent=this.value;minButs=parseInt(this.value);applyFilters()"/>
+      <div class="filter-group">
+        <span class="filter-label">Buts minimum</span>
+        <div class="range-wrap">
+          <div class="range-row"><span>0</span><span id="buts-val">0</span></div>
+          <input type="range" min="0" max="30" value="0" step="1" oninput="document.getElementById('buts-val').textContent=this.value;minButs=parseInt(this.value);applyFilters()"/>
+        </div>
       </div>
-    </div>
 
-    <div class="filter-group">
-      <span class="filter-label">Matchs joués minimum</span>
-      <div class="range-wrap">
-        <div class="range-row"><span>0</span><span id="matchs-val">0</span></div>
-        <input type="range" min="0" max="40" value="0" step="1" oninput="document.getElementById('matchs-val').textContent=this.value;minMatchs=parseInt(this.value);applyFilters()"/>
+      <div class="filter-group">
+        <span class="filter-label">Matchs joués minimum</span>
+        <div class="range-wrap">
+          <div class="range-row"><span>0</span><span id="matchs-val">0</span></div>
+          <input type="range" min="0" max="40" value="0" step="1" oninput="document.getElementById('matchs-val').textContent=this.value;minMatchs=parseInt(this.value);applyFilters()"/>
+        </div>
       </div>
-    </div>
 
-    <div class="filter-group">
-      <span class="filter-label">Club</span>
-      <input type="text" id="f-club" placeholder="Nom du club..."
-        oninput="clubQuery=this.value;applyFilters()"
-        style="width:100%;padding:9px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;"/>
+      <div class="filter-group">
+        <span class="filter-label">Club</span>
+        <input type="text" id="f-club" placeholder="Nom du club..."
+          oninput="clubQuery=this.value;applyFilters()"
+          style="width:100%;padding:9px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;"/>
+      </div>
     </div>
 
     <hr class="fdiv"/>
@@ -418,16 +420,16 @@ function applyFilters() {
     var poste_display = POSTE_DISPLAY[j.poste||'autre'] || 'Milieu';
     if (filters.poste !== 'tous' && poste_display !== filters.poste) return false;
     if (filters.niveau !== 'tous' && (j.niveau||'N2') !== filters.niveau) return false;
-    if ((j.score||50) < minScore) return false;
-    if ((j.buts||0) < minButs) return false;
-    if ((j.matchs_joues||0) < minMatchs) return false;
+    if (canAdvancedFilters) {
+      if ((j.score||50) < minScore) return false;
+      if ((j.buts||0) < minButs) return false;
+      if ((j.matchs_joues||0) < minMatchs) return false;
+      if (clubQuery.trim() && !(j.club||'').toLowerCase().includes(clubQuery.trim().toLowerCase())) return false;
+    }
     if (searchQuery.trim()) {
       var q = normalizeName(searchQuery);
       var fullName = normalizeName((j.prenom||'') + ' ' + (j.nom||''));
       if (fullName.indexOf(q) === -1) return false;
-    }
-    if (clubQuery.trim()) {
-      if (!(j.club||'').toLowerCase().includes(clubQuery.trim().toLowerCase())) return false;
     }
     return true;
   });
@@ -557,6 +559,16 @@ async function saveAddPlayer() {
 let isConnected = false;
 let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
 let viewerPlan = 'free';
+let canAdvancedFilters = false;
+
+function lockAdvancedFilters() {
+  document.getElementById('advanced-filters').innerHTML = `
+    <div style="background:rgba(31,111,235,0.06);border:1px solid rgba(31,111,235,0.2);border-radius:12px;padding:16px;text-align:center;">
+      <p style="font-size:0.8rem;color:var(--blue-l);margin-bottom:10px;">🔒 Filtres avancés (score, buts, matchs, club) réservés aux recruteurs Pro et Premium</p>
+      <a href="footlight-paiement.html?plan=pro"><button style="padding:8px 16px;border-radius:8px;font-size:0.78rem;font-weight:600;background:var(--blue);border:none;color:#fff;cursor:pointer;">Passer au plan Pro</button></a>
+    </div>
+  `;
+}
 
 async function checkSession() {
   try {
@@ -568,6 +580,7 @@ async function checkSession() {
       if (recruteur) {
         viewerRole = 'recruteur';
         viewerPlan = recruteur.plan || 'free';
+        canAdvancedFilters = viewerPlan === 'pro' || viewerPlan === 'premium';
       } else {
         const { data: joueur } = await db.from('joueurs').select('id').eq('email', user.email).single();
         viewerRole = joueur ? 'joueur' : 'nouveau';
@@ -601,6 +614,8 @@ async function checkSession() {
       }
     }
   } catch(e) {}
+
+  if (!canAdvancedFilters) lockAdvancedFilters();
 
   const bandeau = document.getElementById('bandeau-non-connecte');
   if (bandeau) {
