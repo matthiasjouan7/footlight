@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Récap de ma saison</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --blue:#1f6feb;--blue-l:#79c0ff;
+  --gold:#d29922;--gold-l:#e3b341;
+  --green:#238636;--green-l:#56d364;
+  --red:#da3633;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-links{display:flex;gap:16px;align-items:center;}
+.nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.nav-links a:hover{color:var(--text);}
+
+.page{max-width:820px;margin:0 auto;padding:76px 24px 60px;}
+
+.loading{text-align:center;padding:80px 20px;color:var(--muted);}
+.loading-spin{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.hero{background:linear-gradient(135deg,rgba(31,111,235,0.15),rgba(210,153,34,0.1));border:1px solid var(--border);border-radius:18px;padding:32px;margin-bottom:20px;text-align:center;}
+.hero-eyebrow{font-size:0.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold-l);font-weight:700;margin-bottom:8px;}
+.hero-name{font-size:1.8rem;font-weight:900;margin-bottom:6px;}
+.hero-sub{font-size:0.9rem;color:var(--muted);}
+
+.season-select-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;justify-content:center;}
+.season-select-row label{font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.season-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.stat-val{font-size:1.6rem;font-weight:800;margin-bottom:4px;}
+.stat-lbl{font-size:0.72rem;color:var(--muted);}
+
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;}
+.section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg3);font-size:0.85rem;}
+.info-row:last-child{border-bottom:none;}
+.info-key{color:var(--muted);}
+.info-val{font-weight:500;}
+
+.progress-track{background:var(--bg3);border-radius:6px;height:10px;overflow:hidden;margin-top:8px;}
+.progress-fill{height:100%;background:var(--blue);border-radius:6px;}
+
+.highlight-box{background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.25);border-radius:12px;padding:16px;}
+.highlight-box .hb-title{font-size:0.78rem;color:var(--gold-l);font-weight:700;margin-bottom:6px;}
+
+.btn-row{display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;}
+.btn{padding:10px 20px;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn.primary{background:var(--blue);color:#fff;}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;}
+.btn:hover{opacity:0.85;}
+
+.not-found{text-align:center;padding:80px 20px;}
+.not-found h2{font-size:1.4rem;margin-bottom:10px;}
+.not-found p{color:var(--muted);margin-bottom:20px;}
+
+@media print{
+  nav,.no-print{display:none !important;}
+  body{background:#fff !important;color:#111 !important;}
+  .page{padding:10px 0;max-width:100%;}
+  .hero,.section,.stat-card{background:#fff !important;border:1px solid #ccc !important;}
+  .hero-name,.stat-val,.info-val{color:#111 !important;}
+  .info-key,.stat-lbl,.section-title{color:#555 !important;}
+  .progress-track{background:#eee !important;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+  <div class="nav-links">
+    <a href="footlight-espace.html">Mon espace</a>
+    <a href="footlight-profil.html">Mon profil</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="loading" id="loading">
+    <div class="loading-spin"></div>
+    <p>Chargement de ton récap...</p>
+  </div>
+
+  <div id="recap-content" style="display:none;"></div>
+
+  <div class="not-found" id="not-found" style="display:none;">
+    <h2>Aucun profil joueur</h2>
+    <p>Connecte-toi avec ton compte joueur pour voir ton récap de saison.</p>
+    <a href="footlight-connexion.html"><button class="btn primary">Se connecter</button></a>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
+
+function normalizeName(s) {
+  return (s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+async function findOwnJoueur(user) {
+  const { data: exact } = await db.from('joueurs').select('*').eq('email', user.email).single();
+  if (exact) return exact;
+
+  const prenom = user.user_metadata && user.user_metadata.prenom;
+  const nom = user.user_metadata && user.user_metadata.nom;
+  if (!prenom || !nom) return null;
+
+  const { data: candidates } = await db.from('joueurs').select('*').neq('email', user.email).limit(1000);
+  if (!candidates) return null;
+  const np = normalizeName(prenom), nn = normalizeName(nom);
+  const match = candidates.find(c => normalizeName(c.prenom) === np && normalizeName(c.nom) === nn);
+  return match || null;
+}
+
+let joueur = null;
+let seasonsData = [];
+let matchsAll = [];
+
+async function init() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-found').style.display = 'block';
+    return;
+  }
+
+  joueur = await findOwnJoueur(user);
+  if (!joueur) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-found').style.display = 'block';
+    return;
+  }
+
+  const { data: historiqueRaw } = await db.from('stats_saisons').select('*').eq('joueur_id', joueur.id).order('saison', { ascending: false });
+  const historique = historiqueRaw || [];
+
+  const currentSeason = {
+    saison: joueur.saison || '2026-2027', isCurrent: true,
+    club: joueur.club, niveau: joueur.niveau,
+    matchs_joues: joueur.matchs_joues, titularisations: joueur.titularisations,
+    buts: joueur.buts, passes_decisives: joueur.passes_decisives,
+    buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets,
+    minutes_jouees: joueur.minutes_jouees,
+    cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
+  };
+  seasonsData = [currentSeason, ...historique].sort((a,b) => (b.saison||'').localeCompare(a.saison||''));
+
+  const { data: matchsRaw } = await db.from('matchs_joueur').select('*').eq('joueur_id', joueur.id).order('date_match', { ascending: false });
+  matchsAll = matchsRaw || [];
+
+  populateSeasonSelect();
+  renderRecap(currentSeason.saison);
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('recap-content').style.display = 'block';
+}
+
+function populateSeasonSelect() {
+  const html = seasonsData.length > 1 ? `
+    <div class="season-select-row no-print">
+      <label for="season-select">Saison</label>
+      <select id="season-select" class="season-select" onchange="renderRecap(this.value)">
+        ${seasonsData.map(s => `<option value="${s.saison}" ${s.isCurrent?'selected':''}>${s.saison}${s.isCurrent?' (actuelle)':''}</option>`).join('')}
+      </select>
+    </div>` : '';
+  document.getElementById('recap-content').dataset.selectHtml = html;
+}
+
+function renderRecap(saison) {
+  const s = seasonsData.find(x => x.saison === saison) || seasonsData[0];
+  const isDefensif = POSTES_DEFENSIFS.includes(joueur.poste || 'autre');
+  const matchs = matchsAll.filter(m => m.saison === s.saison);
+  const pct_tps = s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0;
+
+  let meilleurMatch = null;
+  if (matchs.length) {
+    if (isDefensif) {
+      meilleurMatch = [...matchs].sort((a,b) => {
+        if (!!b.clean_sheet !== !!a.clean_sheet) return (b.clean_sheet?1:0) - (a.clean_sheet?1:0);
+        return (a.buts_encaisses_avec ?? 99) - (b.buts_encaisses_avec ?? 99);
+      })[0];
+    } else {
+      meilleurMatch = [...matchs].sort((a,b) => ((b.buts||0)+(b.passes_decisives||0)) - ((a.buts||0)+(a.passes_decisives||0)))[0];
+    }
+  }
+
+  const loggedPct = s.matchs_joues > 0 ? Math.min(100, Math.round(matchs.length / s.matchs_joues * 100)) : 0;
+
+  const html = `
+    ${document.getElementById('recap-content').dataset.selectHtml || ''}
+
+    <div class="hero">
+      <div class="hero-eyebrow">Récap de saison</div>
+      <div class="hero-name">${joueur.prenom} ${joueur.nom}</div>
+      <div class="hero-sub">${s.saison}${s.isCurrent?' (en cours)':''} · ${s.club||'—'} · ${(s.niveau||'—')}</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val">${s.matchs_joues||0}</div><div class="stat-lbl">Matchs joués</div></div>
+      ${isDefensif ? `
+      <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.buts_encaisses_avec ?? '—'}</div><div class="stat-lbl">Buts encaissés</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.clean_sheets ?? '—'}</div><div class="stat-lbl">Clean sheets</div></div>
+      ` : `
+      <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.buts||0}</div><div class="stat-lbl">Buts</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${s.passes_decisives||0}</div><div class="stat-lbl">Passes déc.</div></div>
+      `}
+      <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
+    </div>
+
+    ${meilleurMatch ? `
+    <div class="section">
+      <div class="highlight-box">
+        <div class="hb-title">⭐ Meilleur match de la saison</div>
+        <div style="font-size:0.9rem;">
+          ${meilleurMatch.date_match ? new Date(meilleurMatch.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${meilleurMatch.adversaire || 'Adversaire non précisé'}
+          ${meilleurMatch.score_pour != null && meilleurMatch.score_contre != null ? ` (${meilleurMatch.score_pour}-${meilleurMatch.score_contre})` : ''}
+        </div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;">
+          ${isDefensif
+            ? (meilleurMatch.clean_sheet ? 'Clean sheet' : `${meilleurMatch.buts_encaisses_avec ?? 0} but(s) encaissé(s)`)
+            : `${meilleurMatch.buts||0} but(s) · ${meilleurMatch.passes_decisives||0} passe(s) décisive(s)`}
+        </div>
+      </div>
+    </div>` : ''}
+
+    <div class="section">
+      <div class="section-title">Suivi de saison</div>
+      <div class="info-row"><span class="info-key">Fiches de match remplies</span><span class="info-val">${matchs.length}${s.matchs_joues ? ' / ' + s.matchs_joues : ''}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${loggedPct}%;"></div></div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:8px;">
+        ${matchs.length === 0
+          ? "Tu n'as pas encore ajouté de fiche de match cette saison — complète-les dans \"Modifier mon profil\" pour un récap plus riche."
+          : loggedPct < 100
+            ? "Continue à ajouter tes matchs pour un récap encore plus complet."
+            : "Bravo, tu as loggé tous tes matchs de la saison !"}
+      </div>
+    </div>
+
+    ${(joueur.points_forts && joueur.points_forts.length) ? `
+    <div class="section">
+      <div class="section-title">Points forts</div>
+      ${joueur.points_forts.map(p => `
+      <div class="info-row">
+        <span class="info-key">${p.label}</span>
+        ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color:var(--blue-l);font-size:0.82rem;">🎥 Voir la vidéo →</a>` : `<span class="info-val">—</span>`}
+      </div>`).join('')}
+    </div>` : ''}
+
+    ${joueur.points_amelioration ? `
+    <div class="section">
+      <div class="section-title">Points d'amélioration</div>
+      <div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${joueur.points_amelioration}</div>
+    </div>` : ''}
+
+    <div class="btn-row no-print">
+      <button class="btn primary" onclick="window.print()">📄 Télécharger mon récap (PDF)</button>
+      <a href="footlight-modifier-profil.html" class="btn outline">Ajouter mes matchs</a>
+      <a href="footlight-espace.html" class="btn outline">Mon espace</a>
+    </div>
+  `;
+
+  document.getElementById('recap-content').innerHTML = html;
+}
+
+init();
+</script>
+</body>
+</html>
