@@ -202,6 +202,10 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
   <span style="font-size:0.82rem;color:var(--blue-l);">👀 Vous consultez en mode aperçu — Connectez-vous pour accéder aux stats complètes et aux profils détaillés.</span>
   <button onclick="window.location.href='footlight-connexion.html'" style="flex-shrink:0;padding:7px 16px;border-radius:8px;background:var(--blue);border:none;color:#fff;font-size:0.78rem;font-weight:600;cursor:pointer;">Se connecter</button>
 </div>
+<div id="bandeau-shortlist" style="display:none;background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.25);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+  <span style="font-size:0.82rem;color:var(--gold-l);">★ Tu consultes ta shortlist</span>
+  <a href="footlight-recherche.html" style="flex-shrink:0;padding:7px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.78rem;font-weight:600;cursor:pointer;text-decoration:none;">Voir tous les joueurs</a>
+</div>
 <div class="results-bar">
       <div class="results-count"><span id="result-count">0</span> joueurs trouvés</div>
       <div style="display:flex;gap:10px;align-items:center;">
@@ -285,6 +289,7 @@ var minMatchs = 0;
 var searchQuery = '';
 var clubQuery = '';
 var shortlist = new Set();
+var shortlistOnly = new URLSearchParams(window.location.search).get('shortlist') === '1';
 
 function normalizeName(s) {
   return (s || '')
@@ -329,7 +334,7 @@ async function loadJoueurs() {
     }
 
     allPlayers = data;
-    renderCards(data);
+    applyFilters();
   } catch(err) {
     console.error('Erreur chargement:', err);
     document.getElementById('loading').style.display = 'none';
@@ -350,6 +355,8 @@ function renderCards(players) {
     const score = j.score || 50;
     const scoreColor = score >= 75 ? 'var(--green-l)' : score >= 60 ? 'var(--gold-l)' : 'var(--muted)';
 
+    const isShortlisted = shortlist.has(j.id);
+
     const card = document.createElement('div');
     card.className = 'player-card';
     card.dataset.poste = poste_display;
@@ -357,6 +364,7 @@ function renderCards(players) {
     card.dataset.score = score;
     card.dataset.buts = j.buts || 0;
     card.dataset.matchs = j.matchs_joues || 0;
+    if (isShortlisted) card.style.borderColor = 'var(--gold)';
 
     const clubCourt = j.club ? (j.club.length > 16 ? j.club.substring(0,14)+'…' : j.club) : '—';
 
@@ -387,7 +395,11 @@ function renderCards(players) {
           '</div>'
         ) +
         '<div class="card-actions">' +
-          '<button class="ca-btn" onclick="toggleShortlist(this,event,'+"'"+j.id+"'"+')">☆ Shortlist</button>' +
+          (viewerRole === 'recruteur' ?
+            '<button class="ca-btn'+(isShortlisted?' primary':'')+'" onclick="toggleShortlist(this,event,'+"'"+j.id+"'"+')">'+(isShortlisted?'★ Ajouté':'☆ Shortlist')+'</button>'
+          :
+            '<button class="ca-btn" disabled style="opacity:0.5;cursor:not-allowed;" title="Réservé aux recruteurs">☆ Shortlist</button>'
+          ) +
           (viewerRole === 'recruteur' ?
             '<button class="ca-btn primary" onclick="window.location.href=\'footlight-profil.html?id='+j.id+'\'">Voir profil</button>'
           :
@@ -417,6 +429,7 @@ function setFilter(key, val, el) {
 
 function applyFilters() {
   var filtered = allPlayers.filter(function(j) {
+    if (shortlistOnly && !shortlist.has(j.id)) return false;
     var poste_display = POSTE_DISPLAY[j.poste||'autre'] || 'Milieu';
     if (filters.poste !== 'tous' && poste_display !== filters.poste) return false;
     if (filters.niveau !== 'tous' && (j.niveau||'N2') !== filters.niveau) return false;
@@ -465,17 +478,30 @@ function sortCards(val) {
 }
 
 // ── SHORTLIST ──
-function toggleShortlist(btn, e, id) {
+async function toggleShortlist(btn, e, id) {
   e.stopPropagation();
+  if (viewerRole !== 'recruteur') return;
+  btn.disabled = true;
+
   if (shortlist.has(id)) {
-    shortlist.delete(id);
-    btn.textContent = '☆ Shortlist';
-    btn.closest('.player-card').style.borderColor = '';
+    const { error } = await db.from('shortlist').delete().eq('recruteur_email', viewerEmail).eq('joueur_id', id);
+    if (!error) {
+      shortlist.delete(id);
+      btn.textContent = '☆ Shortlist';
+      btn.classList.remove('primary');
+      btn.closest('.player-card').style.borderColor = '';
+      if (shortlistOnly) applyFilters();
+    }
   } else {
-    shortlist.add(id);
-    btn.textContent = '★ Ajouté';
-    btn.closest('.player-card').style.borderColor = 'var(--gold)';
+    const { error } = await db.from('shortlist').insert({ recruteur_email: viewerEmail, joueur_id: id });
+    if (!error) {
+      shortlist.add(id);
+      btn.textContent = '★ Ajouté';
+      btn.classList.add('primary');
+      btn.closest('.player-card').style.borderColor = 'var(--gold)';
+    }
   }
+  btn.disabled = false;
 }
 
 // ── AJOUT MANUEL ──
@@ -559,7 +585,14 @@ async function saveAddPlayer() {
 let isConnected = false;
 let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
 let viewerPlan = 'free';
+let viewerEmail = null;
 let canAdvancedFilters = false;
+
+async function loadShortlist() {
+  if (viewerRole !== 'recruteur') return;
+  const { data } = await db.from('shortlist').select('joueur_id').eq('recruteur_email', viewerEmail);
+  (data || []).forEach(row => shortlist.add(row.joueur_id));
+}
 
 function lockAdvancedFilters() {
   document.getElementById('advanced-filters').innerHTML = `
@@ -575,6 +608,7 @@ async function checkSession() {
     const { data: { user } } = await db.auth.getUser();
     isConnected = !!user;
     if (user) {
+      viewerEmail = user.email;
       // Déterminer le rôle : recruteur ou joueur ?
       const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
       if (recruteur) {
@@ -616,6 +650,12 @@ async function checkSession() {
   } catch(e) {}
 
   if (!canAdvancedFilters) lockAdvancedFilters();
+  await loadShortlist();
+
+  const bandeauShortlist = document.getElementById('bandeau-shortlist');
+  if (bandeauShortlist && new URLSearchParams(window.location.search).get('shortlist') === '1') {
+    bandeauShortlist.style.display = 'flex';
+  }
 
   const bandeau = document.getElementById('bandeau-non-connecte');
   if (bandeau) {
