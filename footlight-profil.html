@@ -197,10 +197,10 @@ function evolutionTier(pct) {
 // Lecture de l'impact collectif (différentiel de points/buts encaissés
 // avec vs sans le joueur) par paliers, plutôt qu'un simple vert/rouge.
 function impactTier(diff) {
-  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe encaisse clairement moins avec lui' };
+  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe est nettement plus performante avec lui' };
   if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
   if (diff >= -0.10) return { color: 'var(--muted)', label: '⚪ Profil neutre — ne change pas grand-chose' };
-  return { color: 'var(--red)', label: '🔴 L\'équipe encaisse plus avec lui — à surveiller' };
+  return { color: 'var(--red)', label: '🔴 L\'équipe est moins performante avec lui — à surveiller' };
 }
 
 function normalizeName(s) {
@@ -457,6 +457,7 @@ async function renderProfil(j, isOwner) {
           <div class="bar-label-row"><span class="k">Différentiel d'impact</span><span class="v" style="color:${impactTier(diff).color}">${diff>=0?'+':''}${Number(diff).toFixed(2)}</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:${diffPct}%;background:${impactTier(diff).color}"></div></div>
           <div style="font-size:0.75rem;color:${impactTier(diff).color};margin-top:6px;">${impactTier(diff).label}</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:4px;">Points pris par l'équipe avec ce joueur vs sans lui — donnée historique, non auto-déclarable.</div>
         </div>` : ''}
         ${(!isDefensif && s.pct_matchs_avec_but != null) ? `
         <div class="bar-item">
