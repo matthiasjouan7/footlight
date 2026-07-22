@@ -259,6 +259,16 @@ async function renderProfil(j, isOwner) {
     .order('saison', { ascending: false });
   const historique = historiqueRaw || [];
 
+  const { data: matchsRaw } = await db
+    .from('matchs_joueur')
+    .select('*')
+    .eq('joueur_id', j.id)
+    .order('date_match', { ascending: false });
+  const matchsBySaison = {};
+  (matchsRaw || []).forEach(m => {
+    (matchsBySaison[m.saison] = matchsBySaison[m.saison] || []).push(m);
+  });
+
   const poste_raw = j.poste || 'autre';
   const couleur = COULEURS[poste_raw] || '#6e7681';
   const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
@@ -281,6 +291,7 @@ async function renderProfil(j, isOwner) {
     vitesse_max_kmh: j.vitesse_max_kmh, vma_kmh: j.vma_kmh,
     distance_moyenne_km: j.distance_moyenne_km, sprints_match: j.sprints_match,
     buts_encaisses_avec: j.buts_encaisses_avec, clean_sheets: j.clean_sheets,
+    preuve_gps_url: j.preuve_gps_url,
     isCurrent: true
   };
   const seasonsData = [currentSeason, ...historique].sort((a,b) => (b.saison||'').localeCompare(a.saison||''));
@@ -302,7 +313,8 @@ async function renderProfil(j, isOwner) {
     vitesse_max_kmh: (() => { const v = seasonsData.map(s=>s.vitesse_max_kmh).filter(x=>x!=null); return v.length ? Math.max(...v) : null; })(),
     vma_kmh: avgKey(seasonsData,'vma_kmh'), distance_moyenne_km: avgKey(seasonsData,'distance_moyenne_km'),
     sprints_match: avgKey(seasonsData,'sprints_match'),
-    buts_encaisses_avec: sumKey(seasonsData,'buts_encaisses_avec'), clean_sheets: sumKey(seasonsData,'clean_sheets')
+    buts_encaisses_avec: sumKey(seasonsData,'buts_encaisses_avec'), clean_sheets: sumKey(seasonsData,'clean_sheets'),
+    preuve_gps_url: (seasonsData.find(s => s.preuve_gps_url) || {}).preuve_gps_url || null
   };
 
   function renderSeasonBlock(s) {
@@ -383,6 +395,7 @@ async function renderProfil(j, isOwner) {
           ${s.distance_moyenne_km!=null?`<div class="stat-card"><div class="stat-val">${round1(s.distance_moyenne_km)}</div><div class="stat-lbl">Km/match moy.</div></div>`:''}
           ${s.sprints_match!=null?`<div class="stat-card"><div class="stat-val">${round1(s.sprints_match)}</div><div class="stat-lbl">Sprints/match</div></div>`:''}
         </div>
+        ${s.preuve_gps_url ? `<a href="${s.preuve_gps_url}" target="_blank" style="display:inline-block;margin-top:10px;color:var(--blue-l);font-size:0.8rem;">📎 Voir la preuve fournie par le joueur</a>` : ''}
       </div>` : `
       <div class="section">
         <div class="section-title">Données GPS</div>
@@ -391,6 +404,39 @@ async function renderProfil(j, isOwner) {
           <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
         </div>
       </div>`}
+
+      ${(function() {
+        const matchs = s.isGlobal
+          ? Object.values(matchsBySaison).flat().sort((a,b) => (b.date_match||'').localeCompare(a.date_match||''))
+          : (matchsBySaison[s.saison] || []);
+        if (!matchs.length) return '';
+        return `
+        <div class="section">
+          <div class="section-title">Historique des matchs${s.isGlobal ? ` · ${matchs.length} fiche${matchs.length>1?'s':''}` : ''}</div>
+          <div style="display:flex;flex-direction:column;">
+            ${matchs.map(m => {
+              const bits = [];
+              if (isDefensif) {
+                if (m.buts_encaisses_avec != null) bits.push(`${m.buts_encaisses_avec} encaissé(s)`);
+                if (m.clean_sheet) bits.push('clean sheet');
+              } else {
+                if (m.buts) bits.push(`${m.buts} but(s)`);
+                if (m.passes_decisives) bits.push(`${m.passes_decisives} passe(s)`);
+              }
+              if (m.minutes_jouees) bits.push(`${m.minutes_jouees} min`);
+              if (m.cartons_jaunes) bits.push(`${m.cartons_jaunes} 🟨`);
+              if (m.cartons_rouges) bits.push(`${m.cartons_rouges} 🟥`);
+              const lieu = m.domicile == null ? '' : (m.domicile ? ' (dom.)' : ' (ext.)');
+              const score = (m.score_pour != null && m.score_contre != null) ? ` · ${m.score_pour}-${m.score_contre}` : '';
+              return `
+              <div style="padding:10px 0;border-bottom:1px solid var(--bg4);">
+                <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}${s.isGlobal ? ` · ${m.saison}` : ''}</div>
+                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${bits.join(' · ') || '—'}${m.lien_match ? ` · <a href="${m.lien_match}" target="_blank" style="color:var(--blue-l);">🔗 voir le match</a>` : ''}</div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      })()}
     `;
   }
 

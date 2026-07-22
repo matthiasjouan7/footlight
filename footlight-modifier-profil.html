@@ -260,6 +260,65 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         </div>
       </div>
 
+      <div class="section">
+        <div class="section-title">Historique des matchs</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">Ajoute une fiche par match joué cette saison : adversaire, score, tes stats perso, et un lien si tu en as un. Ça vient en plus de ton total de saison ci-dessus, et ça montre ton sérieux au fil de la saison.</div>
+        <div id="matchs-list"></div>
+        <button type="button" class="btn outline" id="btn-add-match" onclick="showMatchForm()" style="width:100%;margin-top:8px;">+ Ajouter un match</button>
+
+        <div id="match-form-panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--bg4);">
+          <input type="hidden" id="m-edit-id"/>
+          <div class="field-row">
+            <div class="field"><label class="field-label">Date du match</label><input class="field-input" type="date" id="m-date"/></div>
+            <div class="field"><label class="field-label">Adversaire</label><input class="field-input" type="text" id="m-adversaire" placeholder="FC Lorient B"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Domicile / Extérieur</label>
+              <select class="field-select" id="m-domicile">
+                <option value="1">Domicile</option>
+                <option value="0">Extérieur</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Score (nous - eux)</label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input class="field-input" type="number" id="m-score-pour" min="0" style="text-align:center;"/>
+                <span style="color:var(--muted);">-</span>
+                <input class="field-input" type="number" id="m-score-contre" min="0" style="text-align:center;"/>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="m-titulaire" style="width:auto;"/> Titulaire
+            </label>
+          </div>
+          <div class="stat-grid" id="m-stat-grid">
+            <div class="field"><label class="field-label">Minutes jouées</label><input class="field-input" type="number" id="m-minutes" min="0"/></div>
+            <div class="field" id="m-field-buts"><label class="field-label">Buts</label><input class="field-input" type="number" id="m-buts" min="0"/></div>
+            <div class="field" id="m-field-passes"><label class="field-label">Passes déc.</label><input class="field-input" type="number" id="m-passes" min="0"/></div>
+            <div class="field" id="m-field-encaisses" style="display:none;"><label class="field-label">Buts encaissés</label><input class="field-input" type="number" id="m-encaisses" min="0"/></div>
+            <div class="field" id="m-field-cleansheet" style="display:none;">
+              <label class="field-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="m-cleansheet" style="width:auto;"/> Clean sheet
+              </label>
+            </div>
+            <div class="field"><label class="field-label">Cartons jaunes</label><input class="field-input" type="number" id="m-cartj" min="0"/></div>
+            <div class="field"><label class="field-label">Cartons rouges</label><input class="field-input" type="number" id="m-cartr" min="0"/></div>
+          </div>
+          <div class="field">
+            <label class="field-label">Lien du match (replay, feuille de match, live...)</label>
+            <input class="field-input" type="url" id="m-lien" placeholder="https://..."/>
+          </div>
+          <div class="msg" id="match-form-msg"></div>
+          <div class="btn-row">
+            <button type="button" class="btn primary" id="btn-save-match" onclick="saveMatchForm()">Enregistrer le match</button>
+            <button type="button" class="btn outline" onclick="hideMatchForm()">Annuler</button>
+          </div>
+        </div>
+      </div>
+
       <div class="msg" id="form-msg"></div>
 
       <div class="btn-row">
@@ -392,6 +451,7 @@ async function finishInit() {
   populateSeasonSelect();
   document.getElementById('f-saison').value = currentSeason.saison;
   fillSeasonFields(currentSeason);
+  loadMatchsForSeason(currentSeason.saison);
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('form-content').style.display = 'block';
@@ -410,11 +470,19 @@ function onSeasonSelectChange() {
     document.getElementById('new-season-field').style.display = '';
     document.getElementById('f-new-saison').value = '';
     fillSeasonFields({ club: joueur.club, niveau: joueur.niveau });
+    loadMatchsForSeason('');
     return;
   }
   document.getElementById('new-season-field').style.display = 'none';
   const s = seasonsData.find(x => x.saison === val);
   if (s) fillSeasonFields(s);
+  loadMatchsForSeason(val);
+}
+
+function getSelectedSaisonText() {
+  const val = document.getElementById('f-saison').value;
+  if (val === '__new__') return document.getElementById('f-new-saison').value.trim();
+  return val;
 }
 
 const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
@@ -425,6 +493,10 @@ function toggleDefenseFields() {
   document.getElementById('field-passes').style.display = isDef ? 'none' : '';
   document.getElementById('field-encaisses').style.display = isDef ? '' : 'none';
   document.getElementById('field-cleansheets').style.display = isDef ? '' : 'none';
+  document.getElementById('m-field-buts').style.display = isDef ? 'none' : '';
+  document.getElementById('m-field-passes').style.display = isDef ? 'none' : '';
+  document.getElementById('m-field-encaisses').style.display = isDef ? '' : 'none';
+  document.getElementById('m-field-cleansheet').style.display = isDef ? '' : 'none';
 }
 
 function fillPlayerFields(j) {
@@ -663,6 +735,140 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
 
 function cancelEdit() {
   window.location.href = isRecruiterEditing ? `footlight-profil.html?id=${joueur.id}` : 'footlight-profil.html';
+}
+
+// ── HISTORIQUE DES MATCHS (fiches saisies par le joueur, saison par saison) ──
+let currentMatchsList = [];
+
+async function loadMatchsForSeason(saison) {
+  hideMatchForm();
+  if (!saison) { currentMatchsList = []; renderMatchsList(); return; }
+  const { data } = await db.from('matchs_joueur').select('*')
+    .eq('joueur_id', joueur.id).eq('saison', saison)
+    .order('date_match', { ascending: false });
+  currentMatchsList = data || [];
+  renderMatchsList();
+}
+
+function renderMatchsList() {
+  const el = document.getElementById('matchs-list');
+  if (!currentMatchsList.length) {
+    el.innerHTML = '<div style="font-size:0.8rem;color:var(--muted);">Aucun match ajouté pour cette saison.</div>';
+    return;
+  }
+  const isDef = POSTES_DEFENSIFS.includes(document.getElementById('f-poste').value);
+  el.innerHTML = currentMatchsList.map(m => {
+    const bits = [];
+    if (isDef) {
+      if (m.buts_encaisses_avec != null) bits.push(`${m.buts_encaisses_avec} encaissé(s)`);
+      if (m.clean_sheet) bits.push('clean sheet');
+    } else {
+      if (m.buts) bits.push(`${m.buts} but(s)`);
+      if (m.passes_decisives) bits.push(`${m.passes_decisives} passe(s)`);
+    }
+    if (m.cartons_jaunes) bits.push(`${m.cartons_jaunes} 🟨`);
+    if (m.cartons_rouges) bits.push(`${m.cartons_rouges} 🟥`);
+    const lieu = m.domicile == null ? '' : (m.domicile ? ' (dom.)' : ' (ext.)');
+    const score = (m.score_pour != null && m.score_contre != null) ? ` · ${m.score_pour}-${m.score_contre}` : '';
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg4);">
+        <div>
+          <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${bits.join(' · ') || '—'}${m.lien_match ? ` · <a href="${m.lien_match}" target="_blank" style="color:var(--blue-l);">🔗 lien</a>` : ''}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <button type="button" class="btn outline" style="padding:6px 10px;font-size:0.75rem;" onclick="editMatch('${m.id}')">Modifier</button>
+          <button type="button" class="btn outline" style="padding:6px 10px;font-size:0.75rem;color:var(--red);" onclick="deleteMatch('${m.id}')">Supprimer</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function showMatchForm(match) {
+  document.getElementById('m-edit-id').value = match ? match.id : '';
+  document.getElementById('m-date').value = match && match.date_match ? match.date_match : '';
+  document.getElementById('m-adversaire').value = match ? (match.adversaire || '') : '';
+  document.getElementById('m-domicile').value = match && match.domicile === false ? '0' : '1';
+  document.getElementById('m-score-pour').value = match && match.score_pour != null ? match.score_pour : '';
+  document.getElementById('m-score-contre').value = match && match.score_contre != null ? match.score_contre : '';
+  document.getElementById('m-titulaire').checked = match ? !!match.titulaire : true;
+  document.getElementById('m-minutes').value = match && match.minutes_jouees != null ? match.minutes_jouees : '';
+  document.getElementById('m-buts').value = match && match.buts != null ? match.buts : '';
+  document.getElementById('m-passes').value = match && match.passes_decisives != null ? match.passes_decisives : '';
+  document.getElementById('m-encaisses').value = match && match.buts_encaisses_avec != null ? match.buts_encaisses_avec : '';
+  document.getElementById('m-cleansheet').checked = match ? !!match.clean_sheet : false;
+  document.getElementById('m-cartj').value = match && match.cartons_jaunes != null ? match.cartons_jaunes : '';
+  document.getElementById('m-cartr').value = match && match.cartons_rouges != null ? match.cartons_rouges : '';
+  document.getElementById('m-lien').value = match ? (match.lien_match || '') : '';
+  document.getElementById('match-form-msg').className = 'msg';
+  document.getElementById('match-form-msg').textContent = '';
+  toggleDefenseFields();
+  document.getElementById('match-form-panel').style.display = 'block';
+}
+
+function editMatch(id) {
+  const m = currentMatchsList.find(x => x.id === id);
+  if (m) showMatchForm(m);
+}
+
+function hideMatchForm() {
+  document.getElementById('match-form-panel').style.display = 'none';
+}
+
+async function saveMatchForm() {
+  const saison = getSelectedSaisonText();
+  if (!saison) {
+    alert('Choisis ou saisis une saison avant d\'ajouter un match.');
+    return;
+  }
+  const btn = document.getElementById('btn-save-match');
+  const msg = document.getElementById('match-form-msg');
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement...';
+
+  const payload = {
+    joueur_id: joueur.id,
+    saison,
+    date_match: document.getElementById('m-date').value || null,
+    adversaire: document.getElementById('m-adversaire').value.trim() || null,
+    domicile: document.getElementById('m-domicile').value === '1',
+    score_pour: document.getElementById('m-score-pour').value !== '' ? parseInt(document.getElementById('m-score-pour').value) : null,
+    score_contre: document.getElementById('m-score-contre').value !== '' ? parseInt(document.getElementById('m-score-contre').value) : null,
+    titulaire: document.getElementById('m-titulaire').checked,
+    minutes_jouees: document.getElementById('m-minutes').value !== '' ? parseInt(document.getElementById('m-minutes').value) : null,
+    buts: document.getElementById('m-buts').value !== '' ? parseInt(document.getElementById('m-buts').value) : null,
+    passes_decisives: document.getElementById('m-passes').value !== '' ? parseInt(document.getElementById('m-passes').value) : null,
+    buts_encaisses_avec: document.getElementById('m-encaisses').value !== '' ? parseInt(document.getElementById('m-encaisses').value) : null,
+    clean_sheet: document.getElementById('m-cleansheet').checked,
+    cartons_jaunes: document.getElementById('m-cartj').value !== '' ? parseInt(document.getElementById('m-cartj').value) : null,
+    cartons_rouges: document.getElementById('m-cartr').value !== '' ? parseInt(document.getElementById('m-cartr').value) : null,
+    lien_match: document.getElementById('m-lien').value.trim() || null,
+  };
+
+  const editId = document.getElementById('m-edit-id').value;
+  let error;
+  if (editId) {
+    ({ error } = await db.from('matchs_joueur').update(payload).eq('id', editId));
+  } else {
+    ({ error } = await db.from('matchs_joueur').insert(payload));
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Enregistrer le match';
+
+  if (error) {
+    msg.classList.add('error');
+    msg.textContent = 'Erreur : ' + error.message;
+    return;
+  }
+
+  await loadMatchsForSeason(saison);
+}
+
+async function deleteMatch(id) {
+  if (!confirm('Supprimer cette fiche de match ?')) return;
+  await db.from('matchs_joueur').delete().eq('id', id);
+  await loadMatchsForSeason(getSelectedSaisonText());
 }
 
 // ── BOUTONS +/- SUR LES CHAMPS DE STATS (la saisie manuelle reste possible) ──
