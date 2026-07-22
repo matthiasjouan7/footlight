@@ -161,7 +161,6 @@ function renderJoueur(user, j) {
       <div>
         <div class="user-name">${j.prenom} ${j.nom}</div>
         <div class="user-type">Joueur · ${(j.poste||'').replace(/_/g,' ')} · ${j.club||'—'}</div>
-        <div style="margin-top:6px;font-size:0.78rem;color:var(--muted)">Score : <span style="color:var(--blue-l);font-weight:700;">${j.score||50}/100</span></div>
       </div>
     </div>
 

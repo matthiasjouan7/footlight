@@ -290,21 +290,6 @@
     .bar-fill.gold { background: var(--gold); }
     .bar-fill.green{ background: var(--green-light); }
 
-    .score-circle {
-      width: 90px; height: 90px; border-radius: 50%;
-      background: conic-gradient(var(--blue) 0% 82%, var(--bg3) 82%);
-      display: flex; align-items: center; justify-content: center;
-      position: relative;
-    }
-    .score-inner {
-      width: 70px; height: 70px; border-radius: 50%;
-      background: var(--bg); display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-    }
-    .score-val { font-size: 1.3rem; font-weight: 900; color: var(--blue-light); }
-    .score-sub { font-size: 0.6rem; color: var(--muted); }
-    .score-row { display: flex; align-items: center; gap: 16px; }
-
     /* ── PRICING ── */
     .pricing-grid {
       display: grid; grid-template-columns: repeat(3,1fr); gap: 20px;
@@ -552,7 +537,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       <div class="step-num-circle gold">3</div>
       <div class="step-body">
         <h4>FootLight calcule les indicateurs automatiquement</h4>
-        <p>Les scores viennent de l'API FFF. Le joueur complète sa présence et ses stats individuelles. Impact collectif, score par poste et régularité sont calculés automatiquement.</p>
+        <p>Impact collectif et régularité sont calculés automatiquement à partir des stats déclarées par le joueur, saison après saison.</p>
       </div>
     </div>
     <div class="step-row">
@@ -751,18 +736,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <div class="bar-track"><div class="bar-fill green" style="width:92%"></div></div>
               </div>
             </div>
-            <div>
-              <div style="font-size:0.72rem; color:var(--muted); text-align:center; margin-bottom:10px;">Score global</div>
-              <div class="score-row">
-                <div class="score-circle">
-                  <div class="score-inner">
-                    <span class="score-val">82</span>
-                    <span class="score-sub">/ 100</span>
-                  </div>
-                </div>
-              </div>
-              <div style="font-size:0.7rem; color:var(--muted); text-align:center; margin-top:6px;">Top 8% MO · N1</div>
-            </div>
           </div>
         </div>
       </div>
@@ -790,7 +763,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         <li><span class="check">✓</span><span class="main">Recherche par poste & âge</span></li>
         <li><span class="check">✓</span><span class="main">Stats basiques (matchs, buts, cartons)</span></li>
         <li><span class="check">✓</span><span class="main">3 joueurs non inscrits saisissables</span></li>
-        <li><span class="cross">✗</span>Impact collectif & score global</li>
+        <li><span class="cross">✗</span>Impact collectif</li>
         <li><span class="cross">✗</span>Filtres avancés par indicateurs</li>
         <li><span class="cross">✗</span>Vidéos & données GPS</li>
         <li><span class="cross">✗</span>Contact direct & export</li>
