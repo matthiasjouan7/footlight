@@ -482,6 +482,12 @@ body {
       </div>
     </div>
 
+    <div class="field">
+      <div class="field-label">Téléphone (optionnel)</div>
+      <input class="field-input" type="tel" id="f-telephone" placeholder="06 12 34 56 78"/>
+      <div class="field-hint">Uniquement visible par les recruteurs en offre Premium. Si tu ne le renseignes pas, ils pourront te contacter via l'email de ton compte.</div>
+    </div>
+
     <div class="field-hint" id="already-connected-banner" style="display:none;background:rgba(45,216,130,0.08);border:1px solid rgba(45,216,130,0.25);border-radius:12px;padding:12px 14px;color:var(--green);margin-bottom:16px;"></div>
 
     <div class="field" id="field-email">
@@ -1008,6 +1014,7 @@ async function claimProfile(id, btn) {
   const nom      = document.getElementById('f-nom').value.trim();
   const naiss    = document.getElementById('f-naissance').value;
   const nationalite = document.getElementById('f-nationalite').value.trim();
+  const telephone = document.getElementById('f-telephone').value.trim();
 
   document.querySelectorAll('.claim-card-btn').forEach(b => { b.disabled = true; });
   btn.textContent = 'Récupération...';
@@ -1032,6 +1039,7 @@ async function claimProfile(id, btn) {
       email,
       date_naissance: naiss || null,
       nationalite: nationalite || null,
+      telephone: telephone || null,
       profil_public: true
     })
     .eq('id', id);
@@ -1237,6 +1245,8 @@ async function submitForm() {
     const prenom   = document.getElementById('f-prenom').value.trim();
     const nom      = document.getElementById('f-nom').value.trim();
     const naiss    = document.getElementById('f-naissance').value;
+    const nationalite = document.getElementById('f-nationalite').value.trim();
+    const telephone = document.getElementById('f-telephone').value.trim();
     const club     = document.getElementById('f-club').value.trim();
     const niveau   = document.getElementById('f-niveau').value;
     const saison   = document.getElementById('f-saison').value;
@@ -1268,6 +1278,8 @@ async function submitForm() {
     const { error: profileError } = await db.from('joueurs').insert([{
       prenom, nom, email,
       date_naissance: naiss || null,
+      nationalite: nationalite || null,
+      telephone: telephone || null,
       poste: selectedPoste,
       pied_fort: pied || 'Droit',
       taille: taille ? parseInt(taille) : null,

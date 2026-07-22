@@ -499,6 +499,20 @@ async function renderProfil(j, isOwner) {
       ${j.nationalite ? `<div class="info-row"><span class="info-key">Nationalité</span><span class="info-val">${j.nationalite}</span></div>` : ''}
     </div>
 
+    ${(!isOwner && viewerRole === 'recruteur') ? `
+    <div class="section">
+      <div class="section-title">Coordonnées</div>
+      ${viewerPlan === 'premium' ? `
+      <div class="info-row"><span class="info-key">${j.telephone ? 'Téléphone' : 'Email'}</span><span class="info-val">${j.telephone || j.email || '—'}</span></div>
+      ${j.telephone && j.email ? `<div class="info-row"><span class="info-key">Email</span><span class="info-val">${j.email}</span></div>` : ''}
+      ` : `
+      <div class="locked-box">
+        <p>🔒 Réservé aux recruteurs Premium</p>
+        <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+      </div>
+      `}
+    </div>` : ''}
+
     ${(j.points_forts && j.points_forts.length) ? `
     <div class="section">
       <div class="section-title">Points forts</div>
