@@ -327,7 +327,10 @@ function renderRecap(saison) {
     ${(isDefensif && impactDefReel != null) ? `
     <div class="section">
       <div class="section-title">Impact défensif réel</div>
-      <div class="info-row"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
+      <div class="info-row"><span class="info-key">Matchs de l'équipe (saison)</span><span class="info-val">${s.matchs_equipe}</span></div>
+      <div class="info-row"><span class="info-key">Buts encaissés par l'équipe (saison)</span><span class="info-val">${s.buts_encaisses_equipe}</span></div>
+      <div class="info-row"><span class="info-key">Matchs sans lui</span><span class="info-val">${matchsSansLui} · ${butsEncaissesSansLui} but${butsEncaissesSansLui>1?'s':''} encaissé${butsEncaissesSansLui>1?'s':''}</span></div>
+      <div class="info-row" style="margin-top:6px;"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
       <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
       <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${impactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
       <div style="font-size:0.78rem;color:${impactTier(impactDefReel).color};margin-top:4px;">${impactTier(impactDefReel).label}</div>
