@@ -302,7 +302,7 @@ function renderRecap(saison) {
         ]) : ratioCardSorted([
           { displayVal: ratioButsMatch != null ? ratioButsMatch.toFixed(2) : null, label: 'Buts / match (moyenne)', rawValue: ratioButsMatch, tiers: {elite:0.7, gold:0.4}, invert: false },
           { displayVal: pctMatchsAvecBut != null ? pctMatchsAvecBut+'%' : null, label: '% matchs avec but', rawValue: pctMatchsAvecBut, tiers: {elite:65, gold:40}, invert: false },
-          { displayVal: ratioMinBut != null ? ratioMinBut+"'" : null, label: 'Minutes par but', rawValue: ratioMinBut, tiers: {elite:100, gold:200}, invert: true },
+          { displayVal: ratioMinBut != null ? ratioMinBut+"'" : null, label: 'Minutes par but (moyenne)', rawValue: ratioMinBut, tiers: {elite:100, gold:200}, invert: true },
           { displayVal: contribution, label: 'Buts + passes décisives', rawValue: s.matchs_joues > 0 ? contribution / s.matchs_joues : null, tiers: {elite:1.0, gold:0.6}, invert: false, always: true },
           { displayVal: pctButsEquipe != null ? pctButsEquipe+'%' : null, label: "Part des buts de l'équipe", rawValue: pctButsEquipe, tiers: {elite:35, gold:20}, invert: false },
           { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false },
