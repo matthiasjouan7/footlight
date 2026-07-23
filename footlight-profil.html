@@ -356,7 +356,7 @@ async function renderProfil(j, isOwner) {
   // ── Saisons : saison actuelle (joueurs) + historique (stats_saisons) ──
   const currentSeason = {
     saison: j.saison || '2026-2027', club: j.club, niveau: j.niveau,
-    matchs_joues: j.matchs_joues, titularisations: j.titularisations, buts: j.buts,
+    matchs_joues: j.matchs_joues, matchs_equipe: j.matchs_equipe, titularisations: j.titularisations, buts: j.buts,
     passes_decisives: j.passes_decisives, minutes_jouees: j.minutes_jouees, buts_equipe: j.buts_equipe,
     cartons_jaunes: j.cartons_jaunes, cartons_rouges: j.cartons_rouges,
     impact_differentiel: j.impact_differentiel, pct_matchs_avec_but: j.pct_matchs_avec_but,
@@ -377,7 +377,7 @@ async function renderProfil(j, isOwner) {
     saison: 'global', isGlobal: true, nbSaisons: seasonsData.length,
     club: [...new Set(seasonsData.map(s=>s.club).filter(Boolean))].join(', ') || '—',
     niveau: [...new Set(seasonsData.map(s=>s.niveau).filter(Boolean))].join(', ') || '—',
-    matchs_joues: sumKey(seasonsData,'matchs_joues'), titularisations: sumKey(seasonsData,'titularisations'),
+    matchs_joues: sumKey(seasonsData,'matchs_joues'), matchs_equipe: sumKey(seasonsData,'matchs_equipe'), titularisations: sumKey(seasonsData,'titularisations'),
     buts: sumKey(seasonsData,'buts'), passes_decisives: sumKey(seasonsData,'passes_decisives'), buts_equipe: sumKey(seasonsData,'buts_equipe'),
     minutes_jouees: sumKey(seasonsData,'minutes_jouees'), cartons_jaunes: sumKey(seasonsData,'cartons_jaunes'),
     cartons_rouges: sumKey(seasonsData,'cartons_rouges'),
@@ -411,8 +411,9 @@ async function renderProfil(j, isOwner) {
     const ratioEncaissesMatch = (s.matchs_joues > 0 && s.buts_encaisses_avec != null) ? s.buts_encaisses_avec / s.matchs_joues : null;
     const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
     const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
+    const tauxPresence = (s.matchs_equipe > 0) ? Math.round((s.matchs_joues||0) / s.matchs_equipe * 100) : null;
     const hasDefenseData = s.buts_encaisses_avec != null || s.clean_sheets != null;
-    const hasRatios = isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null || ratioCartons != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null);
+    const hasRatios = (isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null || ratioCartons != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null)) || tauxPresence != null;
 
     return `
       <div class="stats-grid">
@@ -439,15 +440,17 @@ async function renderProfil(j, isOwner) {
             { displayVal: ratioEncaissesMatch != null ? ratioEncaissesMatch.toFixed(2) : null, label: 'Buts encaissés / match', rawValue: ratioEncaissesMatch, tiers: {elite:0.5, gold:1.0}, invert: true },
             { displayVal: pctCleanSheet != null ? pctCleanSheet+'%' : null, label: '% clean sheet (titularisations)', rawValue: pctCleanSheet, tiers: {elite:40, gold:30}, invert: false },
             { displayVal: ratioCartons != null ? ratioCartons.toFixed(2) : null, label: 'Cartons / match (discipline)', rawValue: ratioCartons, tiers: {elite:0.15, gold:0.30}, invert: true },
+            { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false },
           ]) : ratioCardSorted([
             { displayVal: ratioButsMatch != null ? ratioButsMatch.toFixed(2) : null, label: 'Buts / match', rawValue: ratioButsMatch, tiers: {elite:0.7, gold:0.4}, invert: false },
             { displayVal: pctMatchsAvecBut != null ? pctMatchsAvecBut+'%' : null, label: '% matchs avec but', rawValue: pctMatchsAvecBut, tiers: {elite:65, gold:40}, invert: false },
             { displayVal: ratioMinBut != null ? ratioMinBut+"'" : null, label: 'Minutes par but', rawValue: ratioMinBut, tiers: {elite:100, gold:200}, invert: true },
             { displayVal: contribution, label: 'Buts + passes décisives', rawValue: s.matchs_joues > 0 ? contribution / s.matchs_joues : null, tiers: {elite:1.0, gold:0.6}, invert: false, always: true },
             { displayVal: pctButsEquipe != null ? pctButsEquipe+'%' : null, label: "Part des buts de l'équipe", rawValue: pctButsEquipe, tiers: {elite:35, gold:20}, invert: false },
+            { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false },
           ])}
         </div>
-        ${(!isDefensif && (pctButsEquipe == null || pctMatchsAvecBut == null)) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:12px;">${pctMatchsAvecBut == null ? 'Ajoute tes fiches de match pour débloquer le % de matchs avec but. ' : ''}${pctButsEquipe == null ? 'Renseigne les buts marqués par l\'équipe cette saison (dans "Modifier mon profil") pour débloquer la part des buts de l\'équipe.' : ''}</div>` : ''}
+        ${((!isDefensif && (pctButsEquipe == null || pctMatchsAvecBut == null)) || tauxPresence == null) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:12px;">${(!isDefensif && pctMatchsAvecBut == null) ? 'Ajoute tes fiches de match pour débloquer le % de matchs avec but. ' : ''}${(!isDefensif && pctButsEquipe == null) ? 'Renseigne les buts marqués par l\'équipe cette saison pour débloquer la part des buts de l\'équipe. ' : ''}${tauxPresence == null ? 'Renseigne les matchs joués par l\'équipe cette saison (dans "Modifier mon profil") pour débloquer ton taux de présence.' : ''}</div>` : ''}
       </div>`}
 
       ${(evolutionPct != null && !isDefensif) ? `

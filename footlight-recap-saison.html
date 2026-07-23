@@ -206,7 +206,7 @@ async function init() {
   const currentSeason = {
     saison: joueur.saison || '2026-2027', isCurrent: true,
     club: joueur.club, niveau: joueur.niveau,
-    matchs_joues: joueur.matchs_joues, titularisations: joueur.titularisations,
+    matchs_joues: joueur.matchs_joues, matchs_equipe: joueur.matchs_equipe, titularisations: joueur.titularisations,
     buts: joueur.buts, passes_decisives: joueur.passes_decisives, buts_equipe: joueur.buts_equipe,
     buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets,
     minutes_jouees: joueur.minutes_jouees,
@@ -248,11 +248,12 @@ function renderRecap(saison) {
   const ratioEncaissesMatch = (s.matchs_joues > 0 && s.buts_encaisses_avec != null) ? s.buts_encaisses_avec / s.matchs_joues : null;
   const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
   const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
+  const tauxPresence = (s.matchs_equipe > 0) ? Math.round((s.matchs_joues||0) / s.matchs_equipe * 100) : null;
   const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
   const prevSeason = sIndex >= 0 ? seasonsData[sIndex + 1] : null;
   const prevRatioButsMatch = (prevSeason && prevSeason.matchs_joues > 0) ? (prevSeason.buts||0) / prevSeason.matchs_joues : null;
   const evolutionPct = (ratioButsMatch != null && prevRatioButsMatch > 0) ? Math.round((ratioButsMatch - prevRatioButsMatch) / prevRatioButsMatch * 100) : null;
-  const hasRatios = isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null || ratioCartons != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null);
+  const hasRatios = (isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null || ratioCartons != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null)) || tauxPresence != null;
 
   let meilleurMatch = null;
   if (matchs.length) {
@@ -297,12 +298,14 @@ function renderRecap(saison) {
           { displayVal: ratioEncaissesMatch != null ? ratioEncaissesMatch.toFixed(2) : null, label: 'Buts encaissés / match', rawValue: ratioEncaissesMatch, tiers: {elite:0.5, gold:1.0}, invert: true },
           { displayVal: pctCleanSheet != null ? pctCleanSheet+'%' : null, label: '% clean sheet (titularisations)', rawValue: pctCleanSheet, tiers: {elite:40, gold:30}, invert: false },
           { displayVal: ratioCartons != null ? ratioCartons.toFixed(2) : null, label: 'Cartons / match (discipline)', rawValue: ratioCartons, tiers: {elite:0.15, gold:0.30}, invert: true },
+          { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false },
         ]) : ratioCardSorted([
           { displayVal: ratioButsMatch != null ? ratioButsMatch.toFixed(2) : null, label: 'Buts / match', rawValue: ratioButsMatch, tiers: {elite:0.7, gold:0.4}, invert: false },
           { displayVal: pctMatchsAvecBut != null ? pctMatchsAvecBut+'%' : null, label: '% matchs avec but', rawValue: pctMatchsAvecBut, tiers: {elite:65, gold:40}, invert: false },
           { displayVal: ratioMinBut != null ? ratioMinBut+"'" : null, label: 'Minutes par but', rawValue: ratioMinBut, tiers: {elite:100, gold:200}, invert: true },
           { displayVal: contribution, label: 'Buts + passes décisives', rawValue: s.matchs_joues > 0 ? contribution / s.matchs_joues : null, tiers: {elite:1.0, gold:0.6}, invert: false, always: true },
           { displayVal: pctButsEquipe != null ? pctButsEquipe+'%' : null, label: "Part des buts de l'équipe", rawValue: pctButsEquipe, tiers: {elite:35, gold:20}, invert: false },
+          { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false },
         ])}
       </div>
     </div>`}
