@@ -445,10 +445,8 @@ async function renderProfil(j, isOwner) {
     const tauxPresence = (s.matchs_equipe > 0) ? Math.round((s.matchs_joues||0) / s.matchs_equipe * 100) : null;
     // Impact défensif réel : buts encaissés/match sans lui vs avec lui,
     // déduit du total équipe — pas besoin de suivre les matchs sans lui.
-    const matchsSansLui = (s.matchs_equipe > 0) ? s.matchs_equipe - (s.matchs_joues||0) : null;
-    const butsEncaissesSansLui = (s.buts_encaisses_equipe != null && s.buts_encaisses_avec != null) ? s.buts_encaisses_equipe - s.buts_encaisses_avec : null;
-    const ratioEncaissesSansLui = (matchsSansLui > 0 && butsEncaissesSansLui != null) ? butsEncaissesSansLui / matchsSansLui : null;
-    const impactDefReel = (ratioEncaissesMatch != null && ratioEncaissesSansLui != null) ? ratioEncaissesSansLui - ratioEncaissesMatch : null;
+    const ratioEncaissesTotal = (s.matchs_equipe > 0 && s.buts_encaisses_equipe != null) ? s.buts_encaisses_equipe / s.matchs_equipe : null;
+    const impactDefReel = (ratioEncaissesMatch != null && ratioEncaissesTotal != null) ? ratioEncaissesTotal - ratioEncaissesMatch : null;
     const prevRatioEncaissesMatch = (prevSeason && prevSeason.matchs_joues > 0 && prevSeason.buts_encaisses_avec != null) ? prevSeason.buts_encaisses_avec / prevSeason.matchs_joues : null;
     const encaissesEvolutionPct = (ratioEncaissesMatch != null && prevRatioEncaissesMatch > 0) ? Math.round((prevRatioEncaissesMatch - ratioEncaissesMatch) / prevRatioEncaissesMatch * 100) : null;
     const prevPctCleanSheet = (prevSeason && prevSeason.titularisations > 0 && prevSeason.clean_sheets != null) ? Math.round(prevSeason.clean_sheets / prevSeason.titularisations * 100) : null;
@@ -538,9 +536,8 @@ async function renderProfil(j, isOwner) {
         <div class="section-title">Impact défensif réel</div>
         <div class="info-row"><span class="info-key">Matchs de l'équipe (saison)</span><span class="info-val">${s.matchs_equipe}</span></div>
         <div class="info-row"><span class="info-key">Buts encaissés par l'équipe (saison)</span><span class="info-val">${s.buts_encaisses_equipe}</span></div>
-        <div class="info-row"><span class="info-key">Matchs sans lui</span><span class="info-val">${matchsSansLui} · ${butsEncaissesSansLui} but${butsEncaissesSansLui>1?'s':''} encaissé${butsEncaissesSansLui>1?'s':''}</span></div>
         <div class="info-row" style="margin-top:6px;"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
-        <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
+        <div class="info-row"><span class="info-key">Buts encaissés/match (moyenne équipe)</span><span class="info-val">${ratioEncaissesTotal.toFixed(2)}</span></div>
         <div class="bar-item" style="margin-top:12px;">
           <div class="bar-label-row"><span class="k">Différentiel</span><span class="v" style="color:${impactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
           <div style="font-size:0.75rem;color:${impactTier(impactDefReel).color};margin-top:6px;">${impactTier(impactDefReel).label}</div>

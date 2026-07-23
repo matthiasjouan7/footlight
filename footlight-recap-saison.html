@@ -261,10 +261,8 @@ function renderRecap(saison) {
   const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
   const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
   const tauxPresence = (s.matchs_equipe > 0) ? Math.round((s.matchs_joues||0) / s.matchs_equipe * 100) : null;
-  const matchsSansLui = (s.matchs_equipe > 0) ? s.matchs_equipe - (s.matchs_joues||0) : null;
-  const butsEncaissesSansLui = (s.buts_encaisses_equipe != null && s.buts_encaisses_avec != null) ? s.buts_encaisses_equipe - s.buts_encaisses_avec : null;
-  const ratioEncaissesSansLui = (matchsSansLui > 0 && butsEncaissesSansLui != null) ? butsEncaissesSansLui / matchsSansLui : null;
-  const impactDefReel = (ratioEncaissesMatch != null && ratioEncaissesSansLui != null) ? ratioEncaissesSansLui - ratioEncaissesMatch : null;
+  const ratioEncaissesTotal = (s.matchs_equipe > 0 && s.buts_encaisses_equipe != null) ? s.buts_encaisses_equipe / s.matchs_equipe : null;
+  const impactDefReel = (ratioEncaissesMatch != null && ratioEncaissesTotal != null) ? ratioEncaissesTotal - ratioEncaissesMatch : null;
   const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
   // Remonte jusqu'à 3 saisons en arrière pour trouver la plus proche avec
   // des matchs joués, plutôt que d'échouer si la saison juste avant n'a
@@ -329,9 +327,8 @@ function renderRecap(saison) {
       <div class="section-title">Impact défensif réel</div>
       <div class="info-row"><span class="info-key">Matchs de l'équipe (saison)</span><span class="info-val">${s.matchs_equipe}</span></div>
       <div class="info-row"><span class="info-key">Buts encaissés par l'équipe (saison)</span><span class="info-val">${s.buts_encaisses_equipe}</span></div>
-      <div class="info-row"><span class="info-key">Matchs sans lui</span><span class="info-val">${matchsSansLui} · ${butsEncaissesSansLui} but${butsEncaissesSansLui>1?'s':''} encaissé${butsEncaissesSansLui>1?'s':''}</span></div>
       <div class="info-row" style="margin-top:6px;"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
-      <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
+      <div class="info-row"><span class="info-key">Buts encaissés/match (moyenne équipe)</span><span class="info-val">${ratioEncaissesTotal.toFixed(2)}</span></div>
       <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${impactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
       <div style="font-size:0.78rem;color:${impactTier(impactDefReel).color};margin-top:4px;">${impactTier(impactDefReel).label}</div>
     </div>` : ''}
