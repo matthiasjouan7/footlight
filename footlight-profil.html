@@ -345,6 +345,13 @@ async function renderProfil(j, isOwner) {
     (matchsBySaison[m.saison] = matchsBySaison[m.saison] || []).push(m);
   });
 
+  const canBlessures = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
+  let blessures = [];
+  if (canBlessures) {
+    const { data: blessuresRaw } = await db.from('blessures').select('*').eq('joueur_id', j.id).order('date_debut', { ascending: false });
+    blessures = blessuresRaw || [];
+  }
+
   const poste_raw = j.poste || 'autre';
   const couleur = COULEURS[poste_raw] || '#6e7681';
   const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
@@ -692,6 +699,30 @@ async function renderProfil(j, isOwner) {
           </div>
         </div>`;
     })()}
+
+    ${canBlessures ? (function() {
+      const typeCounts = {};
+      blessures.forEach(b => { typeCounts[b.type_blessure] = (typeCounts[b.type_blessure]||0) + 1; });
+      return `
+      <div class="section">
+        <div class="section-title">Historique des blessures</div>
+        ${blessures.length ? blessures.map(b => {
+          const isRecidive = typeCounts[b.type_blessure] >= 2;
+          return `
+          <div class="info-row">
+            <span class="info-key">${b.type_blessure}${isRecidive ? ' <span style="color:var(--red);font-size:0.7rem;font-weight:700;">RÉCIDIVE</span>' : ''}${b.gravite ? ` · ${b.gravite}` : ''}</span>
+            <span class="info-val" style="font-size:0.78rem;">${b.date_debut ? new Date(b.date_debut).toLocaleDateString('fr-FR') : '—'}${b.duree_estimee_jours ? ` · ~${b.duree_estimee_jours}j` : ''}</span>
+          </div>`;
+        }).join('') : `<div style="font-size:0.85rem;color:var(--green-l);">✓ Aucune blessure déclarée</div>`}
+      </div>`;
+    })() : `
+    <div class="section">
+      <div class="section-title">Historique des blessures</div>
+      <div class="locked-box">
+        <p>🔒 Réservé aux recruteurs Pro et Premium</p>
+        <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+      </div>
+    </div>`}
 
     <div class="section">
       <div class="section-title">Badge de validation</div>
