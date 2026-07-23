@@ -222,6 +222,13 @@ function impactTier(diff) {
   return { color: 'var(--red)', label: '🔴 L\'équipe est moins performante avec lui — à surveiller' };
 }
 
+function defensiveImpactTier(diff) {
+  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe encaisse clairement moins avec lui' };
+  if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
+  if (diff >= -0.10) return { color: 'var(--muted)', label: '⚪ Profil neutre — il ne change pas grand-chose' };
+  return { color: 'var(--red)', label: '🔴 L\'équipe encaisse plus avec lui — à surveiller' };
+}
+
 function normalizeName(s) {
   return (s || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -447,6 +454,10 @@ async function renderProfil(j, isOwner) {
     // déduit du total équipe — pas besoin de suivre les matchs sans lui.
     const ratioEncaissesTotal = (s.matchs_equipe > 0 && s.buts_encaisses_equipe != null) ? s.buts_encaisses_equipe / s.matchs_equipe : null;
     const impactDefReel = (ratioEncaissesMatch != null && ratioEncaissesTotal != null) ? ratioEncaissesTotal - ratioEncaissesMatch : null;
+    const matchsSansLui = (s.matchs_equipe > 0) ? s.matchs_equipe - (s.matchs_joues||0) : null;
+    const butsEncaissesSansLui = (s.buts_encaisses_equipe != null && s.buts_encaisses_avec != null) ? s.buts_encaisses_equipe - s.buts_encaisses_avec : null;
+    const ratioEncaissesSansLui = (matchsSansLui > 0 && butsEncaissesSansLui != null) ? butsEncaissesSansLui / matchsSansLui : null;
+    const impactDefReelSansLui = (ratioEncaissesMatch != null && ratioEncaissesSansLui != null) ? ratioEncaissesSansLui - ratioEncaissesMatch : null;
     const prevRatioEncaissesMatch = (prevSeason && prevSeason.matchs_joues > 0 && prevSeason.buts_encaisses_avec != null) ? prevSeason.buts_encaisses_avec / prevSeason.matchs_joues : null;
     const encaissesEvolutionPct = (ratioEncaissesMatch != null && prevRatioEncaissesMatch > 0) ? Math.round((prevRatioEncaissesMatch - ratioEncaissesMatch) / prevRatioEncaissesMatch * 100) : null;
     const prevPctCleanSheet = (prevSeason && prevSeason.titularisations > 0 && prevSeason.clean_sheets != null) ? Math.round(prevSeason.clean_sheets / prevSeason.titularisations * 100) : null;
@@ -539,9 +550,18 @@ async function renderProfil(j, isOwner) {
         <div class="info-row" style="margin-top:6px;"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
         <div class="info-row"><span class="info-key">Buts encaissés/match (moyenne équipe)</span><span class="info-val">${ratioEncaissesTotal.toFixed(2)}</span></div>
         <div class="bar-item" style="margin-top:12px;">
-          <div class="bar-label-row"><span class="k">Différentiel</span><span class="v" style="color:${impactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
-          <div style="font-size:0.75rem;color:${impactTier(impactDefReel).color};margin-top:6px;">${impactTier(impactDefReel).label}</div>
+          <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${defensiveImpactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${defensiveImpactTier(impactDefReel).color};margin-top:6px;">${defensiveImpactTier(impactDefReel).label}</div>
         </div>
+        ${impactDefReelSansLui != null ? `
+        <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
+        <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
+        <div class="bar-item" style="margin-top:12px;">
+          <div class="bar-label-row"><span class="k">Différentiel sans lui - avec lui</span><span class="v" style="color:${defensiveImpactTier(impactDefReelSansLui).color}">${impactDefReelSansLui>=0?'+':''}${impactDefReelSansLui.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${defensiveImpactTier(impactDefReelSansLui).color};margin-top:6px;">${defensiveImpactTier(impactDefReelSansLui).label}</div>
+        </div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Matchs sans lui déduits (matchs de l'équipe − matchs joués) : donnée approximative si des absences ne sont pas liées à des matchs manqués (blessure, banc...).</div>
+        ` : `<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Différentiel "sans lui" indisponible : il a joué la totalité (ou la quasi-totalité) des matchs de l'équipe cette saison, aucun match "sans lui" à comparer.</div>`}
       </div>` : `
       <div class="section">
         <div class="section-title">Impact défensif réel</div>
