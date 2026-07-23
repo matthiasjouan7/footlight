@@ -232,6 +232,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         <div class="section-title">Stats de la saison en cours</div>
         <div class="stat-grid">
           <div class="field"><label class="field-label">Matchs joués</label><input class="field-input" type="number" id="s-matchs" min="0"/></div>
+          <div class="field"><label class="field-label">Matchs de l'équipe (saison)</label><input class="field-input" type="number" id="s-matchs-equipe" min="0"/></div>
           <div class="field"><label class="field-label">Titularisations</label><input class="field-input" type="number" id="s-titu" min="0"/></div>
           <div class="field" id="field-buts"><label class="field-label">Buts</label><input class="field-input" type="number" id="s-buts" min="0"/></div>
           <div class="field" id="field-passes"><label class="field-label">Passes déc.</label><input class="field-input" type="number" id="s-passes" min="0"/></div>
@@ -242,7 +243,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
           <div class="field"><label class="field-label">Cartons jaunes</label><input class="field-input" type="number" id="s-cartj" min="0"/></div>
           <div class="field"><label class="field-label">Cartons rouges</label><input class="field-input" type="number" id="s-cartr" min="0"/></div>
         </div>
-        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">Renseigne le nombre de buts marqués par ton équipe cette saison pour débloquer le calcul de ta part dans les buts collectifs.</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">Renseigne le nombre de matchs joués par ton équipe cette saison pour débloquer ton taux de présence réel, et le nombre de buts marqués par l'équipe pour ta part dans les buts collectifs.</div>
       </div>
 
       <div class="section">
@@ -444,7 +445,7 @@ async function finishInit() {
   const currentSeason = {
     saison: joueur.saison || '2026-2027', isCurrent: true,
     club: joueur.club, niveau: joueur.niveau,
-    matchs_joues: joueur.matchs_joues, titularisations: joueur.titularisations,
+    matchs_joues: joueur.matchs_joues, matchs_equipe: joueur.matchs_equipe, titularisations: joueur.titularisations,
     buts: joueur.buts, passes_decisives: joueur.passes_decisives, buts_equipe: joueur.buts_equipe,
     buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets,
     minutes_jouees: joueur.minutes_jouees,
@@ -607,6 +608,7 @@ function fillSeasonFields(s) {
   document.getElementById('f-club').value = s.club || '';
   document.getElementById('f-niveau').value = s.niveau || '';
   document.getElementById('s-matchs').value = s.matchs_joues ?? '';
+  document.getElementById('s-matchs-equipe').value = s.matchs_equipe ?? '';
   document.getElementById('s-titu').value = s.titularisations ?? '';
   document.getElementById('s-buts').value = s.buts ?? '';
   document.getElementById('s-passes').value = s.passes_decisives ?? '';
@@ -710,6 +712,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     club: document.getElementById('f-club').value.trim() || null,
     niveau: document.getElementById('f-niveau').value || null,
     matchs_joues: parseInt(document.getElementById('s-matchs').value) || 0,
+    matchs_equipe: document.getElementById('s-matchs-equipe').value ? parseInt(document.getElementById('s-matchs-equipe').value) : null,
     titularisations: parseInt(document.getElementById('s-titu').value) || 0,
     buts: parseInt(document.getElementById('s-buts').value) || 0,
     passes_decisives: parseInt(document.getElementById('s-passes').value) || 0,
