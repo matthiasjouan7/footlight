@@ -407,7 +407,8 @@ async function renderProfil(j, isOwner) {
     const ratioMinBut = (s.buts > 0) ? Math.round((s.minutes_jouees||0) / s.buts) : null;
     const pctButsEquipe = (s.buts_equipe > 0) ? Math.round((s.buts||0) / s.buts_equipe * 100) : null;
     const matchsSaison = s.isGlobal ? Object.values(matchsBySaison).flat() : (matchsBySaison[s.saison] || []);
-    const pctMatchsAvecBut = matchsSaison.length > 0 ? Math.round(matchsSaison.filter(m => (m.buts||0) > 0).length / matchsSaison.length * 100) : null;
+    const matchsAvecButCount = matchsSaison.filter(m => (m.buts||0) > 0).length;
+    const pctMatchsAvecBut = matchsSaison.length > 0 ? Math.round(matchsAvecButCount / matchsSaison.length * 100) : null;
     const ratioEncaissesMatch = (s.matchs_joues > 0 && s.buts_encaisses_avec != null) ? s.buts_encaisses_avec / s.matchs_joues : null;
     const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
     const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
@@ -443,7 +444,7 @@ async function renderProfil(j, isOwner) {
             { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false, title: 'Pourcentage des matchs de l\'équipe cette saison où il a été utilisé.' },
           ]) : ratioCardSorted([
             { displayVal: ratioButsMatch != null ? ratioButsMatch.toFixed(2) : null, label: 'Buts / match (moyenne)', rawValue: ratioButsMatch, tiers: {elite:0.7, gold:0.4}, invert: false, title: 'En moyenne, nombre de buts marqués par match joué (total buts ÷ matchs joués).' },
-            { displayVal: pctMatchsAvecBut != null ? pctMatchsAvecBut+'%' : null, label: '% matchs avec but', rawValue: pctMatchsAvecBut, tiers: {elite:65, gold:40}, invert: false, title: 'Pourcentage des matchs (avec fiche remplie) où il a marqué au moins un but.' },
+            { displayVal: pctMatchsAvecBut != null ? pctMatchsAvecBut+'%' : null, label: pctMatchsAvecBut != null ? `A marqué dans ${matchsAvecButCount} match${matchsAvecButCount>1?'s':''} sur ${matchsSaison.length}` : '% matchs avec but', rawValue: pctMatchsAvecBut, tiers: {elite:65, gold:40}, invert: false, title: 'Nombre de matchs (avec fiche remplie) où il a marqué au moins un but, sur le total de matchs loggés — peu importe combien de buts par match.' },
             { displayVal: ratioMinBut != null ? ratioMinBut+"'" : null, label: ratioMinBut != null ? `Marque toutes les ${ratioMinBut} min (moyenne)` : 'Minutes par but (moyenne)', rawValue: ratioMinBut, tiers: {elite:100, gold:200}, invert: true, title: 'En moyenne, nombre de minutes de jeu nécessaires pour marquer un but.' },
             { displayVal: contribution, label: 'Buts + passes décisives', rawValue: s.matchs_joues > 0 ? contribution / s.matchs_joues : null, tiers: {elite:1.0, gold:0.6}, invert: false, always: true, title: 'Total de buts marqués et passes décisives sur la saison.' },
             { displayVal: pctButsEquipe != null ? pctButsEquipe+'%' : null, label: "Part des buts de l'équipe", rawValue: pctButsEquipe, tiers: {elite:35, gold:20}, invert: false, title: 'Pourcentage des buts de l\'équipe qu\'il a marqués lui-même.' },
