@@ -170,7 +170,7 @@ const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral
 
 // Colore un ratio/% selon son niveau réel plutôt qu'une couleur fixe :
 // un attaquant qui marque 50% des buts de son équipe doit sauter aux yeux.
-function ratioCard(displayVal, label, rawValue, tiers, invert) {
+function ratioTierClass(rawValue, tiers, invert) {
   let cls = 'blue';
   if (rawValue != null) {
     if (invert) {
@@ -181,8 +181,25 @@ function ratioCard(displayVal, label, rawValue, tiers, invert) {
       else if (rawValue >= tiers.gold) cls = 'gold';
     }
   }
+  return cls;
+}
+const TIER_WEIGHT = { elite: 2, gold: 1, blue: 0 };
+
+function ratioCard(displayVal, label, rawValue, tiers, invert) {
+  const cls = ratioTierClass(rawValue, tiers, invert);
   const badge = cls === 'elite' ? '<div class="ratio-badge">💪 Point fort</div>' : '';
   return `<div class="ratio-card ${cls}">${badge}<div class="ratio-val">${displayVal}</div><div class="ratio-lbl">${label}</div></div>`;
+}
+
+// Construit les cartes de ratio puis les trie pour faire ressortir les
+// points forts du joueur en premier plutôt qu'un ordre figé.
+function ratioCardSorted(entries) {
+  return entries
+    .filter(e => e.rawValue != null || e.always)
+    .map(e => ({ weight: TIER_WEIGHT[ratioTierClass(e.rawValue, e.tiers, e.invert)], html: ratioCard(e.displayVal, e.label, e.rawValue, e.tiers, e.invert) }))
+    .sort((a, b) => b.weight - a.weight)
+    .map(e => e.html)
+    .join('');
 }
 
 // Compare le ratio buts/match entre deux saisons pour repérer une chute
@@ -395,7 +412,7 @@ async function renderProfil(j, isOwner) {
     const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
     const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
     const hasDefenseData = s.buts_encaisses_avec != null || s.clean_sheets != null;
-    const hasRatios = (isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null)) || ratioCartons != null;
+    const hasRatios = isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null || ratioCartons != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null);
 
     return `
       <div class="stats-grid">
@@ -418,17 +435,17 @@ async function renderProfil(j, isOwner) {
       <div class="section">
         <div class="section-title">Ratios & performance</div>
         <div class="ratio-grid">
-          ${isDefensif ? `
-          ${ratioEncaissesMatch != null ? ratioCard(ratioEncaissesMatch.toFixed(2), 'Buts encaissés / match', ratioEncaissesMatch, {elite:0.5, gold:1.0}, true) : ''}
-          ${pctCleanSheet != null ? ratioCard(pctCleanSheet+'%', '% clean sheet (titularisations)', pctCleanSheet, {elite:40, gold:30}, false) : ''}
-          ` : `
-          ${ratioButsMatch != null ? ratioCard(ratioButsMatch.toFixed(2), 'Buts / match', ratioButsMatch, {elite:0.7, gold:0.4}, false) : ''}
-          ${pctMatchsAvecBut != null ? ratioCard(pctMatchsAvecBut+'%', '% matchs avec but', pctMatchsAvecBut, {elite:65, gold:40}, false) : ''}
-          ${ratioMinBut != null ? ratioCard(ratioMinBut+"'", 'Minutes par but', ratioMinBut, {elite:100, gold:200}, true) : ''}
-          ${ratioCard(contribution, 'Buts + passes décisives', s.matchs_joues > 0 ? contribution / s.matchs_joues : null, {elite:1.0, gold:0.6}, false)}
-          ${pctButsEquipe != null ? ratioCard(pctButsEquipe+'%', "Part des buts de l'équipe", pctButsEquipe, {elite:35, gold:20}, false) : ''}
-          `}
-          ${ratioCartons != null ? ratioCard(ratioCartons.toFixed(2), 'Cartons / match (discipline)', ratioCartons, {elite:0.15, gold:0.30}, true) : ''}
+          ${isDefensif ? ratioCardSorted([
+            { displayVal: ratioEncaissesMatch != null ? ratioEncaissesMatch.toFixed(2) : null, label: 'Buts encaissés / match', rawValue: ratioEncaissesMatch, tiers: {elite:0.5, gold:1.0}, invert: true },
+            { displayVal: pctCleanSheet != null ? pctCleanSheet+'%' : null, label: '% clean sheet (titularisations)', rawValue: pctCleanSheet, tiers: {elite:40, gold:30}, invert: false },
+            { displayVal: ratioCartons != null ? ratioCartons.toFixed(2) : null, label: 'Cartons / match (discipline)', rawValue: ratioCartons, tiers: {elite:0.15, gold:0.30}, invert: true },
+          ]) : ratioCardSorted([
+            { displayVal: ratioButsMatch != null ? ratioButsMatch.toFixed(2) : null, label: 'Buts / match', rawValue: ratioButsMatch, tiers: {elite:0.7, gold:0.4}, invert: false },
+            { displayVal: pctMatchsAvecBut != null ? pctMatchsAvecBut+'%' : null, label: '% matchs avec but', rawValue: pctMatchsAvecBut, tiers: {elite:65, gold:40}, invert: false },
+            { displayVal: ratioMinBut != null ? ratioMinBut+"'" : null, label: 'Minutes par but', rawValue: ratioMinBut, tiers: {elite:100, gold:200}, invert: true },
+            { displayVal: contribution, label: 'Buts + passes décisives', rawValue: s.matchs_joues > 0 ? contribution / s.matchs_joues : null, tiers: {elite:1.0, gold:0.6}, invert: false, always: true },
+            { displayVal: pctButsEquipe != null ? pctButsEquipe+'%' : null, label: "Part des buts de l'équipe", rawValue: pctButsEquipe, tiers: {elite:35, gold:20}, invert: false },
+          ])}
         </div>
         ${(!isDefensif && (pctButsEquipe == null || pctMatchsAvecBut == null)) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:12px;">${pctMatchsAvecBut == null ? 'Ajoute tes fiches de match pour débloquer le % de matchs avec but. ' : ''}${pctButsEquipe == null ? 'Renseigne les buts marqués par l\'équipe cette saison (dans "Modifier mon profil") pour débloquer la part des buts de l\'équipe.' : ''}</div>` : ''}
       </div>`}
