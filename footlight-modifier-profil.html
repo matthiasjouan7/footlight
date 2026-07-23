@@ -326,6 +326,56 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         </div>
       </div>
 
+      <div class="section" id="blessures-section">
+        <div class="section-title">Historique des blessures</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">Visible uniquement par les recruteurs en offre Pro et Premium. Indique tes blessures pour montrer ta régularité — ou l'absence de récidive.</div>
+        <div id="blessures-list"></div>
+        <button type="button" class="btn outline" id="btn-add-blessure" onclick="showBlessureForm()" style="width:100%;margin-top:8px;">+ Ajouter une blessure</button>
+
+        <div id="blessure-form-panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--bg4);">
+          <input type="hidden" id="b-edit-id"/>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Type de blessure</label>
+              <select class="field-select" id="b-type">
+                <option value="Ischio-jambiers">Ischio-jambiers</option>
+                <option value="Cheville">Cheville</option>
+                <option value="Genou">Genou</option>
+                <option value="Mollet">Mollet</option>
+                <option value="Adducteurs">Adducteurs</option>
+                <option value="Épaule">Épaule</option>
+                <option value="Dos">Dos</option>
+                <option value="Fracture">Fracture</option>
+                <option value="Commotion">Commotion</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            <div class="field"><label class="field-label">Date de début</label><input class="field-input" type="date" id="b-date"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label class="field-label">Durée estimée (jours)</label><input class="field-input" type="number" id="b-duree" min="0"/></div>
+            <div class="field">
+              <label class="field-label">Gravité</label>
+              <select class="field-select" id="b-gravite">
+                <option value="">—</option>
+                <option value="Légère">Légère</option>
+                <option value="Modérée">Modérée</option>
+                <option value="Grave">Grave</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Commentaire (optionnel)</label>
+            <input class="field-input" type="text" id="b-commentaire" placeholder="Ex: rechute légère à la reprise"/>
+          </div>
+          <div class="msg" id="blessure-form-msg"></div>
+          <div class="btn-row">
+            <button type="button" class="btn primary" id="btn-save-blessure" onclick="saveBlessureForm()">Enregistrer la blessure</button>
+            <button type="button" class="btn outline" onclick="hideBlessureForm()">Annuler</button>
+          </div>
+        </div>
+      </div>
+
       <div class="msg" id="form-msg"></div>
 
       <div class="btn-row">
@@ -407,6 +457,7 @@ async function init() {
     isRecruiterEditing = true;
     joueur = target;
     document.getElementById('account-section').style.display = 'none';
+    document.getElementById('blessures-section').style.display = 'none';
     document.getElementById('page-title').textContent = `Compléter le profil de ${target.prenom} ${target.nom}`;
     document.getElementById('page-sub').textContent = 'Aide ce joueur à avoir un profil complet en renseignant club, niveau et stats manquantes.';
     document.getElementById('recruteur-banner').style.display = 'block';
@@ -461,6 +512,7 @@ async function finishInit() {
   document.getElementById('f-saison').value = currentSeason.saison;
   fillSeasonFields(currentSeason);
   loadMatchsForSeason(currentSeason.saison);
+  if (!isRecruiterEditing) loadBlessures();
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('form-content').style.display = 'block';
@@ -894,6 +946,104 @@ async function deleteMatch(id) {
   if (!confirm('Supprimer cette fiche de match ?')) return;
   await db.from('matchs_joueur').delete().eq('id', id);
   await loadMatchsForSeason(getSelectedSaisonText());
+}
+
+// ── HISTORIQUE DES BLESSURES (indépendant de la saison sélectionnée) ──
+let blessuresList = [];
+
+async function loadBlessures() {
+  const { data } = await db.from('blessures').select('*').eq('joueur_id', joueur.id).order('date_debut', { ascending: false });
+  blessuresList = data || [];
+  renderBlessuresList();
+}
+
+function renderBlessuresList() {
+  const el = document.getElementById('blessures-list');
+  if (!blessuresList.length) {
+    el.innerHTML = '<div style="font-size:0.8rem;color:var(--muted);">Aucune blessure ajoutée.</div>';
+    return;
+  }
+  const typeCounts = {};
+  blessuresList.forEach(b => { typeCounts[b.type_blessure] = (typeCounts[b.type_blessure]||0) + 1; });
+  el.innerHTML = blessuresList.map(b => {
+    const isRecidive = typeCounts[b.type_blessure] >= 2;
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg4);">
+        <div>
+          <div style="font-size:0.85rem;">${b.type_blessure}${isRecidive ? ' <span style="color:var(--red);font-size:0.7rem;font-weight:700;">RÉCIDIVE</span>' : ''}${b.gravite ? ` · ${b.gravite}` : ''}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${b.date_debut ? new Date(b.date_debut).toLocaleDateString('fr-FR') : 'Date non précisée'}${b.duree_estimee_jours ? ` · ~${b.duree_estimee_jours} jours` : ''}${b.saison ? ` · ${b.saison}` : ''}${b.commentaire ? ` · ${b.commentaire}` : ''}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <button type="button" class="btn outline" style="padding:6px 10px;font-size:0.75rem;" onclick="editBlessure('${b.id}')">Modifier</button>
+          <button type="button" class="btn outline" style="padding:6px 10px;font-size:0.75rem;color:var(--red);" onclick="deleteBlessure('${b.id}')">Supprimer</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function showBlessureForm(b) {
+  document.getElementById('b-edit-id').value = b ? b.id : '';
+  document.getElementById('b-type').value = b ? b.type_blessure : 'Ischio-jambiers';
+  document.getElementById('b-date').value = b && b.date_debut ? b.date_debut : '';
+  document.getElementById('b-duree').value = b && b.duree_estimee_jours != null ? b.duree_estimee_jours : '';
+  document.getElementById('b-gravite').value = b ? (b.gravite || '') : '';
+  document.getElementById('b-commentaire').value = b ? (b.commentaire || '') : '';
+  document.getElementById('blessure-form-msg').className = 'msg';
+  document.getElementById('blessure-form-msg').textContent = '';
+  document.getElementById('blessure-form-panel').style.display = 'block';
+}
+
+function editBlessure(id) {
+  const b = blessuresList.find(x => x.id === id);
+  if (b) showBlessureForm(b);
+}
+
+function hideBlessureForm() {
+  document.getElementById('blessure-form-panel').style.display = 'none';
+}
+
+async function saveBlessureForm() {
+  const saison = getSelectedSaisonText();
+  const btn = document.getElementById('btn-save-blessure');
+  const msg = document.getElementById('blessure-form-msg');
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement...';
+
+  const payload = {
+    joueur_id: joueur.id,
+    saison: saison || (joueur.saison || '2026-2027'),
+    type_blessure: document.getElementById('b-type').value,
+    date_debut: document.getElementById('b-date').value || null,
+    duree_estimee_jours: document.getElementById('b-duree').value ? parseInt(document.getElementById('b-duree').value) : null,
+    gravite: document.getElementById('b-gravite').value || null,
+    commentaire: document.getElementById('b-commentaire').value.trim() || null,
+  };
+
+  const editId = document.getElementById('b-edit-id').value;
+  let error;
+  if (editId) {
+    ({ error } = await db.from('blessures').update(payload).eq('id', editId));
+  } else {
+    ({ error } = await db.from('blessures').insert(payload));
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Enregistrer la blessure';
+
+  if (error) {
+    msg.classList.add('error');
+    msg.textContent = 'Erreur : ' + error.message;
+    return;
+  }
+
+  hideBlessureForm();
+  await loadBlessures();
+}
+
+async function deleteBlessure(id) {
+  if (!confirm('Supprimer cette blessure ?')) return;
+  await db.from('blessures').delete().eq('id', id);
+  await loadBlessures();
 }
 
 // ── BOUTONS +/- SUR LES CHAMPS DE STATS (la saisie manuelle reste possible) ──
