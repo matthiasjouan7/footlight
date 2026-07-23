@@ -50,10 +50,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 .ratio-card.gold{background:rgba(210,153,34,0.1);border-color:rgba(210,153,34,0.35);}
 .ratio-card.blue{background:rgba(31,111,235,0.1);border-color:rgba(31,111,235,0.35);}
 .ratio-card.elite{background:rgba(218,54,51,0.14);border-color:var(--red);border-width:2px;}
+.ratio-card.empty{background:var(--bg3);border-color:var(--bg4);opacity:0.6;}
 .ratio-val{font-size:2rem;font-weight:900;margin-bottom:4px;}
 .ratio-card.gold .ratio-val{color:var(--gold-l);}
 .ratio-card.blue .ratio-val{color:var(--blue-l);}
 .ratio-card.elite .ratio-val{color:var(--red);}
+.ratio-card.empty .ratio-val{color:var(--muted);}
 .ratio-lbl{font-size:0.78rem;color:var(--muted);font-weight:600;}
 .ratio-badge{position:absolute;top:-9px;right:12px;background:var(--red);color:#fff;font-size:0.62rem;font-weight:800;padding:2px 9px;border-radius:20px;letter-spacing:0.3px;}
 
@@ -132,29 +134,27 @@ function evolutionTier(pct) {
 }
 
 function ratioTierClass(rawValue, tiers, invert) {
+  if (rawValue == null) return 'empty';
   let cls = 'blue';
-  if (rawValue != null) {
-    if (invert) {
-      if (rawValue <= tiers.elite) cls = 'elite';
-      else if (rawValue <= tiers.gold) cls = 'gold';
-    } else {
-      if (rawValue >= tiers.elite) cls = 'elite';
-      else if (rawValue >= tiers.gold) cls = 'gold';
-    }
+  if (invert) {
+    if (rawValue <= tiers.elite) cls = 'elite';
+    else if (rawValue <= tiers.gold) cls = 'gold';
+  } else {
+    if (rawValue >= tiers.elite) cls = 'elite';
+    else if (rawValue >= tiers.gold) cls = 'gold';
   }
   return cls;
 }
-const TIER_WEIGHT = { elite: 2, gold: 1, blue: 0 };
+const TIER_WEIGHT = { elite: 2, gold: 1, blue: 0, empty: -1 };
 
 function ratioCard(displayVal, label, rawValue, tiers, invert, title) {
   const cls = ratioTierClass(rawValue, tiers, invert);
   const badge = cls === 'elite' ? '<div class="ratio-badge">💪 Point fort</div>' : '';
-  return `<div class="ratio-card ${cls}" title="${title||''}">${badge}<div class="ratio-val">${displayVal}</div><div class="ratio-lbl">${label}</div></div>`;
+  return `<div class="ratio-card ${cls}" title="${title||''}">${badge}<div class="ratio-val">${displayVal != null ? displayVal : '—'}</div><div class="ratio-lbl">${label}</div></div>`;
 }
 
 function ratioCardSorted(entries) {
   return entries
-    .filter(e => e.rawValue != null || e.always)
     .map(e => ({ weight: e.pinned ? 99 : TIER_WEIGHT[ratioTierClass(e.rawValue, e.tiers, e.invert)], html: ratioCard(e.displayVal, e.label, e.rawValue, e.tiers, e.invert, e.title) }))
     .sort((a, b) => b.weight - a.weight)
     .map(e => e.html)
@@ -255,7 +255,6 @@ function renderRecap(saison) {
   const prevSeason = sIndex >= 0 ? seasonsData[sIndex + 1] : null;
   const prevRatioButsMatch = (prevSeason && prevSeason.matchs_joues > 0) ? (prevSeason.buts||0) / prevSeason.matchs_joues : null;
   const evolutionPct = (ratioButsMatch != null && prevRatioButsMatch > 0) ? Math.round((ratioButsMatch - prevRatioButsMatch) / prevRatioButsMatch * 100) : null;
-  const hasRatios = (isDefensif ? (ratioEncaissesMatch != null || pctCleanSheet != null || ratioCartons != null) : (ratioButsMatch != null || contribution > 0 || ratioMinBut != null || pctButsEquipe != null || pctMatchsAvecBut != null)) || tauxPresence != null;
 
   let meilleurMatch = null;
   if (matchs.length) {
@@ -292,7 +291,6 @@ function renderRecap(saison) {
       <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
     </div>
 
-    ${!hasRatios ? '' : `
     <div class="section">
       <div class="section-title">Ratios & performance</div>
       <div class="ratio-grid">
@@ -310,7 +308,7 @@ function renderRecap(saison) {
           { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false, title: 'Pourcentage des matchs de l\'équipe cette saison où il a été utilisé.' },
         ])}
       </div>
-    </div>`}
+    </div>
 
     ${(evolutionPct != null && !isDefensif) ? `
     <div class="section">
