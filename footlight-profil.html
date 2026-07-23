@@ -397,7 +397,7 @@ async function renderProfil(j, isOwner) {
     const pct_tps = s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0;
     const diff = s.impact_differentiel;
     const diffPct = diff == null ? 0 : Math.max(0, Math.min(100, 50 + diff * 50));
-    const hasImpactData = s.impact_differentiel != null || s.pct_matchs_avec_but != null || s.points_avec != null;
+    const hasImpactData = s.impact_differentiel != null || s.points_avec != null;
     const hasGPS = s.vitesse_max_kmh != null || s.vma_kmh != null || s.distance_moyenne_km != null || s.sprints_match != null;
     const round1 = (v) => v == null ? v : Math.round(v*10)/10;
     const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
@@ -481,11 +481,6 @@ async function renderProfil(j, isOwner) {
           <div class="bar-track"><div class="bar-fill" style="width:${diffPct}%;background:${impactTier(diff).color}"></div></div>
           <div style="font-size:0.75rem;color:${impactTier(diff).color};margin-top:6px;">${impactTier(diff).label}</div>
           <div style="font-size:0.68rem;color:var(--muted);margin-top:4px;">Points pris par l'équipe avec ce joueur vs sans lui — donnée historique, non auto-déclarable.</div>
-        </div>` : ''}
-        ${(!isDefensif && s.pct_matchs_avec_but != null) ? `
-        <div class="bar-item">
-          <div class="bar-label-row"><span class="k">% matchs avec but</span><span class="v" style="color:var(--gold-l)">${Math.round(s.pct_matchs_avec_but)}%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,s.pct_matchs_avec_but)}%;background:var(--gold-l)"></div></div>
         </div>` : ''}
         ${s.points_avec != null && s.points_sans != null ? `
         <div class="info-row"><span class="info-key">Points pris avec le joueur</span><span class="info-val">${s.points_avec}${s.pct_points_avec!=null?' ('+Math.round(s.pct_points_avec)+'%)':''}</span></div>
