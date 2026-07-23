@@ -133,11 +133,11 @@ function evolutionTier(pct) {
   return { color: 'var(--red)', label: '🔴 Grosse baisse — à examiner de près' };
 }
 
-function impactTier(diff) {
-  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe est nettement plus performante avec lui' };
+function defensiveImpactTier(diff) {
+  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe encaisse clairement moins avec lui' };
   if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
-  if (diff >= -0.10) return { color: 'var(--muted)', label: '⚪ Profil neutre — ne change pas grand-chose' };
-  return { color: 'var(--red)', label: '🔴 L\'équipe est moins performante avec lui — à surveiller' };
+  if (diff >= -0.10) return { color: 'var(--muted)', label: '⚪ Profil neutre — il ne change pas grand-chose' };
+  return { color: 'var(--red)', label: '🔴 L\'équipe encaisse plus avec lui — à surveiller' };
 }
 
 function ratioTierClass(rawValue, tiers, invert) {
@@ -263,6 +263,10 @@ function renderRecap(saison) {
   const tauxPresence = (s.matchs_equipe > 0) ? Math.round((s.matchs_joues||0) / s.matchs_equipe * 100) : null;
   const ratioEncaissesTotal = (s.matchs_equipe > 0 && s.buts_encaisses_equipe != null) ? s.buts_encaisses_equipe / s.matchs_equipe : null;
   const impactDefReel = (ratioEncaissesMatch != null && ratioEncaissesTotal != null) ? ratioEncaissesTotal - ratioEncaissesMatch : null;
+  const matchsSansLui = (s.matchs_equipe > 0) ? s.matchs_equipe - (s.matchs_joues||0) : null;
+  const butsEncaissesSansLui = (s.buts_encaisses_equipe != null && s.buts_encaisses_avec != null) ? s.buts_encaisses_equipe - s.buts_encaisses_avec : null;
+  const ratioEncaissesSansLui = (matchsSansLui > 0 && butsEncaissesSansLui != null) ? butsEncaissesSansLui / matchsSansLui : null;
+  const impactDefReelSansLui = (ratioEncaissesMatch != null && ratioEncaissesSansLui != null) ? ratioEncaissesSansLui - ratioEncaissesMatch : null;
   const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
   // Remonte jusqu'à 3 saisons en arrière pour trouver la plus proche avec
   // des matchs joués, plutôt que d'échouer si la saison juste avant n'a
@@ -329,8 +333,14 @@ function renderRecap(saison) {
       <div class="info-row"><span class="info-key">Buts encaissés par l'équipe (saison)</span><span class="info-val">${s.buts_encaisses_equipe}</span></div>
       <div class="info-row" style="margin-top:6px;"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
       <div class="info-row"><span class="info-key">Buts encaissés/match (moyenne équipe)</span><span class="info-val">${ratioEncaissesTotal.toFixed(2)}</span></div>
-      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${impactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
-      <div style="font-size:0.78rem;color:${impactTier(impactDefReel).color};margin-top:4px;">${impactTier(impactDefReel).label}</div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${defensiveImpactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${defensiveImpactTier(impactDefReel).color};margin-top:4px;">${defensiveImpactTier(impactDefReel).label}</div>
+      ${impactDefReelSansLui != null ? `
+      <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
+      <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${defensiveImpactTier(impactDefReelSansLui).color}">${impactDefReelSansLui>=0?'+':''}${impactDefReelSansLui.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${defensiveImpactTier(impactDefReelSansLui).color};margin-top:4px;">${defensiveImpactTier(impactDefReelSansLui).label}</div>
+      ` : ''}
     </div>` : ''}
 
     <div class="section">
