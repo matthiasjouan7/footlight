@@ -701,19 +701,14 @@ async function renderProfil(j, isOwner) {
     })()}
 
     ${canBlessures ? (function() {
-      const typeCounts = {};
-      blessures.forEach(b => { typeCounts[b.type_blessure] = (typeCounts[b.type_blessure]||0) + 1; });
       return `
       <div class="section">
         <div class="section-title">Historique des blessures</div>
-        ${blessures.length ? blessures.map(b => {
-          const isRecidive = typeCounts[b.type_blessure] >= 2;
-          return `
+        ${blessures.length ? blessures.map(b => `
           <div class="info-row">
-            <span class="info-key">${b.type_blessure}${isRecidive ? ' <span style="color:var(--red);font-size:0.7rem;font-weight:700;">RÉCIDIVE</span>' : ''}${b.gravite ? ` · ${b.gravite}` : ''}</span>
-            <span class="info-val" style="font-size:0.78rem;">${b.date_debut ? new Date(b.date_debut).toLocaleDateString('fr-FR') : '—'}${b.duree_estimee_jours ? ` · ~${b.duree_estimee_jours}j` : ''}</span>
-          </div>`;
-        }).join('') : `<div style="font-size:0.85rem;color:var(--green-l);">✓ Aucune blessure déclarée</div>`}
+            <span class="info-key">${b.type_blessure}${b.gravite ? ` · ${b.gravite}` : ''}</span>
+            <span class="info-val" style="font-size:0.78rem;">${b.matchs_rates ? `${b.matchs_rates} match${b.matchs_rates>1?'s':''} raté${b.matchs_rates>1?'s':''}` : '—'}${b.duree_estimee_jours ? ` · ${b.duree_estimee_jours}j d'absence` : ''}</span>
+          </div>`).join('') : `<div style="font-size:0.85rem;color:var(--green-l);">✓ Aucune blessure déclarée</div>`}
       </div>`;
     })() : `
     <div class="section">

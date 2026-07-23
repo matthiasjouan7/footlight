@@ -353,7 +353,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
             <div class="field"><label class="field-label">Date de début</label><input class="field-input" type="date" id="b-date"/></div>
           </div>
           <div class="field-row">
-            <div class="field"><label class="field-label">Durée estimée (jours)</label><input class="field-input" type="number" id="b-duree" min="0"/></div>
+            <div class="field"><label class="field-label">Jours d'absence</label><input class="field-input" type="number" id="b-duree" min="0"/></div>
+            <div class="field"><label class="field-label">Matchs ratés</label><input class="field-input" type="number" id="b-matchs-rates" min="0"/></div>
+          </div>
+          <div class="field-row">
             <div class="field">
               <label class="field-label">Gravité</label>
               <select class="field-select" id="b-gravite">
@@ -963,15 +966,12 @@ function renderBlessuresList() {
     el.innerHTML = '<div style="font-size:0.8rem;color:var(--muted);">Aucune blessure ajoutée.</div>';
     return;
   }
-  const typeCounts = {};
-  blessuresList.forEach(b => { typeCounts[b.type_blessure] = (typeCounts[b.type_blessure]||0) + 1; });
   el.innerHTML = blessuresList.map(b => {
-    const isRecidive = typeCounts[b.type_blessure] >= 2;
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg4);">
         <div>
-          <div style="font-size:0.85rem;">${b.type_blessure}${isRecidive ? ' <span style="color:var(--red);font-size:0.7rem;font-weight:700;">RÉCIDIVE</span>' : ''}${b.gravite ? ` · ${b.gravite}` : ''}</div>
-          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${b.date_debut ? new Date(b.date_debut).toLocaleDateString('fr-FR') : 'Date non précisée'}${b.duree_estimee_jours ? ` · ~${b.duree_estimee_jours} jours` : ''}${b.saison ? ` · ${b.saison}` : ''}${b.commentaire ? ` · ${b.commentaire}` : ''}</div>
+          <div style="font-size:0.85rem;">${b.type_blessure}${b.gravite ? ` · ${b.gravite}` : ''}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${b.date_debut ? new Date(b.date_debut).toLocaleDateString('fr-FR') : 'Date non précisée'}${b.duree_estimee_jours ? ` · ~${b.duree_estimee_jours} jours` : ''}${b.matchs_rates ? ` · ${b.matchs_rates} match${b.matchs_rates>1?'s':''} raté${b.matchs_rates>1?'s':''}` : ''}${b.saison ? ` · ${b.saison}` : ''}${b.commentaire ? ` · ${b.commentaire}` : ''}</div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
           <button type="button" class="btn outline" style="padding:6px 10px;font-size:0.75rem;" onclick="editBlessure('${b.id}')">Modifier</button>
@@ -986,6 +986,7 @@ function showBlessureForm(b) {
   document.getElementById('b-type').value = b ? b.type_blessure : 'Ischio-jambiers';
   document.getElementById('b-date').value = b && b.date_debut ? b.date_debut : '';
   document.getElementById('b-duree').value = b && b.duree_estimee_jours != null ? b.duree_estimee_jours : '';
+  document.getElementById('b-matchs-rates').value = b && b.matchs_rates != null ? b.matchs_rates : '';
   document.getElementById('b-gravite').value = b ? (b.gravite || '') : '';
   document.getElementById('b-commentaire').value = b ? (b.commentaire || '') : '';
   document.getElementById('blessure-form-msg').className = 'msg';
@@ -1015,6 +1016,7 @@ async function saveBlessureForm() {
     type_blessure: document.getElementById('b-type').value,
     date_debut: document.getElementById('b-date').value || null,
     duree_estimee_jours: document.getElementById('b-duree').value ? parseInt(document.getElementById('b-duree').value) : null,
+    matchs_rates: document.getElementById('b-matchs-rates').value ? parseInt(document.getElementById('b-matchs-rates').value) : null,
     gravite: document.getElementById('b-gravite').value || null,
     commentaire: document.getElementById('b-commentaire').value.trim() || null,
   };
