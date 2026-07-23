@@ -147,7 +147,7 @@ const ROWS_COMMON_TOP = [
 const ROWS_OFFENSE = [
   { label: 'Buts', get: j => j.buts || 0, better: 'high' },
   { label: 'Passes décisives', get: j => j.passes_decisives || 0, better: 'high' },
-  { label: 'Buts / match', get: j => j.matchs_joues > 0 ? (j.buts || 0) / j.matchs_joues : null, fmt: v => v == null ? '—' : v.toFixed(2), better: 'high' },
+  { label: 'Buts / match (moyenne)', get: j => j.matchs_joues > 0 ? (j.buts || 0) / j.matchs_joues : null, fmt: v => v == null ? '—' : v.toFixed(2), better: 'high' },
   { label: 'Buts + passes', get: j => (j.buts || 0) + (j.passes_decisives || 0), better: 'high' },
 ];
 
