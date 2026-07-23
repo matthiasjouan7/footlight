@@ -373,7 +373,7 @@ async function renderProfil(j, isOwner) {
     pct_points_avec: j.pct_points_avec, pct_points_sans: j.pct_points_sans,
     vitesse_max_kmh: j.vitesse_max_kmh, vma_kmh: j.vma_kmh,
     distance_moyenne_km: j.distance_moyenne_km, sprints_match: j.sprints_match,
-    buts_encaisses_avec: j.buts_encaisses_avec, clean_sheets: j.clean_sheets,
+    buts_encaisses_avec: j.buts_encaisses_avec, clean_sheets: j.clean_sheets, buts_encaisses_equipe: j.buts_encaisses_equipe,
     preuve_gps_url: j.preuve_gps_url,
     isCurrent: true
   };
@@ -397,6 +397,7 @@ async function renderProfil(j, isOwner) {
     vma_kmh: avgKey(seasonsData,'vma_kmh'), distance_moyenne_km: avgKey(seasonsData,'distance_moyenne_km'),
     sprints_match: avgKey(seasonsData,'sprints_match'),
     buts_encaisses_avec: sumKey(seasonsData,'buts_encaisses_avec'), clean_sheets: sumKey(seasonsData,'clean_sheets'),
+    buts_encaisses_equipe: sumKey(seasonsData,'buts_encaisses_equipe'),
     preuve_gps_url: (seasonsData.find(s => s.preuve_gps_url) || {}).preuve_gps_url || null
   };
 
@@ -442,6 +443,12 @@ async function renderProfil(j, isOwner) {
     const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
     const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
     const tauxPresence = (s.matchs_equipe > 0) ? Math.round((s.matchs_joues||0) / s.matchs_equipe * 100) : null;
+    // Impact défensif réel : buts encaissés/match sans lui vs avec lui,
+    // déduit du total équipe — pas besoin de suivre les matchs sans lui.
+    const matchsSansLui = (s.matchs_equipe > 0) ? s.matchs_equipe - (s.matchs_joues||0) : null;
+    const butsEncaissesSansLui = (s.buts_encaisses_equipe != null && s.buts_encaisses_avec != null) ? s.buts_encaisses_equipe - s.buts_encaisses_avec : null;
+    const ratioEncaissesSansLui = (matchsSansLui > 0 && butsEncaissesSansLui != null) ? butsEncaissesSansLui / matchsSansLui : null;
+    const impactDefReel = (ratioEncaissesMatch != null && ratioEncaissesSansLui != null) ? ratioEncaissesSansLui - ratioEncaissesMatch : null;
     const prevRatioEncaissesMatch = (prevSeason && prevSeason.matchs_joues > 0 && prevSeason.buts_encaisses_avec != null) ? prevSeason.buts_encaisses_avec / prevSeason.matchs_joues : null;
     const encaissesEvolutionPct = (ratioEncaissesMatch != null && prevRatioEncaissesMatch > 0) ? Math.round((prevRatioEncaissesMatch - ratioEncaissesMatch) / prevRatioEncaissesMatch * 100) : null;
     const prevPctCleanSheet = (prevSeason && prevSeason.titularisations > 0 && prevSeason.clean_sheets != null) ? Math.round(prevSeason.clean_sheets / prevSeason.titularisations * 100) : null;
@@ -482,7 +489,7 @@ async function renderProfil(j, isOwner) {
             { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false, title: 'Pourcentage des matchs de l\'équipe cette saison où il a été utilisé.' },
           ])}
         </div>
-        ${((!isDefensif && (pctButsEquipe == null || pctMatchsAvecBut == null)) || tauxPresence == null) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:12px;">${(!isDefensif && pctMatchsAvecBut == null) ? 'Ajoute tes fiches de match pour débloquer le % de matchs avec but. ' : ''}${(!isDefensif && pctButsEquipe == null) ? 'Renseigne les buts marqués par l\'équipe cette saison pour débloquer la part des buts de l\'équipe. ' : ''}${tauxPresence == null ? 'Renseigne les matchs joués par l\'équipe cette saison (dans "Modifier mon profil") pour débloquer ton taux de présence.' : ''}</div>` : ''}
+        ${((!isDefensif && (pctButsEquipe == null || pctMatchsAvecBut == null)) || tauxPresence == null || (isDefensif && impactDefReel == null)) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:12px;">${(!isDefensif && pctMatchsAvecBut == null) ? 'Ajoute tes fiches de match pour débloquer le % de matchs avec but. ' : ''}${(!isDefensif && pctButsEquipe == null) ? 'Renseigne les buts marqués par l\'équipe cette saison pour débloquer la part des buts de l\'équipe. ' : ''}${(isDefensif && impactDefReel == null) ? 'Renseigne les matchs et buts encaissés de l\'équipe cette saison (dans "Modifier mon profil") pour débloquer ton impact défensif réel. ' : ''}${tauxPresence == null ? 'Renseigne les matchs joués par l\'équipe cette saison (dans "Modifier mon profil") pour débloquer ton taux de présence.' : ''}</div>` : ''}
       </div>
 
       ${(isDefensif ? (encaissesEvolutionPct != null || cleanSheetEvolutionPct != null) : (evolutionPct != null || pctMatchsEvolutionPct != null || minButEvolutionPct != null)) ? `
@@ -525,6 +532,24 @@ async function renderProfil(j, isOwner) {
         <div class="info-row"><span class="info-key">Niveau</span><span class="info-val">${s.niveau||'—'}</span></div>
         ${!s.isGlobal ? `<div class="info-row"><span class="info-key">Saison</span><span class="info-val">${s.saison}${s.isCurrent?' (actuelle)':''}</span></div>` : ''}
       </div>
+
+      ${(isDefensif && impactDefReel != null) ? (canImpact ? `
+      <div class="section">
+        <div class="section-title">Impact défensif réel</div>
+        <div class="info-row"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
+        <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
+        <div class="bar-item" style="margin-top:12px;">
+          <div class="bar-label-row"><span class="k">Différentiel</span><span class="v" style="color:${impactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${impactTier(impactDefReel).color};margin-top:6px;">${impactTier(impactDefReel).label}</div>
+        </div>
+      </div>` : `
+      <div class="section">
+        <div class="section-title">Impact défensif réel</div>
+        <div class="locked-box">
+          <p>🔒 Réservé aux recruteurs Pro et Premium</p>
+          <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+        </div>
+      </div>`) : ''}
 
       ${!hasImpactData ? '' : canImpact ? `
       <div class="section">

@@ -133,6 +133,13 @@ function evolutionTier(pct) {
   return { color: 'var(--red)', label: '🔴 Grosse baisse — à examiner de près' };
 }
 
+function impactTier(diff) {
+  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe est nettement plus performante avec lui' };
+  if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
+  if (diff >= -0.10) return { color: 'var(--muted)', label: '⚪ Profil neutre — ne change pas grand-chose' };
+  return { color: 'var(--red)', label: '🔴 L\'équipe est moins performante avec lui — à surveiller' };
+}
+
 function ratioTierClass(rawValue, tiers, invert) {
   if (rawValue == null) return 'empty';
   let cls = 'blue';
@@ -210,7 +217,7 @@ async function init() {
     matchs_joues: joueur.matchs_joues, matchs_equipe: joueur.matchs_equipe, titularisations: joueur.titularisations,
     buts: joueur.buts, passes_decisives: joueur.passes_decisives, buts_equipe: joueur.buts_equipe,
     pct_matchs_avec_but: joueur.pct_matchs_avec_but,
-    buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets,
+    buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets, buts_encaisses_equipe: joueur.buts_encaisses_equipe,
     minutes_jouees: joueur.minutes_jouees,
     cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
   };
@@ -254,6 +261,10 @@ function renderRecap(saison) {
   const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
   const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
   const tauxPresence = (s.matchs_equipe > 0) ? Math.round((s.matchs_joues||0) / s.matchs_equipe * 100) : null;
+  const matchsSansLui = (s.matchs_equipe > 0) ? s.matchs_equipe - (s.matchs_joues||0) : null;
+  const butsEncaissesSansLui = (s.buts_encaisses_equipe != null && s.buts_encaisses_avec != null) ? s.buts_encaisses_equipe - s.buts_encaisses_avec : null;
+  const ratioEncaissesSansLui = (matchsSansLui > 0 && butsEncaissesSansLui != null) ? butsEncaissesSansLui / matchsSansLui : null;
+  const impactDefReel = (ratioEncaissesMatch != null && ratioEncaissesSansLui != null) ? ratioEncaissesSansLui - ratioEncaissesMatch : null;
   const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
   // Remonte jusqu'à 3 saisons en arrière pour trouver la plus proche avec
   // des matchs joués, plutôt que d'échouer si la saison juste avant n'a
@@ -312,6 +323,15 @@ function renderRecap(saison) {
       `}
       <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
     </div>
+
+    ${(isDefensif && impactDefReel != null) ? `
+    <div class="section">
+      <div class="section-title">Impact défensif réel</div>
+      <div class="info-row"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
+      <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${impactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${impactTier(impactDefReel).color};margin-top:4px;">${impactTier(impactDefReel).label}</div>
+    </div>` : ''}
 
     <div class="section">
       <div class="section-title">Ratios & performance</div>
