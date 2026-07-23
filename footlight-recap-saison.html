@@ -255,9 +255,24 @@ function renderRecap(saison) {
   const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
   const tauxPresence = (s.matchs_equipe > 0) ? Math.round((s.matchs_joues||0) / s.matchs_equipe * 100) : null;
   const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
-  const prevSeason = sIndex >= 0 ? seasonsData[sIndex + 1] : null;
+  // Remonte jusqu'à 3 saisons en arrière pour trouver la plus proche avec
+  // des matchs joués, plutôt que d'échouer si la saison juste avant n'a
+  // pas de données exploitables.
+  let prevSeason = null;
+  if (sIndex >= 0) {
+    for (let i = sIndex + 1; i <= sIndex + 3 && i < seasonsData.length; i++) {
+      if (seasonsData[i] && seasonsData[i].matchs_joues > 0) { prevSeason = seasonsData[i]; break; }
+    }
+  }
   const prevRatioButsMatch = (prevSeason && prevSeason.matchs_joues > 0) ? (prevSeason.buts||0) / prevSeason.matchs_joues : null;
   const evolutionPct = (ratioButsMatch != null && prevRatioButsMatch > 0) ? Math.round((ratioButsMatch - prevRatioButsMatch) / prevRatioButsMatch * 100) : null;
+  const prevRatioMinBut = (prevSeason && prevSeason.buts > 0) ? Math.round((prevSeason.minutes_jouees||0) / prevSeason.buts) : null;
+  const minButEvolutionPct = (ratioMinBut != null && prevRatioMinBut > 0) ? Math.round((prevRatioMinBut - ratioMinBut) / prevRatioMinBut * 100) : null;
+  const prevMatchsSaison = prevSeason ? matchsAll.filter(m => m.saison === prevSeason.saison) : [];
+  const prevPctMatchsAvecBut = prevMatchsSaison.length > 0
+    ? Math.round(prevMatchsSaison.filter(m => (m.buts||0) > 0).length / prevMatchsSaison.length * 100)
+    : (prevSeason && prevSeason.pct_matchs_avec_but != null ? Math.round(prevSeason.pct_matchs_avec_but) : null);
+  const pctMatchsEvolutionPct = (pctMatchsAvecBut != null && prevPctMatchsAvecBut > 0) ? Math.round((pctMatchsAvecBut - prevPctMatchsAvecBut) / prevPctMatchsAvecBut * 100) : null;
 
   let meilleurMatch = null;
   if (matchs.length) {
@@ -313,11 +328,19 @@ function renderRecap(saison) {
       </div>
     </div>
 
-    ${(evolutionPct != null && !isDefensif) ? `
+    ${(!isDefensif && (evolutionPct != null || pctMatchsEvolutionPct != null || minButEvolutionPct != null)) ? `
     <div class="section">
       <div class="section-title">Évolution vs saison précédente</div>
+      ${evolutionPct != null ? `
       <div class="info-row"><span class="info-key">Buts/match : ${prevRatioButsMatch.toFixed(2)} (${prevSeason.saison}) → ${ratioButsMatch.toFixed(2)} (${s.saison})</span><span class="info-val" style="color:${evolutionTier(evolutionPct).color}">${evolutionPct>=0?'+':''}${evolutionPct}%</span></div>
-      <div style="font-size:0.78rem;color:${evolutionTier(evolutionPct).color};margin-top:6px;">${evolutionTier(evolutionPct).label}${(s.niveau && prevSeason.niveau && s.niveau !== prevSeason.niveau) ? ` (changement de niveau : ${prevSeason.niveau} → ${s.niveau})` : ''}</div>
+      <div style="font-size:0.78rem;color:${evolutionTier(evolutionPct).color};margin-bottom:8px;">${evolutionTier(evolutionPct).label}</div>` : ''}
+      ${pctMatchsEvolutionPct != null ? `
+      <div class="info-row"><span class="info-key">% matchs avec but : ${prevPctMatchsAvecBut}% (${prevSeason.saison}) → ${pctMatchsAvecBut}% (${s.saison})</span><span class="info-val" style="color:${evolutionTier(pctMatchsEvolutionPct).color}">${pctMatchsEvolutionPct>=0?'+':''}${pctMatchsEvolutionPct}%</span></div>
+      <div style="font-size:0.78rem;color:${evolutionTier(pctMatchsEvolutionPct).color};margin-bottom:8px;">${evolutionTier(pctMatchsEvolutionPct).label}</div>` : ''}
+      ${minButEvolutionPct != null ? `
+      <div class="info-row"><span class="info-key">Minutes par but : ${prevRatioMinBut}' (${prevSeason.saison}) → ${ratioMinBut}' (${s.saison})</span><span class="info-val" style="color:${evolutionTier(minButEvolutionPct).color}">${minButEvolutionPct>=0?'+':''}${minButEvolutionPct}%</span></div>
+      <div style="font-size:0.78rem;color:${evolutionTier(minButEvolutionPct).color};margin-bottom:8px;">${evolutionTier(minButEvolutionPct).label}</div>` : ''}
+      ${(prevSeason && s.niveau && prevSeason.niveau && s.niveau !== prevSeason.niveau) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:6px;">Changement de niveau entre les deux saisons : ${prevSeason.niveau} → ${s.niveau}</div>` : ''}
     </div>` : ''}
 
     ${meilleurMatch ? `

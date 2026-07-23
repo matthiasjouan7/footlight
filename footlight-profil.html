@@ -403,7 +403,15 @@ async function renderProfil(j, isOwner) {
     const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
     const contribution = (s.buts||0) + (s.passes_decisives||0);
     const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
-    const prevSeason = (!s.isGlobal && sIndex >= 0) ? seasonsData[sIndex + 1] : null;
+    // Remonte jusqu'à 3 saisons en arrière pour trouver la plus proche
+    // avec des matchs joués, plutôt que d'échouer si la saison juste
+    // avant n'a pas de données exploitables.
+    let prevSeason = null;
+    if (!s.isGlobal && sIndex >= 0) {
+      for (let i = sIndex + 1; i <= sIndex + 3 && i < seasonsData.length; i++) {
+        if (seasonsData[i] && seasonsData[i].matchs_joues > 0) { prevSeason = seasonsData[i]; break; }
+      }
+    }
     const prevRatioButsMatch = (prevSeason && prevSeason.matchs_joues > 0) ? (prevSeason.buts||0) / prevSeason.matchs_joues : null;
     const evolutionPct = (ratioButsMatch != null && prevRatioButsMatch > 0) ? Math.round((ratioButsMatch - prevRatioButsMatch) / prevRatioButsMatch * 100) : null;
     const ratioMinBut = (s.buts > 0) ? Math.round((s.minutes_jouees||0) / s.buts) : null;
@@ -413,6 +421,16 @@ async function renderProfil(j, isOwner) {
     const pctMatchsAvecBut = matchsSaison.length > 0
       ? Math.round(matchsAvecButCount / matchsSaison.length * 100)
       : (s.pct_matchs_avec_but != null ? Math.round(s.pct_matchs_avec_but) : null);
+
+    // Évolution vs saison précédente — jusqu'à 3 critères, chacun affiché
+    // seulement si calculable (pas de "pas de donnée" forcé pour une tendance).
+    const prevRatioMinBut = (prevSeason && prevSeason.buts > 0) ? Math.round((prevSeason.minutes_jouees||0) / prevSeason.buts) : null;
+    const minButEvolutionPct = (ratioMinBut != null && prevRatioMinBut > 0) ? Math.round((prevRatioMinBut - ratioMinBut) / prevRatioMinBut * 100) : null;
+    const prevMatchsSaison = prevSeason ? (matchsBySaison[prevSeason.saison] || []) : [];
+    const prevPctMatchsAvecBut = prevMatchsSaison.length > 0
+      ? Math.round(prevMatchsSaison.filter(m => (m.buts||0) > 0).length / prevMatchsSaison.length * 100)
+      : (prevSeason && prevSeason.pct_matchs_avec_but != null ? Math.round(prevSeason.pct_matchs_avec_but) : null);
+    const pctMatchsEvolutionPct = (pctMatchsAvecBut != null && prevPctMatchsAvecBut > 0) ? Math.round((pctMatchsAvecBut - prevPctMatchsAvecBut) / prevPctMatchsAvecBut * 100) : null;
     const ratioEncaissesMatch = (s.matchs_joues > 0 && s.buts_encaisses_avec != null) ? s.buts_encaisses_avec / s.matchs_joues : null;
     const pctCleanSheet = (s.titularisations > 0 && s.clean_sheets != null) ? Math.round(s.clean_sheets / s.titularisations * 100) : null;
     const ratioCartons = s.matchs_joues > 0 ? ((s.cartons_jaunes||0) + (s.cartons_rouges||0)) / s.matchs_joues : null;
@@ -456,13 +474,25 @@ async function renderProfil(j, isOwner) {
         ${((!isDefensif && (pctButsEquipe == null || pctMatchsAvecBut == null)) || tauxPresence == null) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:12px;">${(!isDefensif && pctMatchsAvecBut == null) ? 'Ajoute tes fiches de match pour débloquer le % de matchs avec but. ' : ''}${(!isDefensif && pctButsEquipe == null) ? 'Renseigne les buts marqués par l\'équipe cette saison pour débloquer la part des buts de l\'équipe. ' : ''}${tauxPresence == null ? 'Renseigne les matchs joués par l\'équipe cette saison (dans "Modifier mon profil") pour débloquer ton taux de présence.' : ''}</div>` : ''}
       </div>
 
-      ${(evolutionPct != null && !isDefensif) ? `
+      ${(!isDefensif && (evolutionPct != null || pctMatchsEvolutionPct != null || minButEvolutionPct != null)) ? `
       <div class="section">
         <div class="section-title">Évolution vs saison précédente</div>
+        ${evolutionPct != null ? `
         <div class="bar-item">
           <div class="bar-label-row"><span class="k">Buts/match : ${prevRatioButsMatch.toFixed(2)} (${prevSeason.saison}) → ${ratioButsMatch.toFixed(2)} (${s.saison})</span><span class="v" style="color:${evolutionTier(evolutionPct).color}">${evolutionPct>=0?'+':''}${evolutionPct}%</span></div>
-        </div>
-        <div style="font-size:0.78rem;color:${evolutionTier(evolutionPct).color};">${evolutionTier(evolutionPct).label}${(s.niveau && prevSeason.niveau && s.niveau !== prevSeason.niveau) ? ` (changement de niveau : ${prevSeason.niveau} → ${s.niveau})` : ''}</div>
+          <div style="font-size:0.78rem;color:${evolutionTier(evolutionPct).color};margin-top:4px;">${evolutionTier(evolutionPct).label}</div>
+        </div>` : ''}
+        ${pctMatchsEvolutionPct != null ? `
+        <div class="bar-item">
+          <div class="bar-label-row"><span class="k">% matchs avec but : ${prevPctMatchsAvecBut}% (${prevSeason.saison}) → ${pctMatchsAvecBut}% (${s.saison})</span><span class="v" style="color:${evolutionTier(pctMatchsEvolutionPct).color}">${pctMatchsEvolutionPct>=0?'+':''}${pctMatchsEvolutionPct}%</span></div>
+          <div style="font-size:0.78rem;color:${evolutionTier(pctMatchsEvolutionPct).color};margin-top:4px;">${evolutionTier(pctMatchsEvolutionPct).label}</div>
+        </div>` : ''}
+        ${minButEvolutionPct != null ? `
+        <div class="bar-item">
+          <div class="bar-label-row"><span class="k">Minutes par but : ${prevRatioMinBut}' (${prevSeason.saison}) → ${ratioMinBut}' (${s.saison})</span><span class="v" style="color:${evolutionTier(minButEvolutionPct).color}">${minButEvolutionPct>=0?'+':''}${minButEvolutionPct}%</span></div>
+          <div style="font-size:0.78rem;color:${evolutionTier(minButEvolutionPct).color};margin-top:4px;">${evolutionTier(minButEvolutionPct).label}</div>
+        </div>` : ''}
+        ${(prevSeason && s.niveau && prevSeason.niveau && s.niveau !== prevSeason.niveau) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:10px;">Changement de niveau entre les deux saisons : ${prevSeason.niveau} → ${s.niveau}</div>` : ''}
       </div>` : ''}
 
       <div class="section">
