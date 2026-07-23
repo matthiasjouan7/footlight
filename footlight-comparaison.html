@@ -88,6 +88,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
   <a href="footlight-connexion.html"><button class="btn primary">Se connecter</button></a>
 </div>
 
+<!-- BLOQUÉ PREMIUM -->
+<div id="access-blocked-premium" style="display:none; max-width:480px; margin:120px auto 0; text-align:center; padding:0 20px;">
+  <div style="font-size:2.5rem; margin-bottom:16px;">🔒</div>
+  <h2 style="margin-bottom:10px;">Réservé aux recruteurs Premium</h2>
+  <p style="color:var(--muted); margin-bottom:20px; font-size:0.9rem;">
+    La comparaison de joueurs côte à côte fait partie du plan Premium.
+  </p>
+  <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+</div>
+
 <div class="page" id="page" style="display:none;">
   <div class="page-title">Comparer deux joueurs</div>
   <div class="page-sub">Choisis deux joueurs pour comparer leurs stats côte à côte.</div>
@@ -271,9 +281,6 @@ function renderComparison() {
     return;
   }
 
-  const canImpact = viewerPlan === 'pro' || viewerPlan === 'premium';
-  const canGPS = viewerPlan === 'premium';
-
   const aDef = POSTES_DEFENSIFS.includes(a.poste);
   const bDef = POSTES_DEFENSIFS.includes(b.poste);
   const anyOffense = !aDef || !bDef;
@@ -295,20 +302,12 @@ function renderComparison() {
 
     <div class="section">
       <div class="section-title">Impact collectif</div>
-      ${canImpact ? buildRowsTable(impactRows, a, b) : `
-        <div class="locked-box">
-          <p>🔒 Réservé aux recruteurs Pro et Premium</p>
-          <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
-        </div>`}
+      ${buildRowsTable(impactRows, a, b)}
     </div>
 
     <div class="section">
       <div class="section-title">Données GPS</div>
-      ${canGPS ? buildRowsTable(ROWS_GPS, a, b) : `
-        <div class="locked-box">
-          <p>🔒 Réservé aux recruteurs Premium</p>
-          <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
-        </div>`}
+      ${buildRowsTable(ROWS_GPS, a, b)}
     </div>
   `;
 }
@@ -331,6 +330,11 @@ async function checkSession() {
 
   if (viewerRole !== 'recruteur') {
     document.getElementById('access-blocked').style.display = 'block';
+    return;
+  }
+
+  if (viewerPlan !== 'premium') {
+    document.getElementById('access-blocked-premium').style.display = 'block';
     return;
   }
 
