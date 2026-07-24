@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <!-- Stripe.js -->
 <script src="https://js.stripe.com/v3/"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -265,7 +266,15 @@ body {
 
 <div class="bg-mesh"></div>
 
-<div class="wrapper">
+<div class="success-overlay" id="not-auth-overlay">
+  <div class="success-ring" style="background:rgba(245,166,35,0.1);border-color:rgba(245,166,35,0.3);">🔒</div>
+  <div class="suc-title">Connecte-toi d'abord</div>
+  <div class="suc-sub">Le paiement est réservé aux comptes recruteur connectés — crée un compte ou connecte-toi pour continuer.</div>
+  <a class="suc-btn" href="footlight-connexion.html" style="text-decoration:none;text-align:center;">Se connecter →</a>
+  <a class="suc-btn-outline" href="footlight-inscription-recruteur.html" style="text-decoration:none;text-align:center;">Créer un compte recruteur</a>
+</div>
+
+<div class="wrapper" id="wrapper">
 
   <!-- HEADER -->
   <div class="header">
@@ -319,13 +328,12 @@ body {
     <div style="display:flex;flex-direction:column;gap:8px;" id="tier-options"></div>
   </div>
 
-  <!-- FORM EMAIL (si pas déjà connu) -->
+  <!-- COMPTE CONNECTÉ -->
   <div class="form-section">
     <div class="form-title">Votre compte</div>
     <div class="field">
       <div class="field-label">Email</div>
-      <input class="field-input" type="email" id="email-input"
-        placeholder="votre@email.com" value=""/>
+      <input class="field-input" type="email" id="email-input" readonly value=""/>
     </div>
   </div>
 
@@ -374,7 +382,7 @@ body {
     </div>
     <div class="order-row">
       <span class="order-key">Engagement</span>
-      <span class="order-val" style="color:var(--green)">Engagement 3 mois minimum · Engagement minimum 3 mois</span>
+      <span class="order-val" style="color:var(--green)">Engagement 1 à 3 mois minimum</span>
     </div>
     <div class="order-total">
       <span>Aujourd'hui</span>
@@ -390,7 +398,7 @@ body {
     </div>
     <div class="guarantee">
       <div class="guarantee-icon">🔄</div>
-      <div class="guarantee-text">Engagement 3 mois minimum · Engagement minimum 3 mois</div>
+      <div class="guarantee-text">Résiliable à tout moment après la période d'engagement</div>
     </div>
     <div class="guarantee">
       <div class="guarantee-icon">📧</div>
@@ -433,22 +441,54 @@ body {
 // ════════════════════════════════════════════
 
 const STRIPE_CONFIG = {
-  publicKey: 'pk_live_51TR5ntF8F2JI2vQrBkXoJwKykdhPbVMvwFITh1CSig08BhQGGQKjbI6glGQUeLr47LdYsdfdxWEolZZgLsCvd6TW00ZHdLMQzY',
+  // Mode TEST le temps de valider le circuit de paiement sans débiter de
+  // vraie carte. Récupère ces valeurs sur https://dashboard.stripe.com/test/apikeys
+  // (bascule "Mode test" en haut à droite) et sur chaque Price en mode test
+  // (recrée les 6 Price de test, avec metadata.plan = 'pro' ou 'premium').
+  publicKey: 'pk_test_REMPLACE_MOI',
 
   prices: {
     // Plan Pro
-    pro_3mois:  'price_1TR6HYF8F2JI2vQrQ2zUjjy0',  // 14€/mois — 1 à 3 mois
-    pro_6mois:  'price_1Tu5FkF8F2JI2vQrHHbLNbC7',  // 11€/mois — 4 à 6 mois
-    pro_plus:   'price_1Tu5G6F8F2JI2vQr59lgMBgL',  //  9€/mois — 6 mois+
+    pro_3mois:  'price_test_REMPLACE_MOI',  // 14€/mois — 1 à 3 mois
+    pro_6mois:  'price_test_REMPLACE_MOI',  // 11€/mois — 4 à 6 mois
+    pro_plus:   'price_test_REMPLACE_MOI',  //  9€/mois — 6 mois+
 
     // Plan Premium
-    premium_3mois: 'price_1TtofqF8F2JI2vQrpej8fsuE', // 29€/mois — 1 à 3 mois
-    premium_6mois: 'price_1Tu5GrF8F2JI2vQrmgpTTDss', // 23€/mois — 4 à 6 mois
-    premium_plus:  'price_1Tu5HBF8F2JI2vQrewsmu6Bi', // 19€/mois — 6 mois+
+    premium_3mois: 'price_test_REMPLACE_MOI', // 29€/mois — 1 à 3 mois
+    premium_6mois: 'price_test_REMPLACE_MOI', // 23€/mois — 4 à 6 mois
+    premium_plus:  'price_test_REMPLACE_MOI', // 19€/mois — 6 mois+
   },
 
-  trialDays: 1,
+  // Une fois le paiement test validé de bout en bout, remplace les valeurs
+  // ci-dessus par les vraies clés live (déjà créées dans Stripe, gardées ici
+  // pour mémoire) :
+  // publicKey (live)      : pk_live_51TR5ntF8F2JI2vQrBkXoJwKykdhPbVMvwFITh1CSig08BhQGGQKjbI6glGQUeLr47LdYsdfdxWEolZZgLsCvd6TW00ZHdLMQzY
+  // pro_3mois (live)      : price_1TR6HYF8F2JI2vQrQ2zUjjy0
+  // pro_6mois (live)      : price_1Tu5FkF8F2JI2vQrHHbLNbC7
+  // pro_plus (live)       : price_1Tu5G6F8F2JI2vQr59lgMBgL
+  // premium_3mois (live)  : price_1TtofqF8F2JI2vQrpej8fsuE
+  // premium_6mois (live)  : price_1Tu5GrF8F2JI2vQrmgpTTDss
+  // premium_plus (live)   : price_1Tu5HBF8F2JI2vQrewsmu6Bi
+  // ⚠️ Pense aussi à définir metadata.plan sur ces 6 Price live dans Stripe
+  // (voir instructions de déploiement).
 };
+
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const CREATE_SUBSCRIPTION_URL = SUPABASE_URL + '/functions/v1/create-subscription';
+
+const ENGAGEMENT_TIERS = [
+  { key: '3mois', label: '1 à 3 mois' },
+  { key: '6mois', label: '4 à 6 mois' },
+  { key: 'plus',  label: '6 mois et +' },
+];
+const TIER_PRICING = {
+  pro:     { '3mois': 14, '6mois': 11, 'plus': 9 },
+  premium: { '3mois': 29, '6mois': 23, 'plus': 19 },
+};
+let selectedTier = '3mois';
+let sessionUser = null;
 
 // ════════════════════════════════════════════
 //  PLANS
@@ -566,15 +606,47 @@ function initStripe() {
 // ════════════════════════════════════════════
 //  GESTION DES PLANS
 // ════════════════════════════════════════════
+function tierLabel(key) {
+  return (ENGAGEMENT_TIERS.find(t => t.key === key) || {}).label || '';
+}
+
+function renderTierSelector() {
+  const wrap = document.getElementById('tier-selector');
+  const opts = document.getElementById('tier-options');
+  if (currentPlan === 'free') { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  opts.innerHTML = ENGAGEMENT_TIERS.map(t => `
+    <div class="tier-opt" onclick="selectTier('${t.key}')"
+      style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:10px;cursor:pointer;
+      border:1px solid ${selectedTier===t.key ? 'var(--plan-color,#4f8ef7)' : 'var(--border2,#2a2f3a)'};
+      background:${selectedTier===t.key ? 'rgba(79,142,247,0.08)' : 'transparent'};">
+      <span>${t.label}</span>
+      <span style="font-weight:700;">${TIER_PRICING[currentPlan][t.key]}€/mois</span>
+    </div>
+  `).join('');
+}
+
+function selectTier(key) {
+  selectedTier = key;
+  renderTierSelector();
+  renderPlan(currentPlan);
+}
+
+function getSelectedPriceId() {
+  return STRIPE_CONFIG.prices[currentPlan + '_' + selectedTier];
+}
+
 function renderPlan(planKey) {
   const p = PLANS_DATA[planKey];
   document.documentElement.style.setProperty('--plan-color', p.color);
   document.getElementById('plan-name').textContent = `Plan ${p.name}`;
   document.getElementById('plan-name').style.color = p.color;
-  document.getElementById('plan-price').innerHTML = `${p.price} <span>/mois</span>`;
+
+  const monthly = planKey === 'free' ? 0 : TIER_PRICING[planKey][selectedTier];
+  document.getElementById('plan-price').innerHTML = `${monthly}€ <span>/mois</span>`;
 
   const trialEl = document.getElementById('plan-trial');
-  trialEl.textContent = p.trialText;
+  trialEl.textContent = planKey === 'free' ? p.trialText : `Engagement ${tierLabel(selectedTier)} · débité aujourd'hui`;
   trialEl.className = `plan-trial-info ${p.trial ? 'green' : 'muted'}`;
 
   document.getElementById('plan-features').innerHTML = p.features.map(f =>
@@ -583,16 +655,19 @@ function renderPlan(planKey) {
 
   // Récap
   document.getElementById('recap-plan').textContent = p.name;
-  document.getElementById('recap-today').textContent = p.today;
-  document.getElementById('recap-puis').textContent = p.puis;
-  document.getElementById('trial-row').style.display = p.trial ? '' : 'none';
+  document.getElementById('recap-today').textContent = planKey === 'free' ? '0,00€' : `${monthly}€`;
+  document.getElementById('recap-puis').textContent = planKey === 'free' ? 'Gratuit' : `${monthly}€ / mois`;
+  document.getElementById('trial-row').style.display = 'none';
+  document.querySelectorAll('.order-row .order-key').forEach(el => {
+    if (el.textContent === 'Engagement') {
+      el.nextElementSibling.textContent = planKey === 'free' ? '—' : `Engagement ${tierLabel(selectedTier)} minimum`;
+    }
+  });
 
   // Bouton
   const btn = document.getElementById('btn-text');
   if (planKey === 'free') {
     btn.textContent = 'Créer mon compte gratuit';
-  } else if (p.trial) {
-    btn.textContent = `Démarrer l'essai gratuit · ${p.name}`;
   } else {
     btn.textContent = `S'abonner · ${p.name}`;
   }
@@ -602,6 +677,7 @@ function changePlan(planKey, el) {
   currentPlan = planKey;
   document.querySelectorAll('.ps-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected', planKey);
+  renderTierSelector();
   renderPlan(planKey);
   // Cacher/montrer la carte selon plan
   document.getElementById('card-section').style.display =
@@ -619,36 +695,37 @@ function togglePlanSelector() {
 //  PAIEMENT
 // ════════════════════════════════════════════
 async function handlePayment() {
-  const btn = document.getElementById('pay-btn');
-  const email = document.getElementById('email-input').value.trim();
+  document.getElementById('card-errors').textContent = '';
 
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    document.getElementById('card-errors').textContent = 'Veuillez saisir un email valide.';
+  if (!sessionUser) {
+    document.getElementById('not-auth-overlay').classList.add('visible');
     return;
   }
 
-  // Plan gratuit → pas de CB
+  // Plan gratuit → rien à payer, le compte est déjà en 'free' à l'inscription.
   if (currentPlan === 'free') {
     showSuccess('free');
     return;
   }
 
-  // Vérifier que Stripe est initialisé
   if (!stripe || !cardNumber) {
-    // Mode démo
-    showSuccess(currentPlan);
+    document.getElementById('card-errors').textContent = 'Le paiement n\'est pas configuré (clé Stripe manquante).';
     return;
   }
 
-  // Démarrer le loading
+  const priceId = getSelectedPriceId();
+  if (!priceId || priceId.includes('REMPLACE_MOI')) {
+    document.getElementById('card-errors').textContent = 'Configuration incomplète : identifiant de prix Stripe manquant pour cette offre.';
+    return;
+  }
+
   setLoading(true);
 
   try {
-    // 1. Créer un PaymentMethod
     const { paymentMethod, error } = await stripe.createPaymentMethod({
       type: 'card',
       card: cardNumber,
-      billing_details: { email },
+      billing_details: { email: sessionUser.email },
     });
 
     if (error) {
@@ -657,23 +734,33 @@ async function handlePayment() {
       return;
     }
 
-    // 2. Envoyer au backend (à implémenter avec Netlify Functions)
-    // Pour l'instant, simuler la réponse
-    // ── À REMPLACER PAR ──
-    // const response = await fetch('/.netlify/functions/create-subscription', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     paymentMethodId: paymentMethod.id,
-    //     priceId: STRIPE_CONFIG.prices[currentPlan],
-    //     email,
-    //     trialDays: STRIPE_CONFIG.trialDays,
-    //   })
-    // });
-    // const data = await response.json();
+    const { data: { session } } = await db.auth.getSession();
+    const response = await fetch(CREATE_SUBSCRIPTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token,
+      },
+      body: JSON.stringify({ paymentMethodId: paymentMethod.id, priceId }),
+    });
+    const result = await response.json();
 
-    // Simuler succès pour la démo
-    await new Promise(r => setTimeout(r, 1500));
+    if (!response.ok) {
+      document.getElementById('card-errors').textContent = result.error || 'Une erreur est survenue côté serveur.';
+      setLoading(false);
+      return;
+    }
+
+    // Si la banque demande une authentification supplémentaire (3D Secure).
+    if (result.requiresAction && result.clientSecret) {
+      const { error: confirmError } = await stripe.confirmCardPayment(result.clientSecret);
+      if (confirmError) {
+        document.getElementById('card-errors').textContent = confirmError.message;
+        setLoading(false);
+        return;
+      }
+    }
+
     showSuccess(currentPlan);
 
   } catch(err) {
@@ -693,9 +780,7 @@ function showSuccess(planKey) {
   const p = PLANS_DATA[planKey];
   const sub = planKey === 'free'
     ? 'Votre compte gratuit est actif. Découvrez FootLight avec 10 profils par mois.'
-    : p.trial
-      ? `Votre essai ${p.name} d'1 jour est activé. Engagement 3 mois minimum, montant débité après l'essai.`
-      : `Votre abonnement ${p.name} est activé. Engagement 3 mois minimum, montant débité aujourd'hui.`;
+    : `Votre abonnement ${p.name} est activé. Engagement ${tierLabel(selectedTier)} minimum, montant débité aujourd'hui.`;
   document.getElementById('suc-sub').textContent = sub;
   document.getElementById('success-overlay').classList.add('visible');
 }
@@ -703,31 +788,37 @@ function showSuccess(planKey) {
 // ════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════
-// Récupérer le plan depuis l'URL (?plan=pro)
-const urlPlan = new URLSearchParams(window.location.search).get('plan');
-if (urlPlan && PLANS_DATA[urlPlan]) {
-  currentPlan = urlPlan;
+async function initPage() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    document.getElementById('not-auth-overlay').classList.add('visible');
+    return;
+  }
+  sessionUser = user;
+  document.getElementById('email-input').value = user.email;
+
+  // Récupérer le plan depuis l'URL (?plan=pro)
+  const urlPlan = new URLSearchParams(window.location.search).get('plan');
+  if (urlPlan && PLANS_DATA[urlPlan]) {
+    currentPlan = urlPlan;
+  }
+
+  renderTierSelector();
+  renderPlan(currentPlan);
+
+  // Marquer le bon plan dans le sélecteur
+  document.querySelectorAll('.ps-card').forEach(c => c.classList.remove('selected'));
+  const targetCard = document.querySelector(`.ps-card.${currentPlan}`);
+  if (targetCard) targetCard.classList.add('selected', currentPlan);
+
+  if (currentPlan === 'free') {
+    document.getElementById('card-section').style.display = 'none';
+    document.getElementById('order-recap').style.display = 'none';
+  }
+
+  initStripe();
 }
-
-// Récupérer l'email depuis l'URL (?email=...)
-const urlEmail = new URLSearchParams(window.location.search).get('email');
-if (urlEmail) document.getElementById('email-input').value = urlEmail;
-
-renderPlan(currentPlan);
-
-// Marquer le bon plan dans le sélecteur
-document.querySelectorAll('.ps-card').forEach(c => c.classList.remove('selected'));
-const targetCard = document.querySelector(`.ps-card.${currentPlan}`);
-if (targetCard) targetCard.classList.add('selected', currentPlan);
-
-// Cacher carte si plan gratuit
-if (currentPlan === 'free') {
-  document.getElementById('card-section').style.display = 'none';
-  document.getElementById('order-recap').style.display = 'none';
-}
-
-// Init Stripe
-initStripe();
+initPage();
 </script>
 </body>
 </html>
