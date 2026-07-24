@@ -842,7 +842,7 @@ async function renderProfil(j, isOwner) {
         ${j.badge==='declaratif' ? 'Stats déclarées par le joueur. Uploadez une vidéo pour améliorer votre badge.' : ''}
         ${j.badge==='video' ? 'Vidéo de match validée.' : ''}
         ${j.badge==='gps' ? 'Données GPS connectées.' : ''}
-        ${j.badge==='elite' ? 'Badge Elite — 2 saisons validées.' : ''}
+        ${j.badge==='elite' ? `Badge Elite — ${seasonsData.filter(s => (s.matchs_joues||0) > 0).length} saison${seasonsData.filter(s => (s.matchs_joues||0) > 0).length>1?'s':''} validée${seasonsData.filter(s => (s.matchs_joues||0) > 0).length>1?'s':''}.` : ''}
       </div>
     </div>
   `;

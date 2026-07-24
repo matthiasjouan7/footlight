@@ -856,12 +856,29 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     return;
   }
 
+  await checkEliteUpgrade();
+
   msg.classList.add('success');
   msg.textContent = 'Profil mis à jour !';
   setTimeout(() => {
     window.location.href = isRecruiterEditing ? `footlight-profil.html?id=${joueur.id}` : 'footlight-profil.html';
   }, 900);
 });
+
+// Passe automatiquement le badge en Elite dès que le joueur a au moins
+// 2 saisons "validées" (avec des matchs réellement joués) et qu'il est
+// déjà vérifié (vidéo ou GPS) — l'Elite est un palier au-dessus de la
+// vérification, pas un remplacement.
+async function checkEliteUpgrade() {
+  if (joueur.badge !== 'video' && joueur.badge !== 'gps') return;
+  const { data: historiqueRaw } = await db.from('stats_saisons').select('matchs_joues').eq('joueur_id', joueur.id);
+  const { data: current } = await db.from('joueurs').select('matchs_joues').eq('id', joueur.id).single();
+  const seasonsValidees = (historiqueRaw || []).filter(s => (s.matchs_joues||0) > 0).length
+    + (current && current.matchs_joues > 0 ? 1 : 0);
+  if (seasonsValidees >= 2) {
+    await db.from('joueurs').update({ badge: 'elite' }).eq('id', joueur.id);
+  }
+}
 
 function cancelEdit() {
   window.location.href = isRecruiterEditing ? `footlight-profil.html?id=${joueur.id}` : 'footlight-profil.html';
