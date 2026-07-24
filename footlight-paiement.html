@@ -441,36 +441,22 @@ body {
 // ════════════════════════════════════════════
 
 const STRIPE_CONFIG = {
-  // Mode TEST le temps de valider le circuit de paiement sans débiter de
-  // vraie carte. Récupère ces valeurs sur https://dashboard.stripe.com/test/apikeys
-  // (bascule "Mode test" en haut à droite) et sur chaque Price en mode test
-  // (recrée les 6 Price de test, avec metadata.plan = 'pro' ou 'premium').
-  publicKey: 'pk_test_51TR5ntF8F2JI2vQrHoKHbG1H270UpZPpoafyFeXFlgSQjmJqgf2WAUrZA5WpyZpiU5pfZZqkDWWfL6fKoo0z3W5900O3ijHelk',
+  // Mode LIVE — de vraies cartes sont débitées. Testé et validé de bout en
+  // bout en mode test avant bascule (voir historique du fichier si besoin
+  // de revenir en arrière temporairement).
+  publicKey: 'pk_live_51TR5ntF8F2JI2vQrBkXoJwKykdhPbVMvwFITh1CSig08BhQGGQKjbI6glGQUeLr47LdYsdfdxWEolZZgLsCvd6TW00ZHdLMQzY',
 
   prices: {
     // Plan Pro
-    pro_3mois:  'price_1Twg5bF8F2JI2vQr2Wc6iQZX',  // 14€/mois — 1 à 3 mois
-    pro_6mois:  'price_1Twg8LF8F2JI2vQrGPBELMNz',  // 11€/mois — 4 à 6 mois
-    pro_plus:   'price_1Twg8vF8F2JI2vQrKXCf6Snq',  //  9€/mois — 6 mois+
+    pro_3mois:  'price_1TR6HYF8F2JI2vQrQ2zUjjy0',  // 14€/mois — 1 à 3 mois
+    pro_6mois:  'price_1Tu5FkF8F2JI2vQrHHbLNbC7',  // 11€/mois — 4 à 6 mois
+    pro_plus:   'price_1Tu5G6F8F2JI2vQr59lgMBgL',  //  9€/mois — 6 mois+
 
     // Plan Premium
-    premium_3mois: 'price_1Twg9gF8F2JI2vQrvkJyj9Ga', // 29€/mois — 1 à 3 mois
-    premium_6mois: 'price_1TwgAHF8F2JI2vQrp9tozfdv', // 23€/mois — 4 à 6 mois
-    premium_plus:  'price_1TwgAmF8F2JI2vQr77KIhzAF', // 19€/mois — 6 mois+
+    premium_3mois: 'price_1TtofqF8F2JI2vQrpej8fsuE', // 29€/mois — 1 à 3 mois
+    premium_6mois: 'price_1Tu5GrF8F2JI2vQrmgpTTDss', // 23€/mois — 4 à 6 mois
+    premium_plus:  'price_1Tu5HBF8F2JI2vQrewsmu6Bi', // 19€/mois — 6 mois+
   },
-
-  // Une fois le paiement test validé de bout en bout, remplace les valeurs
-  // ci-dessus par les vraies clés live (déjà créées dans Stripe, gardées ici
-  // pour mémoire) :
-  // publicKey (live)      : pk_live_51TR5ntF8F2JI2vQrBkXoJwKykdhPbVMvwFITh1CSig08BhQGGQKjbI6glGQUeLr47LdYsdfdxWEolZZgLsCvd6TW00ZHdLMQzY
-  // pro_3mois (live)      : price_1TR6HYF8F2JI2vQrQ2zUjjy0
-  // pro_6mois (live)      : price_1Tu5FkF8F2JI2vQrHHbLNbC7
-  // pro_plus (live)       : price_1Tu5G6F8F2JI2vQr59lgMBgL
-  // premium_3mois (live)  : price_1TtofqF8F2JI2vQrpej8fsuE
-  // premium_6mois (live)  : price_1Tu5GrF8F2JI2vQrmgpTTDss
-  // premium_plus (live)   : price_1Tu5HBF8F2JI2vQrewsmu6Bi
-  // ⚠️ Pense aussi à définir metadata.plan sur ces 6 Price live dans Stripe
-  // (voir instructions de déploiement).
 };
 
 const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
