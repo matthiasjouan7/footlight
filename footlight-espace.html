@@ -137,6 +137,17 @@ function renderRecruteur(user, r) {
     </div>
 
     <div class="section">
+      <div class="section-title">Alertes</div>
+      <div id="alertes-content">
+        ${plan === 'premium' ? '<div style="font-size:0.82rem;color:var(--muted);">Chargement...</div>' : `
+        <div style="background:rgba(31,111,235,0.06);border:1px solid rgba(31,111,235,0.2);border-radius:12px;padding:16px;text-align:center;">
+          <p style="font-size:0.82rem;color:var(--blue-l);margin-bottom:10px;">🔒 Alertes automatiques sur critères réservées aux recruteurs Premium</p>
+          <a href="footlight-paiement.html?plan=premium"><button class="btn primary">Passer au plan Premium</button></a>
+        </div>`}
+      </div>
+    </div>
+
+    <div class="section">
       <div class="section-title">Actions rapides</div>
       <div class="btn-row">
         <a href="footlight-recherche.html" class="btn primary">Rechercher des joueurs</a>
@@ -145,9 +156,94 @@ function renderRecruteur(user, r) {
       </div>
     </div>
   `;
-  
+
   document.getElementById('loading').style.display = 'none';
   document.getElementById('contenu').style.display = 'block';
+
+  if (plan === 'premium') loadAlertes(r.id);
+}
+
+function getAge(dateNaissance) {
+  if (!dateNaissance) return null;
+  const d = new Date(dateNaissance);
+  const diff = Date.now() - d.getTime();
+  return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+}
+
+async function loadAlertes(recruteurId) {
+  const el = document.getElementById('alertes-content');
+  const { data: recherches } = await db.from('recherches_sauvegardees').select('*')
+    .eq('recruteur_id', recruteurId).order('created_at', { ascending: false });
+
+  if (!recherches || !recherches.length) {
+    el.innerHTML = `<div style="font-size:0.82rem;color:var(--muted);">Aucune recherche enregistrée. Enregistre une recherche depuis la page <a href="footlight-recherche.html" style="color:var(--blue-l);">Recherche</a> pour être alerté des nouveaux joueurs qui correspondent.</div>`;
+    return;
+  }
+
+  const blocks = await Promise.all(recherches.map(async (s) => {
+    let q = db.from('joueurs').select('id, prenom, nom, poste, niveau, club, date_naissance')
+      .eq('profil_public', true).gt('created_at', s.derniere_consultation);
+    if (s.poste) q = q.eq('poste', s.poste);
+    if (s.niveau) q = q.eq('niveau', s.niveau);
+    if (s.min_buts) q = q.gte('buts', s.min_buts);
+    if (s.min_matchs) q = q.gte('matchs_joues', s.min_matchs);
+    if (s.club_query) q = q.ilike('club', `%${s.club_query}%`);
+    const { data } = await q;
+    let matches = data || [];
+    if (s.age_min != null || s.age_max != null) {
+      matches = matches.filter(j => {
+        const age = getAge(j.date_naissance);
+        if (age == null) return false;
+        if (s.age_min != null && age < s.age_min) return false;
+        if (s.age_max != null && age > s.age_max) return false;
+        return true;
+      });
+    }
+    const critereBits = [];
+    if (s.poste) critereBits.push(s.poste.replace(/_/g,' '));
+    if (s.niveau) critereBits.push(s.niveau);
+    if (s.age_min != null || s.age_max != null) critereBits.push(`${s.age_min ?? '?'}-${s.age_max ?? '?'} ans`);
+    if (s.min_buts) critereBits.push(`≥${s.min_buts} buts`);
+    if (s.min_matchs) critereBits.push(`≥${s.min_matchs} matchs`);
+    if (s.club_query) critereBits.push(`club: ${s.club_query}`);
+
+    return `
+    <div style="padding:12px 0;border-bottom:1px solid var(--bg3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div>
+          <div style="font-weight:600;font-size:0.88rem;">${s.nom}</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">${critereBits.join(' · ') || 'Tous critères'}</div>
+        </div>
+        <span class="badge ${matches.length ? 'pro' : 'free'}">${matches.length} nouveau${matches.length>1?'x':''}</span>
+      </div>
+      ${matches.length ? `
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+        ${matches.slice(0,5).map(j => `<a href="footlight-profil.html?id=${j.id}" style="font-size:0.8rem;color:var(--blue-l);">${j.prenom} ${j.nom} · ${(j.poste||'').replace(/_/g,' ')} · ${j.club||'—'}</a>`).join('')}
+        ${matches.length > 5 ? `<span style="font-size:0.75rem;color:var(--muted);">+ ${matches.length - 5} autre(s)</span>` : ''}
+      </div>` : ''}
+      <div class="btn-row" style="margin-top:8px;">
+        ${matches.length ? `<button class="btn outline" style="padding:6px 12px;font-size:0.75rem;" onclick="markSearchRead(${s.id})">Marquer comme lu</button>` : ''}
+        <button class="btn outline" style="padding:6px 12px;font-size:0.75rem;color:var(--red);" onclick="deleteSearch(${s.id})">Supprimer</button>
+      </div>
+    </div>`;
+  }));
+
+  el.innerHTML = `<div>${blocks.join('')}</div>`;
+}
+
+async function markSearchRead(id) {
+  const { data: { user } } = await db.auth.getUser();
+  const { data: recruteur } = await db.from('recruteurs').select('id').eq('email', user.email).single();
+  await db.from('recherches_sauvegardees').update({ derniere_consultation: new Date().toISOString() }).eq('id', id);
+  loadAlertes(recruteur.id);
+}
+
+async function deleteSearch(id) {
+  if (!confirm('Supprimer cette recherche enregistrée ?')) return;
+  const { data: { user } } = await db.auth.getUser();
+  const { data: recruteur } = await db.from('recruteurs').select('id').eq('email', user.email).single();
+  await db.from('recherches_sauvegardees').delete().eq('id', id);
+  loadAlertes(recruteur.id);
 }
 
 function renderJoueur(user, j) {

@@ -202,6 +202,8 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 
     <hr class="fdiv"/>
     <button class="reset-btn" onclick="resetFilters()">Réinitialiser</button>
+    <button class="reset-btn" id="btn-save-search" onclick="saveCurrentSearch()" style="margin-top:8px;border-color:var(--blue);color:var(--blue-l);">💾 Enregistrer cette recherche</button>
+    <div id="save-search-msg" style="font-size:0.72rem;color:var(--muted);margin-top:6px;display:none;"></div>
   </div>
 
   <!-- MAIN -->
@@ -464,6 +466,41 @@ function applyFilters() {
     return true;
   });
   renderCards(filtered);
+}
+
+async function saveCurrentSearch() {
+  const msg = document.getElementById('save-search-msg');
+  msg.style.display = 'block';
+  if (viewerRole !== 'recruteur' || !viewerRecruteurId) {
+    msg.style.color = 'var(--muted)';
+    msg.textContent = 'Connecte-toi en tant que recruteur pour enregistrer une recherche.';
+    return;
+  }
+  if (viewerPlan !== 'premium') {
+    msg.style.color = 'var(--blue-l)';
+    msg.innerHTML = '🔒 Réservé aux recruteurs Premium — <a href="footlight-paiement.html?plan=premium" style="color:var(--blue-l);">Passer au plan Premium</a>';
+    return;
+  }
+  const nom = prompt('Nom de cette recherche (ex : "Attaquants U19 Régional") :');
+  if (!nom || !nom.trim()) return;
+  const { error } = await db.from('recherches_sauvegardees').insert({
+    recruteur_id: viewerRecruteurId,
+    nom: nom.trim(),
+    poste: filters.poste !== 'tous' ? filters.poste : null,
+    niveau: filters.niveau !== 'tous' ? filters.niveau : null,
+    age_min: minAge,
+    age_max: maxAge,
+    min_buts: minButs || null,
+    min_matchs: minMatchs || null,
+    club_query: clubQuery.trim() || null,
+  });
+  if (error) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Erreur : ' + error.message;
+    return;
+  }
+  msg.style.color = 'var(--green-l)';
+  msg.textContent = '✓ Recherche enregistrée — retrouve-la dans "Mon espace".';
 }
 
 function resetFilters() {
