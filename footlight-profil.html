@@ -568,12 +568,13 @@ async function renderProfil(j, isOwner) {
       </div>
       `}
 
+      ${(s.isGlobal || !s.isCurrent) ? `
       <div class="section">
-        <div class="section-title">${s.isGlobal ? `Informations · cumul sur ${s.nbSaisons} saison${s.nbSaisons>1?'s':''}` : 'Informations'}</div>
+        <div class="section-title">${s.isGlobal ? `Informations · cumul sur ${s.nbSaisons} saison${s.nbSaisons>1?'s':''}` : `Informations · ${s.saison}`}</div>
         <div class="info-row"><span class="info-key">Club</span><span class="info-val">${s.club||'—'}</span></div>
         <div class="info-row"><span class="info-key">Niveau</span><span class="info-val">${s.niveau||'—'}</span></div>
-        ${!s.isGlobal ? `<div class="info-row"><span class="info-key">Saison</span><span class="info-val">${s.saison}${s.isCurrent?' (actuelle)':''}</span></div>` : ''}
       </div>
+      ` : ''}
 
       ${(isDefensif && impactDefReel != null) ? (canImpact ? `
       <div class="section">
