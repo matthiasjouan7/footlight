@@ -65,6 +65,36 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const CANCEL_SUBSCRIPTION_URL = SUPABASE_URL + '/functions/v1/cancel-subscription';
+
+async function cancelSubscription(e) {
+  e.preventDefault();
+  if (!confirm('Confirmer la résiliation de votre abonnement ?')) return;
+
+  const msg = document.getElementById('resiliation-msg');
+  msg.textContent = 'Résiliation en cours...';
+  msg.style.color = 'var(--muted)';
+
+  const { data: { session } } = await db.auth.getSession();
+  const res = await fetch(CANCEL_SUBSCRIPTION_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + session.access_token,
+    },
+  });
+  const result = await res.json();
+
+  if (result.error) {
+    msg.textContent = result.error;
+    msg.style.color = 'var(--red)';
+    return;
+  }
+
+  const [y, m, d] = result.currentPeriodEnd.split('-');
+  document.getElementById('resiliation-zone').innerHTML =
+    `<div style="font-size:0.8rem;color:var(--gold-l);">Résiliation confirmée — accès conservé jusqu'au ${d}/${m}/${y}, puis passage automatique en Gratuit.</div>`;
+}
 
 async function deconnexion() {
   await db.auth.signOut();
@@ -124,6 +154,14 @@ function renderRecruteur(user, r) {
       </div>
       ${plan === 'free' ? '<a href="footlight-paiement.html?plan=pro" class="upgrade-btn">Passer au plan Pro — 14€/mois →</a>' : ''}
       ${plan === 'pro' ? '<a href="footlight-paiement.html?plan=premium" class="upgrade-btn">Passer au plan Premium — 29€/mois →</a>' : ''}
+      ${plan !== 'free' ? `
+      <div id="resiliation-zone" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);">
+        ${r.annulation_prevue
+          ? '<div style="font-size:0.8rem;color:var(--gold-l);">Résiliation en cours — votre abonnement reste actif jusqu\'à la fin de la période déjà payée, puis repasse en Gratuit.</div>'
+          : `<a href="#" onclick="cancelSubscription(event)" style="font-size:0.8rem;color:var(--muted);text-decoration:underline;">Résilier mon abonnement</a>
+             <div id="resiliation-msg" style="font-size:0.8rem;margin-top:8px;"></div>`
+        }
+      </div>` : ''}
     </div>
 
     <div class="section">
