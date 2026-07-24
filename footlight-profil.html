@@ -750,15 +750,15 @@ async function renderProfil(j, isOwner) {
 
     <div id="season-block">${renderSeasonBlock(currentSeason)}</div>
 
+    ${(j.poste_secondaire || j.taille || j.poids || j.nationalite) ? `
     <div class="section">
       <div class="section-title">Profil</div>
-      <div class="info-row"><span class="info-key">Poste</span><span class="info-val">${poste_raw.replace(/_/g,' ')}</span></div>
       ${j.poste_secondaire ? `<div class="info-row"><span class="info-key">Poste secondaire</span><span class="info-val">${j.poste_secondaire.replace(/_/g,' ')}</span></div>` : ''}
-      <div class="info-row"><span class="info-key">Pied fort</span><span class="info-val">${j.pied_fort||'—'}</span></div>
       ${j.taille ? `<div class="info-row"><span class="info-key">Taille</span><span class="info-val">${j.taille} cm</span></div>` : ''}
       ${j.poids ? `<div class="info-row"><span class="info-key">Poids</span><span class="info-val">${j.poids} kg</span></div>` : ''}
       ${j.nationalite ? `<div class="info-row"><span class="info-key">Nationalité</span><span class="info-val">${j.nationalite}</span></div>` : ''}
     </div>
+    ` : ''}
 
     ${(!isOwner && viewerRole === 'recruteur') ? `
     <div class="section">
