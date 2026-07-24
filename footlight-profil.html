@@ -431,7 +431,8 @@ async function renderProfil(j, isOwner) {
     const evolutionPct = (ratioButsMatch != null && prevRatioButsMatch > 0) ? Math.round((ratioButsMatch - prevRatioButsMatch) / prevRatioButsMatch * 100) : null;
     const ratioMinBut = (s.buts > 0) ? Math.round((s.minutes_jouees||0) / s.buts) : null;
     const pctButsEquipe = (s.buts_equipe > 0) ? Math.round((s.buts||0) / s.buts_equipe * 100) : null;
-    const matchsSaison = s.isGlobal ? Object.values(matchsBySaison).flat() : (matchsBySaison[s.saison] || []);
+    const matchsSaison = (s.isGlobal ? Object.values(matchsBySaison).flat() : (matchsBySaison[s.saison] || []))
+      .filter(m => !m.competition || m.competition === 'championnat');
     const matchsAvecButCount = matchsSaison.filter(m => (m.buts||0) > 0).length;
     const pctMatchsAvecBut = matchsSaison.length > 0
       ? Math.round(matchsAvecButCount / matchsSaison.length * 100)
@@ -441,7 +442,8 @@ async function renderProfil(j, isOwner) {
     // seulement si calculable (pas de "pas de donnée" forcé pour une tendance).
     const prevRatioMinBut = (prevSeason && prevSeason.buts > 0) ? Math.round((prevSeason.minutes_jouees||0) / prevSeason.buts) : null;
     const minButEvolutionPct = (ratioMinBut != null && prevRatioMinBut > 0) ? Math.round((prevRatioMinBut - ratioMinBut) / prevRatioMinBut * 100) : null;
-    const prevMatchsSaison = prevSeason ? (matchsBySaison[prevSeason.saison] || []) : [];
+    const prevMatchsSaison = (prevSeason ? (matchsBySaison[prevSeason.saison] || []) : [])
+      .filter(m => !m.competition || m.competition === 'championnat');
     const prevPctMatchsAvecBut = prevMatchsSaison.length > 0
       ? Math.round(prevMatchsSaison.filter(m => (m.buts||0) > 0).length / prevMatchsSaison.length * 100)
       : (prevSeason && prevSeason.pct_matchs_avec_but != null ? Math.round(prevSeason.pct_matchs_avec_but) : null);
@@ -636,9 +638,10 @@ async function renderProfil(j, isOwner) {
               const lieu = m.domicile == null ? '' : (m.domicile ? ' (dom.)' : ' (ext.)');
               const score = (m.score_pour != null && m.score_contre != null) ? ` · ${m.score_pour}-${m.score_contre}` : '';
               const badge = m.verifie ? ' <span style="font-size:0.68rem;color:var(--green-l);">✓ vérifié FFF</span>' : '';
+              const compTag = m.competition === 'coupe_france' ? ' <span style="font-size:0.68rem;color:var(--gold-l);">🏆 Coupe de France</span>' : m.competition === 'coupe_regionale' ? ' <span style="font-size:0.68rem;color:var(--gold-l);">🏆 Coupe régionale</span>' : '';
               return `
               <div style="padding:10px 0;border-bottom:1px solid var(--bg4);">
-                <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}${badge}${s.isGlobal ? ` · ${m.saison}` : ''}</div>
+                <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}${badge}${compTag}${s.isGlobal ? ` · ${m.saison}` : ''}</div>
                 <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${bits.join(' · ') || '—'}${m.lien_match ? ` · <a href="${m.lien_match}" target="_blank" style="color:var(--blue-l);">🔗 voir le match</a>` : ''}</div>
               </div>`;
             }).join('')}
