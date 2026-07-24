@@ -278,14 +278,17 @@ async function createAcc(){
       }
     }
 
-    // Sauvegarder dans table recruteurs
+    // Sauvegarder dans table recruteurs — toujours en Gratuit à l'inscription.
+    // Le plan choisi (sPlan) ne sert qu'à rediriger vers la bonne offre sur
+    // la page de paiement ; seul un paiement réussi (via Stripe) doit passer
+    // le compte en Pro/Premium, jamais l'inscription elle-même.
     var profileResult = await db.from('recruteurs').insert([{
       prenom: prenom, nom: nom, email: email,
       telephone: tel || null,
       organisation: orga || null,
       type_profil: sType || 'club',
-      plan: sPlan,
-      abonnement_actif: sPlan === 'free'
+      plan: 'free',
+      abonnement_actif: true
     }]);
 
     if (profileResult.error) {
