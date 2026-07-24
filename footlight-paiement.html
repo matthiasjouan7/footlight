@@ -751,11 +751,21 @@ async function handlePayment() {
       return;
     }
 
-    // Si la banque demande une authentification supplémentaire (3D Secure).
-    if (result.requiresAction && result.clientSecret) {
-      const { error: confirmError } = await stripe.confirmCardPayment(result.clientSecret);
+    // Avec payment_behavior: 'default_incomplete', la facture initiale n'est
+    // JAMAIS confirmée automatiquement côté serveur — même pour une carte
+    // simple sans 3D Secure (status 'requires_confirmation'), pas seulement
+    // en cas de 3DS ('requires_action'). Il faut donc toujours confirmer
+    // côté client dès qu'un clientSecret est renvoyé, sinon l'abonnement
+    // reste bloqué en 'incomplete' malgré un écran de succès affiché.
+    if (result.clientSecret) {
+      const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(result.clientSecret);
       if (confirmError) {
         document.getElementById('card-errors').textContent = confirmError.message;
+        setLoading(false);
+        return;
+      }
+      if (paymentIntent && paymentIntent.status !== 'succeeded') {
+        document.getElementById('card-errors').textContent = 'Le paiement n\'a pas pu être confirmé (statut : ' + paymentIntent.status + ').';
         setLoading(false);
         return;
       }
