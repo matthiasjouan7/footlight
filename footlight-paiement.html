@@ -543,10 +543,18 @@ function initStripe() {
           colorPrimary: '#4f8ef7',
           colorBackground: '#141820',
           colorText: '#f0f2f7',
+          colorTextPlaceholder: '#5a6275',
           colorDanger: '#f74f4f',
           fontFamily: 'DM Sans, sans-serif',
           borderRadius: '8px',
           spacingUnit: '4px',
+        },
+        // Le thème 'night' n'applique pas toujours colorText aux chiffres
+        // tapés selon le navigateur (bug connu Stripe.js) — on force la
+        // couleur explicitement sur .Input pour garantir la lisibilité.
+        rules: {
+          '.Input': { color: '#f0f2f7' },
+          '.Input::placeholder': { color: '#5a6275' },
         }
       }
     });
