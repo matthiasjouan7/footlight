@@ -502,6 +502,7 @@ async function renderProfil(j, isOwner) {
         <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
       </div>
 
+      ${canHistory ? `
       <div class="section">
         <div class="section-title">Ratios & performance</div>
         <div class="ratio-grid">
@@ -557,6 +558,15 @@ async function renderProfil(j, isOwner) {
         `}
         ${(prevSeason && s.niveau && prevSeason.niveau && s.niveau !== prevSeason.niveau) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:10px;">Changement de niveau entre les deux saisons : ${prevSeason.niveau} → ${s.niveau}</div>` : ''}
       </div>` : ''}
+      ` : `
+      <div class="section">
+        <div class="section-title">Ratios & performance</div>
+        <div class="locked-box">
+          <p>🔒 Stats complètes réservées aux recruteurs Pro et Premium</p>
+          <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+        </div>
+      </div>
+      `}
 
       <div class="section">
         <div class="section-title">${s.isGlobal ? `Informations · cumul sur ${s.nbSaisons} saison${s.nbSaisons>1?'s':''}` : 'Informations'}</div>
@@ -661,6 +671,16 @@ async function renderProfil(j, isOwner) {
           ? Object.values(matchsBySaison).flat().sort((a,b) => (b.date_match||'').localeCompare(a.date_match||''))
           : (matchsBySaison[s.saison] || []);
         if (!matchs.length) return '';
+        if (!canHistory) {
+          return `
+        <div class="section">
+          <div class="section-title">Historique des matchs</div>
+          <div class="locked-box">
+            <p>🔒 Réservé aux recruteurs Pro et Premium</p>
+            <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+          </div>
+        </div>`;
+        }
         return `
         <div class="section">
           <div class="section-title">Historique des matchs${s.isGlobal ? ` · ${matchs.length} fiche${matchs.length>1?'s':''}` : ''}</div>
