@@ -415,9 +415,9 @@ async function renderProfil(j, isOwner) {
     vitesse_max_kmh: (() => { const v = seasonsData.map(s=>s.vitesse_max_kmh).filter(x=>x!=null); return v.length ? Math.max(...v) : null; })(),
     vma_kmh: avgKey(seasonsData,'vma_kmh'), distance_moyenne_km: avgKey(seasonsData,'distance_moyenne_km'),
     sprints_match: avgKey(seasonsData,'sprints_match'),
-    buts_encaisses_avec: sumKey(seasonsData,'buts_encaisses_avec'), clean_sheets: sumKey(seasonsData,'clean_sheets'),
-    buts_encaisses_equipe: sumKey(seasonsData,'buts_encaisses_equipe'),
-    points_equipe: sumKey(seasonsData,'points_equipe'),
+    buts_encaisses_avec: sumKeyOrNull(seasonsData,'buts_encaisses_avec'), clean_sheets: sumKeyOrNull(seasonsData,'clean_sheets'),
+    buts_encaisses_equipe: sumKeyOrNull(seasonsData,'buts_encaisses_equipe'),
+    points_equipe: sumKeyOrNull(seasonsData,'points_equipe'),
     preuve_gps_url: (seasonsData.find(s => s.preuve_gps_url) || {}).preuve_gps_url || null
   };
 
