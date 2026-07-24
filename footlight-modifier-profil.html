@@ -277,9 +277,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         <div id="match-form-panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--bg4);">
           <input type="hidden" id="m-edit-id"/>
           <div class="field-row">
-            <div class="field"><label class="field-label">Date du match</label><input class="field-input" type="date" id="m-date"/></div>
-            <div class="field"><label class="field-label">Adversaire</label><input class="field-input" type="text" id="m-adversaire" placeholder="FC Lorient B"/></div>
+            <div class="field"><label class="field-label">Date du match</label><input class="field-input" type="date" id="m-date" onchange="onMatchDateChange()"/></div>
+            <div class="field"><label class="field-label">Adversaire</label><input class="field-input" type="text" id="m-adversaire" placeholder="FC Lorient B" oninput="document.getElementById('m-verifie-id').value=''"/></div>
           </div>
+          <input type="hidden" id="m-verifie-id"/>
+          <div id="m-verifie-note" style="font-size:0.75rem;color:var(--green-l);margin:-6px 0 10px;display:none;">✓ Match trouvé dans le calendrier officiel FFF — adversaire pré-rempli.</div>
           <div class="field-row">
             <div class="field">
               <label class="field-label">Domicile / Extérieur</label>
@@ -401,6 +403,37 @@ function normalizeName(s) {
   return (s || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+// Rapprochement avec le calendrier officiel FFF (National 1 / National 2) :
+// on tol\u00e8re les variations de ponctuation et le num\u00e9ro d'\u00e9quipe (r\u00e9serve)
+// qui ne sont pas toujours saisis pareil par le joueur ("US Cr\u00e9teil" vs
+// "Us Creteil Football 2").
+function normalizeClub(s) {
+  return normalizeName(s)
+    .replace(/[.']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\s\d+$/, '');
+}
+
+// Cherche un match du calendrier officiel FFF \u00e0 cette date impliquant le
+// club du joueur. Retourne { adversaire, id } si trouv\u00e9 sans ambigu\u00eft\u00e9.
+async function findCalendrierMatch(dateStr, clubJoueur) {
+  const clubNorm = normalizeClub(clubJoueur);
+  if (!dateStr || !clubNorm) return null;
+  const { data } = await db.from('calendrier_officiel').select('*').eq('date_match', dateStr);
+  if (!data || !data.length) return null;
+  const candidats = data.filter(row => {
+    const dom = normalizeClub(row.equipe_domicile);
+    const ext = normalizeClub(row.equipe_exterieur);
+    return dom === clubNorm || ext === clubNorm;
+  });
+  if (candidats.length !== 1) return null;
+  const row = candidats[0];
+  const domNorm = normalizeClub(row.equipe_domicile);
+  const adversaire = domNorm === clubNorm ? row.equipe_exterieur : row.equipe_domicile;
+  return { id: row.id, adversaire };
 }
 
 // Si l'email de connexion a changé (via changeEmail ci-dessous) et a été
@@ -854,10 +887,11 @@ function renderMatchsList() {
     if (m.cartons_rouges) bits.push(`${m.cartons_rouges} 🟥`);
     const lieu = m.domicile == null ? '' : (m.domicile ? ' (dom.)' : ' (ext.)');
     const score = (m.score_pour != null && m.score_contre != null) ? ` · ${m.score_pour}-${m.score_contre}` : '';
+    const badge = m.verifie ? ' <span style="font-size:0.68rem;color:var(--green-l);">✓ vérifié FFF</span>' : '';
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg4);">
         <div>
-          <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}</div>
+          <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}${badge}</div>
           <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${bits.join(' · ') || '—'}${m.lien_match ? ` · <a href="${m.lien_match}" target="_blank" style="color:var(--blue-l);">🔗 lien</a>` : ''}</div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
@@ -868,10 +902,25 @@ function renderMatchsList() {
   }).join('');
 }
 
+async function onMatchDateChange() {
+  const dateStr = document.getElementById('m-date').value;
+  const adversaireInput = document.getElementById('m-adversaire');
+  if (!dateStr || adversaireInput.value.trim()) return;
+  const club = document.getElementById('f-club').value;
+  const found = await findCalendrierMatch(dateStr, club);
+  if (found) {
+    adversaireInput.value = found.adversaire;
+    document.getElementById('m-verifie-id').value = found.id;
+    document.getElementById('m-verifie-note').style.display = 'block';
+  }
+}
+
 function showMatchForm(match) {
   document.getElementById('m-edit-id').value = match ? match.id : '';
   document.getElementById('m-date').value = match && match.date_match ? match.date_match : '';
   document.getElementById('m-adversaire').value = match ? (match.adversaire || '') : '';
+  document.getElementById('m-verifie-id').value = match && match.verifie && match.calendrier_officiel_id ? match.calendrier_officiel_id : '';
+  document.getElementById('m-verifie-note').style.display = document.getElementById('m-verifie-id').value ? 'block' : 'none';
   document.getElementById('m-domicile').value = match && match.domicile === false ? '0' : '1';
   document.getElementById('m-score-pour').value = match && match.score_pour != null ? match.score_pour : '';
   document.getElementById('m-score-contre').value = match && match.score_contre != null ? match.score_contre : '';
@@ -927,6 +976,8 @@ async function saveMatchForm() {
     cartons_jaunes: document.getElementById('m-cartj').value !== '' ? parseInt(document.getElementById('m-cartj').value) : null,
     cartons_rouges: document.getElementById('m-cartr').value !== '' ? parseInt(document.getElementById('m-cartr').value) : null,
     lien_match: document.getElementById('m-lien').value.trim() || null,
+    verifie: !!document.getElementById('m-verifie-id').value,
+    calendrier_officiel_id: document.getElementById('m-verifie-id').value || null,
   };
 
   const editId = document.getElementById('m-edit-id').value;
