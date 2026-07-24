@@ -635,9 +635,10 @@ async function renderProfil(j, isOwner) {
               if (m.cartons_rouges) bits.push(`${m.cartons_rouges} 🟥`);
               const lieu = m.domicile == null ? '' : (m.domicile ? ' (dom.)' : ' (ext.)');
               const score = (m.score_pour != null && m.score_contre != null) ? ` · ${m.score_pour}-${m.score_contre}` : '';
+              const badge = m.verifie ? ' <span style="font-size:0.68rem;color:var(--green-l);">✓ vérifié FFF</span>' : '';
               return `
               <div style="padding:10px 0;border-bottom:1px solid var(--bg4);">
-                <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}${s.isGlobal ? ` · ${m.saison}` : ''}</div>
+                <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}${badge}${s.isGlobal ? ` · ${m.saison}` : ''}</div>
                 <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${bits.join(' · ') || '—'}${m.lien_match ? ` · <a href="${m.lien_match}" target="_blank" style="color:var(--blue-l);">🔗 voir le match</a>` : ''}</div>
               </div>`;
             }).join('')}

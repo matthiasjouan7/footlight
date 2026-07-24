@@ -393,6 +393,7 @@ function renderRecap(saison) {
         <div style="font-size:0.9rem;">
           ${meilleurMatch.date_match ? new Date(meilleurMatch.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${meilleurMatch.adversaire || 'Adversaire non précisé'}
           ${meilleurMatch.score_pour != null && meilleurMatch.score_contre != null ? ` (${meilleurMatch.score_pour}-${meilleurMatch.score_contre})` : ''}
+          ${meilleurMatch.verifie ? ' <span style="font-size:0.68rem;color:var(--green-l);">✓ vérifié FFF</span>' : ''}
         </div>
         <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;">
           ${isDefensif
