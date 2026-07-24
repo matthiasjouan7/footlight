@@ -280,6 +280,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
             <div class="field"><label class="field-label">Date du match</label><input class="field-input" type="date" id="m-date" onchange="onMatchDateChange()"/></div>
             <div class="field"><label class="field-label">Adversaire</label><input class="field-input" type="text" id="m-adversaire" placeholder="FC Lorient B" oninput="document.getElementById('m-verifie-id').value=''"/></div>
           </div>
+          <div class="field">
+            <label class="field-label">Compétition</label>
+            <select class="field-select" id="m-competition">
+              <option value="championnat">Championnat</option>
+              <option value="coupe_france">Coupe de France</option>
+              <option value="coupe_regionale">Coupe régionale</option>
+            </select>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Seuls les matchs de championnat comptent dans tes ratios de performance — les matchs de coupe restent visibles dans ton historique.</div>
+          </div>
           <input type="hidden" id="m-verifie-id"/>
           <div id="m-verifie-note" style="font-size:0.75rem;color:var(--green-l);margin:-6px 0 10px;display:none;">✓ Match trouvé dans le calendrier officiel FFF — adversaire pré-rempli.</div>
           <div class="field-row">
@@ -888,10 +897,11 @@ function renderMatchsList() {
     const lieu = m.domicile == null ? '' : (m.domicile ? ' (dom.)' : ' (ext.)');
     const score = (m.score_pour != null && m.score_contre != null) ? ` · ${m.score_pour}-${m.score_contre}` : '';
     const badge = m.verifie ? ' <span style="font-size:0.68rem;color:var(--green-l);">✓ vérifié FFF</span>' : '';
+    const compTag = m.competition === 'coupe_france' ? ' <span style="font-size:0.68rem;color:var(--gold-l);">🏆 Coupe de France</span>' : m.competition === 'coupe_regionale' ? ' <span style="font-size:0.68rem;color:var(--gold-l);">🏆 Coupe régionale</span>' : '';
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg4);">
         <div>
-          <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}${badge}</div>
+          <div style="font-size:0.85rem;">${m.date_match ? new Date(m.date_match).toLocaleDateString('fr-FR') + ' · ' : ''}${m.adversaire || 'Adversaire non précisé'}${lieu}${score}${badge}${compTag}</div>
           <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">${bits.join(' · ') || '—'}${m.lien_match ? ` · <a href="${m.lien_match}" target="_blank" style="color:var(--blue-l);">🔗 lien</a>` : ''}</div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
@@ -919,6 +929,7 @@ function showMatchForm(match) {
   document.getElementById('m-edit-id').value = match ? match.id : '';
   document.getElementById('m-date').value = match && match.date_match ? match.date_match : '';
   document.getElementById('m-adversaire').value = match ? (match.adversaire || '') : '';
+  document.getElementById('m-competition').value = match && match.competition ? match.competition : 'championnat';
   document.getElementById('m-verifie-id').value = match && match.verifie && match.calendrier_officiel_id ? match.calendrier_officiel_id : '';
   document.getElementById('m-verifie-note').style.display = document.getElementById('m-verifie-id').value ? 'block' : 'none';
   document.getElementById('m-domicile').value = match && match.domicile === false ? '0' : '1';
@@ -964,6 +975,7 @@ async function saveMatchForm() {
     saison,
     date_match: document.getElementById('m-date').value || null,
     adversaire: document.getElementById('m-adversaire').value.trim() || null,
+    competition: document.getElementById('m-competition').value,
     domicile: document.getElementById('m-domicile').value === '1',
     score_pour: document.getElementById('m-score-pour').value !== '' ? parseInt(document.getElementById('m-score-pour').value) : null,
     score_contre: document.getElementById('m-score-contre').value !== '' ? parseInt(document.getElementById('m-score-contre').value) : null,

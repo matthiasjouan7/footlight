@@ -247,7 +247,7 @@ function populateSeasonSelect() {
 function renderRecap(saison) {
   const s = seasonsData.find(x => x.saison === saison) || seasonsData[0];
   const isDefensif = POSTES_DEFENSIFS.includes(joueur.poste || 'autre');
-  const matchs = matchsAll.filter(m => m.saison === s.saison);
+  const matchs = matchsAll.filter(m => m.saison === s.saison && (!m.competition || m.competition === 'championnat'));
   const pct_tps = s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0;
   const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
   const contribution = (s.buts||0) + (s.passes_decisives||0);
@@ -281,7 +281,7 @@ function renderRecap(saison) {
   const evolutionPct = (ratioButsMatch != null && prevRatioButsMatch > 0) ? Math.round((ratioButsMatch - prevRatioButsMatch) / prevRatioButsMatch * 100) : null;
   const prevRatioMinBut = (prevSeason && prevSeason.buts > 0) ? Math.round((prevSeason.minutes_jouees||0) / prevSeason.buts) : null;
   const minButEvolutionPct = (ratioMinBut != null && prevRatioMinBut > 0) ? Math.round((prevRatioMinBut - ratioMinBut) / prevRatioMinBut * 100) : null;
-  const prevMatchsSaison = prevSeason ? matchsAll.filter(m => m.saison === prevSeason.saison) : [];
+  const prevMatchsSaison = prevSeason ? matchsAll.filter(m => m.saison === prevSeason.saison && (!m.competition || m.competition === 'championnat')) : [];
   const prevPctMatchsAvecBut = prevMatchsSaison.length > 0
     ? Math.round(prevMatchsSaison.filter(m => (m.buts||0) > 0).length / prevMatchsSaison.length * 100)
     : (prevSeason && prevSeason.pct_matchs_avec_but != null ? Math.round(prevSeason.pct_matchs_avec_but) : null);
