@@ -310,7 +310,7 @@ body {
       <span class="plan-change" onclick="togglePlanSelector()">Changer →</span>
     </div>
     <div class="plan-price-big" id="plan-price">14€ <span>/mois</span></div>
-    <div class="plan-trial-info muted" id="plan-trial">Engagement 3 mois minimum · débité aujourd'hui</div>
+    <div class="plan-trial-info muted" id="plan-trial">Engagement 1 mois · débité aujourd'hui</div>
     <div class="plan-features-mini" id="plan-features">
       <span class="feat-pill on">Illimité</span>
       <span class="feat-pill on">Impact collectif</span>
@@ -382,7 +382,7 @@ body {
     </div>
     <div class="order-row">
       <span class="order-key">Engagement</span>
-      <span class="order-val" style="color:var(--green)">Engagement 1 à 3 mois minimum</span>
+      <span class="order-val" style="color:var(--green)">Engagement 1 mois minimum</span>
     </div>
     <div class="order-total">
       <span>Aujourd'hui</span>
@@ -447,15 +447,15 @@ const STRIPE_CONFIG = {
   publicKey: 'pk_live_51TR5ntF8F2JI2vQrBkXoJwKykdhPbVMvwFITh1CSig08BhQGGQKjbI6glGQUeLr47LdYsdfdxWEolZZgLsCvd6TW00ZHdLMQzY',
 
   prices: {
-    // Plan Pro
-    pro_3mois:  'price_1TR6HYF8F2JI2vQrQ2zUjjy0',  // 14€/mois — 1 à 3 mois
-    pro_6mois:  'price_1Tu5FkF8F2JI2vQrHHbLNbC7',  // 11€/mois — 4 à 6 mois
-    pro_plus:   'price_1Tu5G6F8F2JI2vQr59lgMBgL',  //  9€/mois — 6 mois+
+    // Plan Pro — engagement fixe (clés conservées telles quelles, seul le sens a changé)
+    pro_3mois:  'price_1TR6HYF8F2JI2vQrQ2zUjjy0',  // 14€/mois — engagement 1 mois
+    pro_6mois:  'price_1Tu5FkF8F2JI2vQrHHbLNbC7',  // 11€/mois — engagement 6 mois
+    pro_plus:   'price_1Tu5G6F8F2JI2vQr59lgMBgL',  //  9€/mois — engagement 1 an
 
     // Plan Premium
-    premium_3mois: 'price_1TtofqF8F2JI2vQrpej8fsuE', // 29€/mois — 1 à 3 mois
-    premium_6mois: 'price_1Tu5GrF8F2JI2vQrmgpTTDss', // 23€/mois — 4 à 6 mois
-    premium_plus:  'price_1Tu5HBF8F2JI2vQrewsmu6Bi', // 19€/mois — 6 mois+
+    premium_3mois: 'price_1TtofqF8F2JI2vQrpej8fsuE', // 29€/mois — engagement 1 mois
+    premium_6mois: 'price_1Tu5GrF8F2JI2vQrmgpTTDss', // 23€/mois — engagement 6 mois
+    premium_plus:  'price_1Tu5HBF8F2JI2vQrewsmu6Bi', // 19€/mois — engagement 1 an
   },
 };
 
@@ -465,9 +465,9 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const CREATE_SUBSCRIPTION_URL = SUPABASE_URL + '/functions/v1/create-subscription';
 
 const ENGAGEMENT_TIERS = [
-  { key: '3mois', label: '1 à 3 mois' },
-  { key: '6mois', label: '4 à 6 mois' },
-  { key: 'plus',  label: '6 mois et +' },
+  { key: '3mois', label: '1 mois' },
+  { key: '6mois', label: '6 mois' },
+  { key: 'plus',  label: '1 an' },
 ];
 const TIER_PRICING = {
   pro:     { '3mois': 14, '6mois': 11, 'plus': 9 },
