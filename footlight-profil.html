@@ -396,6 +396,10 @@ async function renderProfil(j, isOwner) {
 
   const sumKey = (list,k) => list.reduce((a,s)=>a+(Number(s[k])||0),0);
   const avgKey = (list,k) => { const v = list.map(s=>s[k]).filter(x=>x!=null); return v.length ? v.reduce((a,b)=>a+Number(b),0)/v.length : null; };
+  // Comme sumKey, mais renvoie null (pas 0) quand aucune saison n'a la donnée
+  // — évite d'afficher un différentiel "0 / 0" pour des champs legacy que
+  // personne n'a jamais renseignés.
+  const sumKeyOrNull = (list,k) => { const v = list.map(s=>s[k]).filter(x=>x!=null); return v.length ? v.reduce((a,b)=>a+Number(b),0) : null; };
 
   const globalSeason = {
     saison: 'global', isGlobal: true, nbSaisons: seasonsData.length,
@@ -406,7 +410,7 @@ async function renderProfil(j, isOwner) {
     minutes_jouees: sumKey(seasonsData,'minutes_jouees'), cartons_jaunes: sumKey(seasonsData,'cartons_jaunes'),
     cartons_rouges: sumKey(seasonsData,'cartons_rouges'),
     impact_differentiel: avgKey(seasonsData,'impact_differentiel'), pct_matchs_avec_but: avgKey(seasonsData,'pct_matchs_avec_but'),
-    points_avec: sumKey(seasonsData,'points_avec'), points_sans: sumKey(seasonsData,'points_sans'),
+    points_avec: sumKeyOrNull(seasonsData,'points_avec'), points_sans: sumKeyOrNull(seasonsData,'points_sans'),
     pct_points_avec: avgKey(seasonsData,'pct_points_avec'), pct_points_sans: avgKey(seasonsData,'pct_points_sans'),
     vitesse_max_kmh: (() => { const v = seasonsData.map(s=>s.vitesse_max_kmh).filter(x=>x!=null); return v.length ? Math.max(...v) : null; })(),
     vma_kmh: avgKey(seasonsData,'vma_kmh'), distance_moyenne_km: avgKey(seasonsData,'distance_moyenne_km'),
