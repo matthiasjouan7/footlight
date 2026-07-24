@@ -559,9 +559,27 @@ function initStripe() {
       }
     });
 
-    cardNumber = elements.create('cardNumber', { placeholder: '1234 5678 9012 3456' });
-    cardExpiry = elements.create('cardExpiry');
-    cardCvc    = elements.create('cardCvc');
+    // Style classique redondant : sur certains navigateurs, la fonctionnalité
+    // "Link" de Stripe réinjecte sa propre couleur de texte sur le champ
+    // numéro de carte et ignore l'appearance ci-dessus. On force donc aussi
+    // la couleur via l'API de style historique, par élément, et on coupe Link.
+    const legacyStyle = {
+      base: {
+        color: '#f0f2f7',
+        fontFamily: 'DM Sans, sans-serif',
+        fontSize: '15px',
+        '::placeholder': { color: '#5a6275' },
+      },
+      invalid: { color: '#f74f4f' },
+    };
+
+    cardNumber = elements.create('cardNumber', {
+      placeholder: '1234 5678 9012 3456',
+      style: legacyStyle,
+      disableLink: true,
+    });
+    cardExpiry = elements.create('cardExpiry', { style: legacyStyle });
+    cardCvc    = elements.create('cardCvc', { style: legacyStyle });
 
     cardNumber.mount('#card-number-element');
     cardExpiry.mount('#card-expiry-element');
