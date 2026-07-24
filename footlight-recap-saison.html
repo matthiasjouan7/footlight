@@ -140,6 +140,13 @@ function defensiveImpactTier(diff) {
   return { color: 'var(--red)', label: '🔴 L\'équipe encaisse plus avec lui — à surveiller' };
 }
 
+function offensiveImpactTier(diff) {
+  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe prend clairement plus de points avec lui' };
+  if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
+  if (diff >= -0.10) return { color: 'var(--muted)', label: '⚪ Profil neutre — il ne change pas grand-chose' };
+  return { color: 'var(--red)', label: '🔴 L\'équipe prend moins de points avec lui — à surveiller' };
+}
+
 function ratioTierClass(rawValue, tiers, invert) {
   if (rawValue == null) return 'empty';
   let cls = 'blue';
@@ -218,6 +225,7 @@ async function init() {
     buts: joueur.buts, passes_decisives: joueur.passes_decisives, buts_equipe: joueur.buts_equipe,
     pct_matchs_avec_but: joueur.pct_matchs_avec_but,
     buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets, buts_encaisses_equipe: joueur.buts_encaisses_equipe,
+    points_equipe: joueur.points_equipe,
     minutes_jouees: joueur.minutes_jouees,
     cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
   };
@@ -267,6 +275,12 @@ function renderRecap(saison) {
   const butsEncaissesSansLui = (s.buts_encaisses_equipe != null && s.buts_encaisses_avec != null) ? s.buts_encaisses_equipe - s.buts_encaisses_avec : null;
   const ratioEncaissesSansLui = (matchsSansLui > 0 && butsEncaissesSansLui != null) ? butsEncaissesSansLui / matchsSansLui : null;
   const impactDefReelSansLui = (ratioEncaissesMatch != null && ratioEncaissesSansLui != null) ? ratioEncaissesSansLui - ratioEncaissesMatch : null;
+  const matchsAvecScore = matchs.filter(m => m.score_pour != null && m.score_contre != null);
+  const ptsAvecLui = matchsAvecScore.length > 0
+    ? matchsAvecScore.reduce((sum,m) => sum + (m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0), 0) / matchsAvecScore.length
+    : null;
+  const ratioPointsEquipeTotal = (s.matchs_equipe > 0 && s.points_equipe != null) ? s.points_equipe / s.matchs_equipe : null;
+  const impactPointsReel = (ptsAvecLui != null && ratioPointsEquipeTotal != null) ? ptsAvecLui - ratioPointsEquipeTotal : null;
   const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
   // Remonte jusqu'à 3 saisons en arrière pour trouver la plus proche avec
   // des matchs joués, plutôt que d'échouer si la saison juste avant n'a
@@ -343,6 +357,17 @@ function renderRecap(saison) {
       ` : ''}
     </div>` : ''}
 
+    ${impactPointsReel != null ? `
+    <div class="section">
+      <div class="section-title">Impact collectif réel</div>
+      <div class="info-row"><span class="info-key">Matchs de l'équipe (saison)</span><span class="info-val">${s.matchs_equipe}</span></div>
+      <div class="info-row"><span class="info-key">Points de l'équipe (saison)</span><span class="info-val">${s.points_equipe}</span></div>
+      <div class="info-row" style="margin-top:6px;"><span class="info-key">Points pris/match avec lui</span><span class="info-val">${ptsAvecLui.toFixed(2)}</span></div>
+      <div class="info-row"><span class="info-key">Points pris/match (moyenne équipe)</span><span class="info-val">${ratioPointsEquipeTotal.toFixed(2)}</span></div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${offensiveImpactTier(impactPointsReel).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${offensiveImpactTier(impactPointsReel).color};margin-top:4px;">${offensiveImpactTier(impactPointsReel).label}</div>
+    </div>` : ''}
+
     <div class="section">
       <div class="section-title">Ratios & performance</div>
       <div class="ratio-grid">
@@ -351,6 +376,7 @@ function renderRecap(saison) {
           { displayVal: pctCleanSheet != null ? pctCleanSheet+'%' : null, label: '% clean sheet (titularisations)', rawValue: pctCleanSheet, tiers: {elite:40, gold:30}, invert: false, title: 'Pourcentage de ses titularisations où l\'équipe n\'a encaissé aucun but.' },
           { displayVal: ratioCartons != null ? ratioCartons.toFixed(2) : null, label: 'Cartons / match (discipline)', rawValue: ratioCartons, tiers: {elite:0.15, gold:0.30}, invert: true, title: 'En moyenne, nombre de cartons (jaunes + rouges) reçus par match joué.' },
           { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false, title: 'Pourcentage des matchs de l\'équipe cette saison où il a été utilisé.' },
+          { displayVal: ptsAvecLui != null ? ptsAvecLui.toFixed(2) : null, label: 'Points pris / match (moyenne)', rawValue: ptsAvecLui, tiers: {elite:2.2, gold:1.5}, invert: false, title: 'En moyenne, nombre de points pris par l\'équipe (3 victoire, 1 nul) sur les matchs où il joue — déduit du score de ses fiches de match.' },
         ]) : ratioCardSorted([
           { displayVal: ratioButsMatch != null ? ratioButsMatch.toFixed(2) : null, label: 'Buts / match (moyenne)', rawValue: ratioButsMatch, tiers: {elite:0.7, gold:0.4}, invert: false, title: 'En moyenne, nombre de buts marqués par match joué (total buts ÷ matchs joués).' },
           { displayVal: pctMatchsAvecBut != null ? pctMatchsAvecBut+'%' : null, label: matchs.length > 0 ? `A marqué dans ${matchsAvecButCount} match${matchsAvecButCount>1?'s':''} sur ${matchs.length}` : '% matchs avec but', rawValue: pctMatchsAvecBut, tiers: {elite:65, gold:40}, invert: false, title: matchs.length > 0 ? 'Nombre de matchs (avec fiche remplie) où il a marqué au moins un but, sur le total de matchs loggés — peu importe combien de buts par match.' : 'Pourcentage des matchs où il a marqué au moins un but (donnée historique importée, en l\'absence de fiches de match).' },
@@ -358,6 +384,7 @@ function renderRecap(saison) {
           { displayVal: contribution, label: 'Buts + passes décisives', rawValue: s.matchs_joues > 0 ? contribution / s.matchs_joues : null, tiers: {elite:1.0, gold:0.6}, invert: false, always: true, pinned: POSTES_MILIEU.includes(joueur.poste || 'autre'), title: 'Total de buts marqués et passes décisives sur la saison.' },
           { displayVal: pctButsEquipe != null ? pctButsEquipe+'%' : null, label: "Part des buts de l'équipe", rawValue: pctButsEquipe, tiers: {elite:35, gold:20}, invert: false, title: 'Pourcentage des buts de l\'équipe qu\'il a marqués lui-même.' },
           { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false, title: 'Pourcentage des matchs de l\'équipe cette saison où il a été utilisé.' },
+          { displayVal: ptsAvecLui != null ? ptsAvecLui.toFixed(2) : null, label: 'Points pris / match (moyenne)', rawValue: ptsAvecLui, tiers: {elite:2.2, gold:1.5}, invert: false, title: 'En moyenne, nombre de points pris par l\'équipe (3 victoire, 1 nul) sur les matchs où il joue — déduit du score de ses fiches de match.' },
         ])}
       </div>
     </div>

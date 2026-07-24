@@ -240,11 +240,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
           <div class="field" id="field-encaisses" style="display:none;"><label class="field-label">Buts encaissés</label><input class="field-input" type="number" id="s-encaisses" min="0"/></div>
           <div class="field" id="field-encaisses-equipe" style="display:none;"><label class="field-label">Buts encaissés par l'équipe (saison)</label><input class="field-input" type="number" id="s-encaisses-equipe" min="0"/></div>
           <div class="field" id="field-cleansheets" style="display:none;"><label class="field-label">Clean sheets</label><input class="field-input" type="number" id="s-cleansheets" min="0"/></div>
+          <div class="field"><label class="field-label">Points de l'équipe (saison)</label><input class="field-input" type="number" id="s-points-equipe" min="0"/></div>
           <div class="field"><label class="field-label">Minutes</label><input class="field-input" type="number" id="s-minutes" min="0"/></div>
           <div class="field"><label class="field-label">Cartons jaunes</label><input class="field-input" type="number" id="s-cartj" min="0"/></div>
           <div class="field"><label class="field-label">Cartons rouges</label><input class="field-input" type="number" id="s-cartr" min="0"/></div>
         </div>
-        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">Renseigne le nombre de matchs joués par ton équipe cette saison pour débloquer ton taux de présence réel, et le nombre de buts marqués par l'équipe pour ta part dans les buts collectifs.</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">Renseigne le nombre de matchs joués par ton équipe cette saison pour débloquer ton taux de présence réel, le nombre de buts marqués par l'équipe pour ta part dans les buts collectifs, et le nombre de points pris par l'équipe (3 pts/victoire, 1 pt/nul) pour ton impact collectif réel.</div>
       </div>
 
       <div class="section">
@@ -545,6 +546,7 @@ async function finishInit() {
     matchs_joues: joueur.matchs_joues, matchs_equipe: joueur.matchs_equipe, titularisations: joueur.titularisations,
     buts: joueur.buts, passes_decisives: joueur.passes_decisives, buts_equipe: joueur.buts_equipe,
     buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets, buts_encaisses_equipe: joueur.buts_encaisses_equipe,
+    points_equipe: joueur.points_equipe,
     minutes_jouees: joueur.minutes_jouees,
     cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
     vitesse_max_kmh: joueur.vitesse_max_kmh, vma_kmh: joueur.vma_kmh,
@@ -715,6 +717,7 @@ function fillSeasonFields(s) {
   document.getElementById('s-encaisses').value = s.buts_encaisses_avec ?? '';
   document.getElementById('s-encaisses-equipe').value = s.buts_encaisses_equipe ?? '';
   document.getElementById('s-cleansheets').value = s.clean_sheets ?? '';
+  document.getElementById('s-points-equipe').value = s.points_equipe ?? '';
   document.getElementById('s-minutes').value = s.minutes_jouees ?? '';
   document.getElementById('s-cartj').value = s.cartons_jaunes ?? '';
   document.getElementById('s-cartr').value = s.cartons_rouges ?? '';
@@ -820,6 +823,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     buts_encaisses_avec: document.getElementById('s-encaisses').value ? parseInt(document.getElementById('s-encaisses').value) : null,
     buts_encaisses_equipe: document.getElementById('s-encaisses-equipe').value ? parseInt(document.getElementById('s-encaisses-equipe').value) : null,
     clean_sheets: document.getElementById('s-cleansheets').value ? parseInt(document.getElementById('s-cleansheets').value) : null,
+    points_equipe: document.getElementById('s-points-equipe').value ? parseInt(document.getElementById('s-points-equipe').value) : null,
     minutes_jouees: parseInt(document.getElementById('s-minutes').value) || 0,
     cartons_jaunes: parseInt(document.getElementById('s-cartj').value) || 0,
     cartons_rouges: parseInt(document.getElementById('s-cartr').value) || 0,

@@ -229,6 +229,13 @@ function defensiveImpactTier(diff) {
   return { color: 'var(--red)', label: '🔴 L\'équipe encaisse plus avec lui — à surveiller' };
 }
 
+function offensiveImpactTier(diff) {
+  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe prend clairement plus de points avec lui' };
+  if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
+  if (diff >= -0.10) return { color: 'var(--muted)', label: '⚪ Profil neutre — il ne change pas grand-chose' };
+  return { color: 'var(--red)', label: '🔴 L\'équipe prend moins de points avec lui — à surveiller' };
+}
+
 function normalizeName(s) {
   return (s || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -381,6 +388,7 @@ async function renderProfil(j, isOwner) {
     vitesse_max_kmh: j.vitesse_max_kmh, vma_kmh: j.vma_kmh,
     distance_moyenne_km: j.distance_moyenne_km, sprints_match: j.sprints_match,
     buts_encaisses_avec: j.buts_encaisses_avec, clean_sheets: j.clean_sheets, buts_encaisses_equipe: j.buts_encaisses_equipe,
+    points_equipe: j.points_equipe,
     preuve_gps_url: j.preuve_gps_url,
     isCurrent: true
   };
@@ -405,6 +413,7 @@ async function renderProfil(j, isOwner) {
     sprints_match: avgKey(seasonsData,'sprints_match'),
     buts_encaisses_avec: sumKey(seasonsData,'buts_encaisses_avec'), clean_sheets: sumKey(seasonsData,'clean_sheets'),
     buts_encaisses_equipe: sumKey(seasonsData,'buts_encaisses_equipe'),
+    points_equipe: sumKey(seasonsData,'points_equipe'),
     preuve_gps_url: (seasonsData.find(s => s.preuve_gps_url) || {}).preuve_gps_url || null
   };
 
@@ -465,6 +474,16 @@ async function renderProfil(j, isOwner) {
     const prevPctCleanSheet = (prevSeason && prevSeason.titularisations > 0 && prevSeason.clean_sheets != null) ? Math.round(prevSeason.clean_sheets / prevSeason.titularisations * 100) : null;
     const cleanSheetEvolutionPct = (pctCleanSheet != null && prevPctCleanSheet > 0) ? Math.round((pctCleanSheet - prevPctCleanSheet) / prevPctCleanSheet * 100) : null;
     const hasDefenseData = s.buts_encaisses_avec != null || s.clean_sheets != null;
+    // Impact collectif réel : points pris par match joué (3/1/0, déduits du
+    // score de ses fiches de match) vs moyenne de points de l'équipe sur la
+    // saison — un vrai indicateur auto-déclarable, contrairement au champ
+    // legacy points_avec/points_sans (import historique, jamais resaisissable).
+    const matchsAvecScore = matchsSaison.filter(m => m.score_pour != null && m.score_contre != null);
+    const ptsAvecLui = matchsAvecScore.length > 0
+      ? matchsAvecScore.reduce((sum,m) => sum + (m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0), 0) / matchsAvecScore.length
+      : null;
+    const ratioPointsEquipeTotal = (s.matchs_equipe > 0 && s.points_equipe != null) ? s.points_equipe / s.matchs_equipe : null;
+    const impactPointsReel = (ptsAvecLui != null && ratioPointsEquipeTotal != null) ? ptsAvecLui - ratioPointsEquipeTotal : null;
 
     return `
       <div class="stats-grid">
@@ -491,6 +510,7 @@ async function renderProfil(j, isOwner) {
             { displayVal: pctCleanSheet != null ? pctCleanSheet+'%' : null, label: '% clean sheet (titularisations)', rawValue: pctCleanSheet, tiers: {elite:40, gold:30}, invert: false, title: 'Pourcentage de ses titularisations où l\'équipe n\'a encaissé aucun but.' },
             { displayVal: ratioCartons != null ? ratioCartons.toFixed(2) : null, label: 'Cartons / match (discipline)', rawValue: ratioCartons, tiers: {elite:0.15, gold:0.30}, invert: true, title: 'En moyenne, nombre de cartons (jaunes + rouges) reçus par match joué.' },
             { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false, title: 'Pourcentage des matchs de l\'équipe cette saison où il a été utilisé.' },
+            { displayVal: ptsAvecLui != null ? ptsAvecLui.toFixed(2) : null, label: 'Points pris / match (moyenne)', rawValue: ptsAvecLui, tiers: {elite:2.2, gold:1.5}, invert: false, title: 'En moyenne, nombre de points pris par l\'équipe (3 victoire, 1 nul) sur les matchs où il joue — déduit du score de ses fiches de match.' },
           ]) : ratioCardSorted([
             { displayVal: ratioButsMatch != null ? ratioButsMatch.toFixed(2) : null, label: 'Buts / match (moyenne)', rawValue: ratioButsMatch, tiers: {elite:0.7, gold:0.4}, invert: false, title: 'En moyenne, nombre de buts marqués par match joué (total buts ÷ matchs joués).' },
             { displayVal: pctMatchsAvecBut != null ? pctMatchsAvecBut+'%' : null, label: matchsSaison.length > 0 ? `A marqué dans ${matchsAvecButCount} match${matchsAvecButCount>1?'s':''} sur ${matchsSaison.length}` : '% matchs avec but', rawValue: pctMatchsAvecBut, tiers: {elite:65, gold:40}, invert: false, title: matchsSaison.length > 0 ? 'Nombre de matchs (avec fiche remplie) où il a marqué au moins un but, sur le total de matchs loggés — peu importe combien de buts par match.' : 'Pourcentage des matchs où il a marqué au moins un but (donnée historique importée, en l\'absence de fiches de match).' },
@@ -498,6 +518,7 @@ async function renderProfil(j, isOwner) {
             { displayVal: contribution, label: 'Buts + passes décisives', rawValue: s.matchs_joues > 0 ? contribution / s.matchs_joues : null, tiers: {elite:1.0, gold:0.6}, invert: false, always: true, pinned: POSTES_MILIEU.includes(poste_raw), title: 'Total de buts marqués et passes décisives sur la saison.' },
             { displayVal: pctButsEquipe != null ? pctButsEquipe+'%' : null, label: "Part des buts de l'équipe", rawValue: pctButsEquipe, tiers: {elite:35, gold:20}, invert: false, title: 'Pourcentage des buts de l\'équipe qu\'il a marqués lui-même.' },
             { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false, title: 'Pourcentage des matchs de l\'équipe cette saison où il a été utilisé.' },
+            { displayVal: ptsAvecLui != null ? ptsAvecLui.toFixed(2) : null, label: 'Points pris / match (moyenne)', rawValue: ptsAvecLui, tiers: {elite:2.2, gold:1.5}, invert: false, title: 'En moyenne, nombre de points pris par l\'équipe (3 victoire, 1 nul) sur les matchs où il joue — déduit du score de ses fiches de match.' },
           ])}
         </div>
         ${((!isDefensif && (pctButsEquipe == null || pctMatchsAvecBut == null)) || tauxPresence == null || (isDefensif && impactDefReel == null)) ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:12px;">${(!isDefensif && pctMatchsAvecBut == null) ? 'Ajoute tes fiches de match pour débloquer le % de matchs avec but. ' : ''}${(!isDefensif && pctButsEquipe == null) ? 'Renseigne les buts marqués par l\'équipe cette saison pour débloquer la part des buts de l\'équipe. ' : ''}${(isDefensif && impactDefReel == null) ? 'Renseigne les matchs et buts encaissés de l\'équipe cette saison (dans "Modifier mon profil") pour débloquer ton impact défensif réel. ' : ''}${tauxPresence == null ? 'Renseigne les matchs joués par l\'équipe cette saison (dans "Modifier mon profil") pour débloquer ton taux de présence.' : ''}</div>` : ''}
@@ -573,9 +594,30 @@ async function renderProfil(j, isOwner) {
         </div>
       </div>`) : ''}
 
+      ${impactPointsReel != null ? (canImpact ? `
+      <div class="section">
+        <div class="section-title">Impact collectif réel</div>
+        <div class="info-row"><span class="info-key">Matchs de l'équipe (saison)</span><span class="info-val">${s.matchs_equipe}</span></div>
+        <div class="info-row"><span class="info-key">Points de l'équipe (saison)</span><span class="info-val">${s.points_equipe}</span></div>
+        <div class="info-row" style="margin-top:6px;"><span class="info-key">Points pris/match avec lui</span><span class="info-val">${ptsAvecLui.toFixed(2)}</span></div>
+        <div class="info-row"><span class="info-key">Points pris/match (moyenne équipe)</span><span class="info-val">${ratioPointsEquipeTotal.toFixed(2)}</span></div>
+        <div class="bar-item" style="margin-top:12px;">
+          <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${offensiveImpactTier(impactPointsReel).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${offensiveImpactTier(impactPointsReel).color};margin-top:6px;">${offensiveImpactTier(impactPointsReel).label}</div>
+        </div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Points pris (3 victoire, 1 nul) déduits du score de ses fiches de match de championnat.</div>
+      </div>` : `
+      <div class="section">
+        <div class="section-title">Impact collectif réel</div>
+        <div class="locked-box">
+          <p>🔒 Réservé aux recruteurs Pro et Premium</p>
+          <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
+        </div>
+      </div>`) : ''}
+
       ${!hasImpactData ? '' : canImpact ? `
       <div class="section">
-        <div class="section-title">Impact collectif</div>
+        <div class="section-title">Impact collectif (historique)</div>
         ${diff != null ? `
         <div class="bar-item">
           <div class="bar-label-row"><span class="k">Différentiel d'impact</span><span class="v" style="color:${impactTier(diff).color}">${diff>=0?'+':''}${Number(diff).toFixed(2)}</span></div>
@@ -588,7 +630,7 @@ async function renderProfil(j, isOwner) {
         <div class="info-row"><span class="info-key">Points pris sans le joueur</span><span class="info-val">${s.points_sans}${s.pct_points_sans!=null?' ('+Math.round(s.pct_points_sans)+'%)':''}</span></div>` : ''}
       </div>` : `
       <div class="section">
-        <div class="section-title">Impact collectif</div>
+        <div class="section-title">Impact collectif (historique)</div>
         <div class="locked-box">
           <p>🔒 Réservé aux recruteurs Pro et Premium</p>
           <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
