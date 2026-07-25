@@ -278,17 +278,34 @@ async function createAcc(){
       }
     }
 
-    // Sauvegarder dans table recruteurs — toujours en Gratuit à l'inscription.
-    // Le plan choisi (sPlan) ne sert qu'à rediriger vers la bonne offre sur
-    // la page de paiement ; seul un paiement réussi (via Stripe) doit passer
-    // le compte en Pro/Premium, jamais l'inscription elle-même.
+    // Sauvegarder dans table recruteurs — toujours en Gratuit à l'inscription,
+    // sauf essai promo (voir ci-dessous). Le plan choisi (sPlan) ne sert qu'à
+    // rediriger vers la bonne offre sur la page de paiement ; seul un
+    // paiement réussi (via Stripe) doit passer le compte en Pro/Premium de
+    // façon durable, jamais l'inscription elle-même.
+    //
+    // Promo essai gratuit : toute inscription jusqu'au 31/10/2026 démarre
+    // avec 14 jours de Premium offerts (essai_fin), repassé en Gratuit
+    // automatiquement ensuite par une tâche planifiée côté base de données.
+    var PROMO_ESSAI_CUTOFF = new Date('2026-10-31T23:59:59');
+    var enPromoEssai = new Date() <= PROMO_ESSAI_CUTOFF;
+    var essaiFin = null;
+    var planInitial = 'free';
+    if (enPromoEssai) {
+      planInitial = 'premium';
+      var dFin = new Date();
+      dFin.setDate(dFin.getDate() + 14);
+      essaiFin = dFin.toISOString().slice(0, 10);
+    }
+
     var profileResult = await db.from('recruteurs').insert([{
       prenom: prenom, nom: nom, email: email,
       telephone: tel || null,
       organisation: orga || null,
       type_profil: sType || 'club',
-      plan: 'free',
-      abonnement_actif: true
+      plan: planInitial,
+      abonnement_actif: true,
+      essai_fin: essaiFin
     }]);
 
     if (profileResult.error) {
