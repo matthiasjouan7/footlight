@@ -134,27 +134,34 @@ function renderRecruteur(user, r) {
   const plan = r.plan || 'free';
   const planLabels = {free: 'Gratuit', pro: 'Pro', premium: 'Premium'};
   const planColors = {free: 'free', pro: 'pro', premium: 'premium'};
-  
+  const enEssai = !!(r.essai_fin && !r.stripe_subscription_id);
+  const essaiLabel = enEssai ? (() => {
+    const [y, m, d] = r.essai_fin.split('-');
+    return `${d}/${m}/${y}`;
+  })() : null;
+
   document.getElementById('contenu').innerHTML = `
     <div class="header-card">
       <div class="avatar" style="background:linear-gradient(135deg,#1f6feb,#7c6af7)">${initiales}</div>
       <div>
         <div class="user-name">${r.prenom} ${r.nom}</div>
         <div class="user-type">Recruteur · ${r.type_profil === 'club' ? 'Club amateur' : r.type_profil === 'agent' ? 'Agent' : 'Scout'}</div>
-        <div style="margin-top:6px;"><span class="badge ${planColors[plan]}">${planLabels[plan]}</span></div>
+        <div style="margin-top:6px;"><span class="badge ${planColors[plan]}">${enEssai ? 'Essai ' + planLabels[plan] : planLabels[plan]}</span></div>
       </div>
     </div>
 
     <div class="plan-card">
-      <div class="plan-name">Plan ${planLabels[plan]}</div>
+      <div class="plan-name">${enEssai ? 'Essai gratuit — ' : ''}Plan ${planLabels[plan]}</div>
       <div class="plan-desc">
-        ${plan === 'free' ? '10 profils consultables par mois · Stats basiques · 3 joueurs manuels' : ''}
-        ${plan === 'pro' ? 'Recherche illimitée · Stats complètes · Impact collectif · Shortlist illimitée' : ''}
-        ${plan === 'premium' ? 'Tout le Pro + Vidéos, GPS, Export, Contact direct joueurs' : ''}
+        ${enEssai ? `Accès complet offert jusqu'au ${essaiLabel}, puis retour automatique en Gratuit sauf abonnement.` : ''}
+        ${!enEssai && plan === 'free' ? '10 profils consultables par mois · Stats basiques · 3 joueurs manuels' : ''}
+        ${!enEssai && plan === 'pro' ? 'Recherche illimitée · Stats complètes · Impact collectif · Shortlist illimitée' : ''}
+        ${!enEssai && plan === 'premium' ? 'Tout le Pro + Vidéos, GPS, Export, Contact direct joueurs' : ''}
       </div>
-      ${plan === 'free' ? '<a href="footlight-paiement.html?plan=pro" class="upgrade-btn">Passer au plan Pro — 14€/mois →</a>' : ''}
-      ${plan === 'pro' ? '<a href="footlight-paiement.html?plan=premium" class="upgrade-btn">Passer au plan Premium — 29€/mois →</a>' : ''}
-      ${plan !== 'free' ? `
+      ${enEssai ? '<a href="footlight-paiement.html?plan=premium" class="upgrade-btn">Garder l\'accès après l\'essai — S\'abonner →</a>' : ''}
+      ${!enEssai && plan === 'free' ? '<a href="footlight-paiement.html?plan=pro" class="upgrade-btn">Passer au plan Pro — 14€/mois →</a>' : ''}
+      ${!enEssai && plan === 'pro' ? '<a href="footlight-paiement.html?plan=premium" class="upgrade-btn">Passer au plan Premium — 29€/mois →</a>' : ''}
+      ${plan !== 'free' && !enEssai ? `
       <div id="resiliation-zone" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);">
         ${r.annulation_prevue
           ? '<div style="font-size:0.8rem;color:var(--gold-l);">Résiliation en cours — votre abonnement reste actif jusqu\'à la fin de la période déjà payée, puis repasse en Gratuit.</div>'
