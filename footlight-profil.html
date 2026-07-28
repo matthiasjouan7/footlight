@@ -388,7 +388,7 @@ async function renderProfil(j, isOwner) {
     vitesse_max_kmh: j.vitesse_max_kmh, vma_kmh: j.vma_kmh,
     distance_moyenne_km: j.distance_moyenne_km, sprints_match: j.sprints_match,
     buts_encaisses_avec: j.buts_encaisses_avec, clean_sheets: j.clean_sheets, buts_encaisses_equipe: j.buts_encaisses_equipe,
-    points_equipe: j.points_equipe,
+    points_equipe: j.points_equipe, points_avec_lui: j.points_avec_lui,
     preuve_gps_url: j.preuve_gps_url,
     isCurrent: true
   };
@@ -487,7 +487,7 @@ async function renderProfil(j, isOwner) {
     const matchsAvecScore = matchsSaison.filter(m => m.score_pour != null && m.score_contre != null);
     const ptsAvecLui = matchsAvecScore.length > 0
       ? matchsAvecScore.reduce((sum,m) => sum + (m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0), 0) / matchsAvecScore.length
-      : null;
+      : (s.matchs_joues > 0 && s.points_avec_lui != null ? s.points_avec_lui / s.matchs_joues : null);
     const ratioPointsEquipeTotal = (s.matchs_equipe > 0 && s.points_equipe != null) ? s.points_equipe / s.matchs_equipe : null;
     const impactPointsReel = (ptsAvecLui != null && ratioPointsEquipeTotal != null) ? ptsAvecLui - ratioPointsEquipeTotal : null;
 
