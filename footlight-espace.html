@@ -215,6 +215,44 @@ function getAge(dateNaissance) {
   return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
 }
 
+// Doit rester cohérent avec CRITERIA_DEFS de footlight-recherche.html —
+// utilisé pour ré-appliquer les critères ajoutés dynamiquement (criteres_avances)
+// aux recherches sauvegardées.
+const CRITERIA_DEFS = [
+  { key: 'minutes_jouees', column: 'minutes_jouees', type: 'range', direction: 'min' },
+  { key: 'titularisations', column: 'titularisations', type: 'range', direction: 'min' },
+  { key: 'passes_decisives', column: 'passes_decisives', type: 'range', direction: 'min' },
+  { key: 'cartons_jaunes', column: 'cartons_jaunes', type: 'range', direction: 'max' },
+  { key: 'cartons_rouges', column: 'cartons_rouges', type: 'range', direction: 'max' },
+  { key: 'vitesse_max_kmh', column: 'vitesse_max_kmh', type: 'range', direction: 'min' },
+  { key: 'vma_kmh', column: 'vma_kmh', type: 'range', direction: 'min' },
+  { key: 'distance_moyenne_km', column: 'distance_moyenne_km', type: 'range', direction: 'min' },
+  { key: 'sprints_match', column: 'sprints_match', type: 'range', direction: 'min' },
+  { key: 'pied_fort', column: 'pied_fort', type: 'select' },
+  { key: 'badge', column: 'badge', type: 'select', tierOrder: true, order: ['declaratif','video','gps','elite'] },
+];
+
+function matchesCriteresAvances(j, criteres) {
+  if (!criteres) return true;
+  for (const key in criteres) {
+    const def = CRITERIA_DEFS.find(d => d.key === key);
+    const val = criteres[key];
+    if (!def || val == null || val === '') continue;
+    if (def.type === 'range') {
+      const jv = j[def.column] || 0;
+      if (def.direction === 'min' && jv < val) return false;
+      if (def.direction === 'max' && jv > val) return false;
+    } else if (def.type === 'select') {
+      if (def.tierOrder) {
+        if (def.order.indexOf(j[def.column]) < def.order.indexOf(val)) return false;
+      } else if (j[def.column] !== val) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 async function loadAlertes(recruteurId) {
   const el = document.getElementById('alertes-content');
   const { data: recherches } = await db.from('recherches_sauvegardees').select('*')
@@ -226,7 +264,7 @@ async function loadAlertes(recruteurId) {
   }
 
   const blocks = await Promise.all(recherches.map(async (s) => {
-    let q = db.from('joueurs').select('id, prenom, nom, poste, niveau, club, date_naissance')
+    let q = db.from('joueurs').select('id, prenom, nom, poste, niveau, club, date_naissance, minutes_jouees, titularisations, passes_decisives, cartons_jaunes, cartons_rouges, vitesse_max_kmh, vma_kmh, distance_moyenne_km, sprints_match, pied_fort, badge')
       .eq('profil_public', true).gt('created_at', s.derniere_consultation);
     if (s.poste) q = q.eq('poste', s.poste);
     if (s.niveau) q = q.eq('niveau', s.niveau);
@@ -234,7 +272,7 @@ async function loadAlertes(recruteurId) {
     if (s.min_matchs) q = q.gte('matchs_joues', s.min_matchs);
     if (s.club_query) q = q.ilike('club', `%${s.club_query}%`);
     const { data } = await q;
-    let matches = data || [];
+    let matches = (data || []).filter(j => matchesCriteresAvances(j, s.criteres_avances));
     if (s.age_min != null || s.age_max != null) {
       matches = matches.filter(j => {
         const age = getAge(j.date_naissance);
@@ -251,6 +289,13 @@ async function loadAlertes(recruteurId) {
     if (s.min_buts) critereBits.push(`≥${s.min_buts} buts`);
     if (s.min_matchs) critereBits.push(`≥${s.min_matchs} matchs`);
     if (s.club_query) critereBits.push(`club: ${s.club_query}`);
+    if (s.criteres_avances) {
+      Object.keys(s.criteres_avances).forEach(key => {
+        const def = CRITERIA_DEFS.find(d => d.key === key);
+        const val = s.criteres_avances[key];
+        if (def && val != null && val !== '') critereBits.push(`${key.replace(/_/g,' ')}: ${val}`);
+      });
+    }
 
     return `
     <div style="padding:12px 0;border-bottom:1px solid var(--bg3);">
