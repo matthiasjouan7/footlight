@@ -198,6 +198,14 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
           oninput="clubQuery=this.value;applyFilters()"
           style="width:100%;padding:9px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;"/>
       </div>
+
+      <div id="custom-criteria"></div>
+
+      <div class="filter-group">
+        <select class="sort-select" id="add-criterion-select" style="width:100%;" onchange="if(this.value)addCriterion(this.value);this.value='';">
+          <option value="">+ Ajouter un critère…</option>
+        </select>
+      </div>
     </div>
 
     <hr class="fdiv"/>
@@ -300,6 +308,23 @@ var searchQuery = '';
 var clubQuery = '';
 var shortlist = new Set();
 var shortlistOnly = new URLSearchParams(window.location.search).get('shortlist') === '1';
+var customCriteria = {}; // { [key]: valeur choisie }
+
+// Indicateurs disponibles pour "+ Ajouter un critère" — un recruteur choisit
+// lesquels afficher, plutôt qu'un panneau figé avec tout dedans.
+const CRITERIA_DEFS = [
+  { key: 'minutes_jouees', label: 'Minutes jouées (min)', column: 'minutes_jouees', type: 'range', min: 0, max: 3000, step: 50, direction: 'min' },
+  { key: 'titularisations', label: 'Titularisations (min)', column: 'titularisations', type: 'range', min: 0, max: 40, step: 1, direction: 'min' },
+  { key: 'passes_decisives', label: 'Passes décisives (min)', column: 'passes_decisives', type: 'range', min: 0, max: 30, step: 1, direction: 'min' },
+  { key: 'cartons_jaunes', label: 'Cartons jaunes (max)', column: 'cartons_jaunes', type: 'range', min: 0, max: 20, step: 1, direction: 'max' },
+  { key: 'cartons_rouges', label: 'Cartons rouges (max)', column: 'cartons_rouges', type: 'range', min: 0, max: 5, step: 1, direction: 'max' },
+  { key: 'vitesse_max_kmh', label: 'Vitesse max km/h (min)', column: 'vitesse_max_kmh', type: 'range', min: 0, max: 40, step: 0.5, direction: 'min' },
+  { key: 'vma_kmh', label: 'VMA km/h (min)', column: 'vma_kmh', type: 'range', min: 0, max: 25, step: 0.5, direction: 'min' },
+  { key: 'distance_moyenne_km', label: 'Distance moy./match km (min)', column: 'distance_moyenne_km', type: 'range', min: 0, max: 15, step: 0.5, direction: 'min' },
+  { key: 'sprints_match', label: 'Sprints/match (min)', column: 'sprints_match', type: 'range', min: 0, max: 40, step: 1, direction: 'min' },
+  { key: 'pied_fort', label: 'Pied fort', column: 'pied_fort', type: 'select', options: [{v:'Droit',l:'Droit'},{v:'Gauche',l:'Gauche'},{v:'Les deux',l:'Les deux'}] },
+  { key: 'badge', label: 'Badge minimum', column: 'badge', type: 'select', tierOrder: true, options: [{v:'declaratif',l:'⚪ Déclaratif'},{v:'video',l:'🎥 Vérifié vidéo'},{v:'gps',l:'📍 Vérifié GPS'},{v:'elite',l:'⭐ Elite'}] },
+];
 
 function normalizeName(s) {
   return (s || '')
@@ -330,7 +355,7 @@ async function loadJoueurs() {
   try {
     const { data, error } = await db
       .from('joueurs')
-      .select('id,prenom,nom,poste,club,niveau,buts,passes_decisives,matchs_joues,minutes_jouees,badge,pied_fort,date_naissance')
+      .select('id,prenom,nom,poste,club,niveau,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,badge,pied_fort,date_naissance')
       .eq('profil_public', true)
       .order('matchs_joues', { ascending: false });
 
@@ -457,6 +482,7 @@ function applyFilters() {
       if ((j.buts||0) < minButs) return false;
       if ((j.matchs_joues||0) < minMatchs) return false;
       if (clubQuery.trim() && !(j.club||'').toLowerCase().includes(clubQuery.trim().toLowerCase())) return false;
+      if (!matchesCustomCriteria(j)) return false;
     }
     if (searchQuery.trim()) {
       var q = normalizeName(searchQuery);
@@ -466,6 +492,77 @@ function applyFilters() {
     return true;
   });
   renderCards(filtered);
+}
+
+function matchesCustomCriteria(j) {
+  for (const key in customCriteria) {
+    const def = CRITERIA_DEFS.find(d => d.key === key);
+    const val = customCriteria[key];
+    if (!def || val == null || val === '') continue;
+    if (def.type === 'range') {
+      const jv = j[def.column] || 0;
+      if (def.direction === 'min' && jv < val) return false;
+      if (def.direction === 'max' && jv > val) return false;
+    } else if (def.type === 'select') {
+      if (def.tierOrder) {
+        const order = def.options.map(o => o.v);
+        if (order.indexOf(j[def.column]) < order.indexOf(val)) return false;
+      } else if (j[def.column] !== val) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function populateAddCriterionSelect() {
+  const sel = document.getElementById('add-criterion-select');
+  if (!sel) return;
+  const added = new Set(Object.keys(customCriteria));
+  sel.innerHTML = '<option value="">+ Ajouter un critère…</option>' +
+    CRITERIA_DEFS.filter(d => !added.has(d.key)).map(d => `<option value="${d.key}">${d.label}</option>`).join('');
+}
+
+function addCriterion(key) {
+  const def = CRITERIA_DEFS.find(d => d.key === key);
+  if (!def) return;
+  customCriteria[key] = def.type === 'range' ? def.min : '';
+  const wrap = document.createElement('div');
+  wrap.className = 'filter-group';
+  wrap.id = 'criterion-' + key;
+  if (def.type === 'range') {
+    wrap.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="filter-label">${def.label}</span>
+        <span onclick="removeCriterion('${key}')" style="cursor:pointer;color:var(--muted);font-size:0.9rem;" title="Retirer ce critère">✕</span>
+      </div>
+      <div class="range-wrap">
+        <div class="range-row"><span>${def.min}</span><span id="crit-val-${key}">${def.min}</span></div>
+        <input type="range" min="${def.min}" max="${def.max}" value="${def.min}" step="${def.step}"
+          oninput="document.getElementById('crit-val-${key}').textContent=this.value;customCriteria['${key}']=parseFloat(this.value);applyFilters()"/>
+      </div>`;
+  } else {
+    wrap.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="filter-label">${def.label}</span>
+        <span onclick="removeCriterion('${key}')" style="cursor:pointer;color:var(--muted);font-size:0.9rem;" title="Retirer ce critère">✕</span>
+      </div>
+      <select class="sort-select" style="width:100%;" onchange="customCriteria['${key}']=this.value;applyFilters()">
+        <option value="">—</option>
+        ${def.options.map(o => `<option value="${o.v}">${o.l}</option>`).join('')}
+      </select>`;
+  }
+  document.getElementById('custom-criteria').appendChild(wrap);
+  populateAddCriterionSelect();
+  applyFilters();
+}
+
+function removeCriterion(key) {
+  delete customCriteria[key];
+  const el = document.getElementById('criterion-' + key);
+  if (el) el.remove();
+  populateAddCriterionSelect();
+  applyFilters();
 }
 
 async function saveCurrentSearch() {
@@ -493,6 +590,7 @@ async function saveCurrentSearch() {
     min_buts: minButs || null,
     min_matchs: minMatchs || null,
     club_query: clubQuery.trim() || null,
+    criteres_avances: Object.keys(customCriteria).length ? customCriteria : null,
   });
   if (error) {
     msg.style.color = 'var(--red)';
@@ -521,6 +619,9 @@ function resetFilters() {
   document.getElementById('f-search').value = '';
   document.getElementById('f-age-min').value = '';
   document.getElementById('f-age-max').value = '';
+  customCriteria = {};
+  if (document.getElementById('custom-criteria')) document.getElementById('custom-criteria').innerHTML = '';
+  populateAddCriterionSelect();
   applyFilters();
 }
 
@@ -731,6 +832,7 @@ async function checkSession() {
     }
   }
 
+  populateAddCriterionSelect();
   loadJoueurs();
 }
 
