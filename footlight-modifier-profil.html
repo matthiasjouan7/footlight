@@ -537,14 +537,9 @@ async function init() {
     document.getElementById('page-sub').textContent = 'Aide ce joueur à avoir un profil complet en renseignant club, niveau et stats manquantes.';
     document.getElementById('recruteur-banner').style.display = 'block';
     document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
-    // Une fiche "manuelle" (joueur non inscrit, ajouté par un recruteur/coach)
-    // n'a pas de vrai compte associé : corriger le prénom/nom ici ne risque
-    // pas de renommer l'identité d'un joueur inscrit sous son propre compte.
-    if (target.email && target.email.endsWith('.manuel@scoute.footlight.fr')) {
-      document.getElementById('identite-section').style.display = 'block';
-      document.getElementById('id-prenom').value = target.prenom || '';
-      document.getElementById('id-nom').value = target.nom || '';
-    }
+    document.getElementById('identite-section').style.display = 'block';
+    document.getElementById('id-prenom').value = target.prenom || '';
+    document.getElementById('id-nom').value = target.nom || '';
     await finishInit();
     return;
   }
