@@ -669,8 +669,9 @@ function toggleDefenseFields() {
   document.getElementById('field-buts').style.display = isDef ? 'none' : '';
   document.getElementById('field-passes').style.display = isDef ? 'none' : '';
   document.getElementById('field-buts-equipe').style.display = isDef ? 'none' : '';
-  document.getElementById('field-points-avec-lui').style.display = isDef ? 'none' : '';
-  document.getElementById('field-points-sans-lui').style.display = isDef ? 'none' : '';
+  // Contrairement aux buts/passes, l'impact "points pris avec/sans lui"
+  // concerne tous les postes (un gardien influence aussi le résultat) : ces
+  // champs restent visibles même pour les postes défensifs.
   document.getElementById('field-encaisses').style.display = isDef ? '' : 'none';
   document.getElementById('field-encaisses-equipe').style.display = isDef ? '' : 'none';
   document.getElementById('field-cleansheets').style.display = isDef ? '' : 'none';
