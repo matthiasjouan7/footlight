@@ -134,6 +134,25 @@
     .hs-val { font-size: 2rem; font-weight: 900; color: var(--text); }
     .hs-label { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
 
+    /* ── VIDÉO PRÉSENTATION ── */
+    .video-section { background: var(--bg2); max-width:100%; padding:80px 24px; }
+    .video-wrap {
+      max-width:1100px; margin:48px auto 0;
+      display:grid; grid-template-columns: 1fr 340px; gap:40px; align-items:center;
+    }
+    @media(max-width:800px){ .video-wrap { grid-template-columns: 1fr; } }
+    .video-text ul { list-style:none; margin-top:20px; }
+    .video-text li { font-size:0.9rem; color:var(--muted); padding:8px 0; border-bottom:1px solid var(--bg3); display:flex; gap:8px; align-items:center; }
+    .video-text li:last-child { border-bottom:none; }
+    .video-text li::before { content:'✓'; color:var(--green-light); font-weight:700; flex-shrink:0; }
+    .phone-frame {
+      background: #000; border-radius: 28px; padding: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px #00000060;
+      max-width: 320px; margin: 0 auto;
+    }
+    .phone-frame video { width:100%; display:block; border-radius:20px; background:#000; }
+
     /* ── SECTIONS COMMUNES ── */
     section { padding: 80px 24px; max-width: 1100px; margin: 0 auto; }
     .section-tag {
@@ -465,6 +484,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 <nav>
   <a href="index.html" style="text-decoration:none"><div class="nav-logo">FootLight</div></a>
   <div class="nav-links">
+    <a href="#video">Vidéo</a>
     <a href="#comment">Fonctionnement</a>
     <a href="footlight-recherche.html">Recherche</a>
     <a href="#tarifs">Tarifs</a>
@@ -510,6 +530,33 @@ document.addEventListener('DOMContentLoaded', async function() {
     </div>
   </div>
 </div>
+
+<!-- VIDÉO PRÉSENTATION -->
+<section class="video-section" id="video">
+  <div style="max-width:1100px; margin:0 auto">
+    <div style="text-align:center; margin-bottom:0">
+      <span class="section-tag">Démo</span>
+      <div class="section-title">FootLight en vidéo</div>
+      <p class="section-sub" style="margin:0 auto">30 secondes pour comprendre comment un joueur construit son profil, saisit ses stats et devient visible pour les recruteurs.</p>
+    </div>
+    <div class="video-wrap">
+      <div class="phone-frame">
+        <video src="videos/footlight-presentation.mp4" controls muted autoplay loop playsinline preload="metadata"></video>
+      </div>
+      <div class="video-text">
+        <h4 style="font-size:1.1rem; font-weight:800; margin-bottom:6px;">De l'inscription au profil recruteur, en quelques étapes</h4>
+        <p style="font-size:0.9rem; color:var(--muted)">Toutes les infos qui font un profil crédible, remplies directement par le joueur.</p>
+        <ul>
+          <li>Coordonnées & club actuel</li>
+          <li>Points forts et axes d'amélioration</li>
+          <li>Vidéos de matchs à l'appui</li>
+          <li>Historique des blessures</li>
+        </ul>
+        <a href="footlight-inscription-joueur.html" class="btn-primary btn-inscription" style="display:inline-block; margin-top:20px;">Créer mon profil joueur — Gratuit</a>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- COMMENT ÇA MARCHE -->
 <section id="comment">
