@@ -264,15 +264,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
           <div class="field"><label class="field-label">Matchs remplaçant</label><input class="field-input" type="number" id="s-remplacant" min="0" oninput="recomputeMatchsJoues()"/></div>
           <div class="field"><label class="field-label">Matchs joués (calculé)</label><input class="field-input" type="number" id="s-matchs" min="0" readonly style="opacity:0.7;cursor:not-allowed;"/></div>
           <div class="field"><label class="field-label">Absences (calculé)</label><input class="field-input" type="number" id="s-absences" min="0" readonly style="opacity:0.7;cursor:not-allowed;"/></div>
+        </div>
+        <div class="stat-grid" style="margin-top:10px;">
+          <div class="field" id="field-buts-equipe"><label class="field-label">Buts de l'équipe (saison)</label><input class="field-input" type="number" id="s-buts-equipe" min="0"/></div>
           <div class="field" id="field-buts"><label class="field-label">Buts</label><input class="field-input" type="number" id="s-buts" min="0"/></div>
           <div class="field" id="field-passes"><label class="field-label">Passes déc.</label><input class="field-input" type="number" id="s-passes" min="0"/></div>
-          <div class="field" id="field-buts-equipe"><label class="field-label">Buts de l'équipe (saison)</label><input class="field-input" type="number" id="s-buts-equipe" min="0"/></div>
-          <div class="field" id="field-encaisses" style="display:none;"><label class="field-label">Buts encaissés</label><input class="field-input" type="number" id="s-encaisses" min="0"/></div>
           <div class="field" id="field-encaisses-equipe" style="display:none;"><label class="field-label">Buts encaissés par l'équipe (saison)</label><input class="field-input" type="number" id="s-encaisses-equipe" min="0"/></div>
+          <div class="field" id="field-encaisses" style="display:none;"><label class="field-label">Buts encaissés</label><input class="field-input" type="number" id="s-encaisses" min="0"/></div>
           <div class="field" id="field-cleansheets" style="display:none;"><label class="field-label">Clean sheets</label><input class="field-input" type="number" id="s-cleansheets" min="0"/></div>
+        </div>
+        <div class="stat-grid" style="margin-top:10px;">
           <div class="field"><label class="field-label">Points de l'équipe (saison)</label><input class="field-input" type="number" id="s-points-equipe" min="0" oninput="recomputePointsSansLui()"/></div>
           <div class="field" id="field-points-avec-lui"><label class="field-label">Points pris avec lui</label><input class="field-input" type="number" id="s-points-avec-lui" min="0" title="Points pris par l'équipe sur les matchs qu'il a joués" oninput="recomputePointsSansLui()"/></div>
           <div class="field" id="field-points-sans-lui"><label class="field-label">Points sans lui (calculé)</label><input class="field-input" type="number" id="s-points-sans-lui" min="0" readonly style="opacity:0.7;cursor:not-allowed;" title="Points pris par l'équipe sur les matchs qu'il n'a pas joués"/></div>
+        </div>
+        <div class="stat-grid" style="margin-top:10px;">
           <div class="field"><label class="field-label">Minutes</label><input class="field-input" type="number" id="s-minutes" min="0"/></div>
           <div class="field"><label class="field-label">Cartons jaunes</label><input class="field-input" type="number" id="s-cartj" min="0"/></div>
           <div class="field"><label class="field-label">Cartons rouges</label><input class="field-input" type="number" id="s-cartr" min="0"/></div>
