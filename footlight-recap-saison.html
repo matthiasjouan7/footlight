@@ -225,7 +225,7 @@ async function init() {
     buts: joueur.buts, passes_decisives: joueur.passes_decisives, buts_equipe: joueur.buts_equipe,
     pct_matchs_avec_but: joueur.pct_matchs_avec_but,
     buts_encaisses_avec: joueur.buts_encaisses_avec, clean_sheets: joueur.clean_sheets, buts_encaisses_equipe: joueur.buts_encaisses_equipe,
-    points_equipe: joueur.points_equipe,
+    points_equipe: joueur.points_equipe, points_avec_lui: joueur.points_avec_lui,
     minutes_jouees: joueur.minutes_jouees,
     cartons_jaunes: joueur.cartons_jaunes, cartons_rouges: joueur.cartons_rouges,
   };
@@ -260,7 +260,11 @@ function renderRecap(saison) {
   // vraie influence dessus : titulaire, ou au moins une mi-temps jouée.
   // Sinon un remplaçant entré à la 88e pèserait autant qu'un titulaire.
   const matchsImpact = matchs.filter(m => m.titulaire === true || (m.minutes_jouees||0) >= 45);
-  const pct_tps = s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0;
+  // Sur le total de matchs de l'équipe cette saison, pas seulement ceux où
+  // il a joué — sinon le % gonfle artificiellement s'il a été peu sélectionné.
+  const pct_tps = s.matchs_equipe > 0
+    ? Math.round((s.minutes_jouees||0) / (s.matchs_equipe * 90) * 100)
+    : (s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0);
   const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
   const contribution = (s.buts||0) + (s.passes_decisives||0);
   const ratioMinBut = (s.buts > 0) ? Math.round((s.minutes_jouees||0) / s.buts) : null;
@@ -282,7 +286,7 @@ function renderRecap(saison) {
   const matchsAvecScore = matchsImpact.filter(m => m.score_pour != null && m.score_contre != null);
   const ptsAvecLui = matchsAvecScore.length > 0
     ? matchsAvecScore.reduce((sum,m) => sum + (m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0), 0) / matchsAvecScore.length
-    : null;
+    : (s.matchs_joues > 0 && s.points_avec_lui != null ? s.points_avec_lui / s.matchs_joues : null);
   const ratioPointsEquipeTotal = (s.matchs_equipe > 0 && s.points_equipe != null) ? s.points_equipe / s.matchs_equipe : null;
   const impactPointsReel = (ptsAvecLui != null && ratioPointsEquipeTotal != null) ? ptsAvecLui - ratioPointsEquipeTotal : null;
   const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
