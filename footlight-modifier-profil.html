@@ -98,8 +98,36 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
     </div>
     <div class="welcome-banner" id="recruteur-banner" style="display:none; background:rgba(210,153,34,0.1); border-color:rgba(210,153,34,0.3); color:var(--gold-l);"></div>
 
+    <div class="section" id="identite-section" style="display:none;">
+      <div class="section-title">Identité</div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Prénom</label>
+          <input class="field-input" type="text" id="id-prenom"/>
+        </div>
+        <div class="field">
+          <label class="field-label">Nom</label>
+          <input class="field-input" type="text" id="id-nom"/>
+        </div>
+      </div>
+      <div class="msg" id="identite-msg"></div>
+      <button type="button" class="btn outline" id="btn-change-identite" onclick="changeIdentite()" style="width:100%;">Corriger le prénom / nom</button>
+    </div>
+
     <div class="section" id="account-section">
       <div class="section-title">Compte</div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Prénom</label>
+          <input class="field-input" type="text" id="f-account-prenom"/>
+        </div>
+        <div class="field">
+          <label class="field-label">Nom</label>
+          <input class="field-input" type="text" id="f-account-nom"/>
+        </div>
+      </div>
+      <div class="msg" id="name-msg"></div>
+      <button type="button" class="btn outline" id="btn-change-name" onclick="changeName()" style="width:100%; margin-bottom:16px;">Corriger mon prénom / nom</button>
       <div class="field">
         <label class="field-label">Email de connexion</label>
         <input class="field-input" type="email" id="f-account-email"/>
@@ -509,6 +537,9 @@ async function init() {
     document.getElementById('page-sub').textContent = 'Aide ce joueur à avoir un profil complet en renseignant club, niveau et stats manquantes.';
     document.getElementById('recruteur-banner').style.display = 'block';
     document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
+    document.getElementById('identite-section').style.display = 'block';
+    document.getElementById('id-prenom').value = target.prenom || '';
+    document.getElementById('id-nom').value = target.nom || '';
     await finishInit();
     return;
   }
@@ -524,6 +555,8 @@ async function init() {
   }
 
   joueur = data;
+  document.getElementById('f-account-prenom').value = joueur.prenom || '';
+  document.getElementById('f-account-nom').value = joueur.nom || '';
 
   if (params.get('bienvenue') === '1') {
     document.getElementById('welcome-banner').style.display = 'block';
@@ -736,6 +769,78 @@ function fillSeasonFields(s) {
   document.getElementById('preuve-gps-existing').innerHTML = currentPreuveGpsUrl
     ? `<a href="${currentPreuveGpsUrl}" target="_blank" style="color:var(--blue-l);">📎 Voir la preuve actuelle</a>`
     : '';
+}
+
+async function changeIdentite() {
+  const msg = document.getElementById('identite-msg');
+  const btn = document.getElementById('btn-change-identite');
+  msg.className = 'msg';
+
+  const newPrenom = document.getElementById('id-prenom').value.trim();
+  const newNom = document.getElementById('id-nom').value.trim();
+  if (!newPrenom || !newNom) {
+    msg.classList.add('error');
+    msg.textContent = 'Prénom et nom sont obligatoires.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement...';
+
+  const { error } = await db.from('joueurs').update({ prenom: newPrenom, nom: newNom }).eq('id', joueur.id);
+
+  btn.disabled = false;
+  btn.textContent = 'Corriger le prénom / nom';
+
+  if (error) {
+    msg.classList.add('error');
+    msg.textContent = 'Erreur : ' + error.message;
+    return;
+  }
+
+  joueur.prenom = newPrenom;
+  joueur.nom = newNom;
+  document.getElementById('page-title').textContent = `Compléter le profil de ${newPrenom} ${newNom}`;
+  msg.classList.add('success');
+  msg.textContent = 'Prénom et nom mis à jour.';
+}
+
+async function changeName() {
+  const msg = document.getElementById('name-msg');
+  const btn = document.getElementById('btn-change-name');
+  msg.className = 'msg';
+
+  const newPrenom = document.getElementById('f-account-prenom').value.trim();
+  const newNom = document.getElementById('f-account-nom').value.trim();
+  if (!newPrenom || !newNom) {
+    msg.classList.add('error');
+    msg.textContent = 'Prénom et nom sont obligatoires.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement...';
+
+  const { error } = await db.from('joueurs').update({ prenom: newPrenom, nom: newNom }).eq('id', joueur.id);
+  if (!error) {
+    joueur.prenom = newPrenom;
+    joueur.nom = newNom;
+    // Garde les métadonnées d'auth alignées pour le rattachement automatique
+    // du profil en cas de changement d'email (voir findOwnJoueur).
+    await db.auth.updateUser({ data: { prenom: newPrenom, nom: newNom } });
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Corriger mon prénom / nom';
+
+  if (error) {
+    msg.classList.add('error');
+    msg.textContent = 'Erreur : ' + error.message;
+    return;
+  }
+
+  msg.classList.add('success');
+  msg.textContent = 'Prénom et nom mis à jour.';
 }
 
 async function changeEmail() {
