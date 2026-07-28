@@ -176,8 +176,6 @@ const ROWS_COMMON_BOTTOM = [
 ];
 
 // Points pris avec/sans lui, calculés comme sur footlight-profil.html.
-// Repli sur l'ancien champ impact_differentiel si le joueur n'a que les
-// données d'un import historique, sans les nouveaux champs saisis.
 function ptsAvecLuiFor(j) {
   return (j.matchs_joues > 0 && j.points_avec_lui != null) ? j.points_avec_lui / j.matchs_joues : null;
 }
@@ -189,8 +187,7 @@ function ptsSansLuiFor(j) {
 function impactDiffFor(j) {
   const avecLui = ptsAvecLuiFor(j);
   const moyenneEquipe = (j.matchs_equipe > 0 && j.points_equipe != null) ? j.points_equipe / j.matchs_equipe : null;
-  if (avecLui != null && moyenneEquipe != null) return avecLui - moyenneEquipe;
-  return j.impact_differentiel;
+  return (avecLui != null && moyenneEquipe != null) ? avecLui - moyenneEquipe : null;
 }
 
 const ROWS_IMPACT = [
@@ -212,7 +209,7 @@ const ROWS_GPS = [
 
 async function loadJoueurs() {
   const { data } = await db.from('joueurs')
-    .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,matchs_equipe,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,impact_differentiel,pct_matchs_avec_but,points_equipe,points_avec_lui,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
+    .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,matchs_equipe,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,pct_matchs_avec_but,points_equipe,points_avec_lui,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
     .eq('profil_public', true)
     .order('nom');
   allPlayers = data || [];

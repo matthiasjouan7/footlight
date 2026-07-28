@@ -213,15 +213,6 @@ function evolutionTier(pct) {
   return { color: 'var(--red)', label: '🔴 Grosse baisse — à examiner de près' };
 }
 
-// Lecture de l'impact collectif (différentiel de points/buts encaissés
-// avec vs sans le joueur) par paliers, plutôt qu'un simple vert/rouge.
-function impactTier(diff) {
-  if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe est nettement plus performante avec lui' };
-  if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
-  if (diff >= -0.10) return { color: 'var(--muted)', label: '⚪ Profil neutre — ne change pas grand-chose' };
-  return { color: 'var(--red)', label: '🔴 L\'équipe est moins performante avec lui — à surveiller' };
-}
-
 function defensiveImpactTier(diff) {
   if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe encaisse clairement moins avec lui' };
   if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
@@ -382,9 +373,7 @@ async function renderProfil(j, isOwner) {
     matchs_joues: j.matchs_joues, matchs_equipe: j.matchs_equipe, titularisations: j.titularisations, matchs_remplacant: j.matchs_remplacant, buts: j.buts,
     passes_decisives: j.passes_decisives, minutes_jouees: j.minutes_jouees, buts_equipe: j.buts_equipe,
     cartons_jaunes: j.cartons_jaunes, cartons_rouges: j.cartons_rouges,
-    impact_differentiel: j.impact_differentiel, pct_matchs_avec_but: j.pct_matchs_avec_but,
-    points_avec: j.points_avec, points_sans: j.points_sans,
-    pct_points_avec: j.pct_points_avec, pct_points_sans: j.pct_points_sans,
+    pct_matchs_avec_but: j.pct_matchs_avec_but,
     vitesse_max_kmh: j.vitesse_max_kmh, vma_kmh: j.vma_kmh,
     distance_moyenne_km: j.distance_moyenne_km, sprints_match: j.sprints_match,
     buts_encaisses_avec: j.buts_encaisses_avec, clean_sheets: j.clean_sheets, buts_encaisses_equipe: j.buts_encaisses_equipe,
@@ -409,9 +398,7 @@ async function renderProfil(j, isOwner) {
     buts: sumKey(seasonsData,'buts'), passes_decisives: sumKey(seasonsData,'passes_decisives'), buts_equipe: sumKey(seasonsData,'buts_equipe'),
     minutes_jouees: sumKey(seasonsData,'minutes_jouees'), cartons_jaunes: sumKey(seasonsData,'cartons_jaunes'),
     cartons_rouges: sumKey(seasonsData,'cartons_rouges'),
-    impact_differentiel: avgKey(seasonsData,'impact_differentiel'), pct_matchs_avec_but: avgKey(seasonsData,'pct_matchs_avec_but'),
-    points_avec: sumKeyOrNull(seasonsData,'points_avec'), points_sans: sumKeyOrNull(seasonsData,'points_sans'),
-    pct_points_avec: avgKey(seasonsData,'pct_points_avec'), pct_points_sans: avgKey(seasonsData,'pct_points_sans'),
+    pct_matchs_avec_but: avgKey(seasonsData,'pct_matchs_avec_but'),
     vitesse_max_kmh: (() => { const v = seasonsData.map(s=>s.vitesse_max_kmh).filter(x=>x!=null); return v.length ? Math.max(...v) : null; })(),
     vma_kmh: avgKey(seasonsData,'vma_kmh'), distance_moyenne_km: avgKey(seasonsData,'distance_moyenne_km'),
     sprints_match: avgKey(seasonsData,'sprints_match'),
@@ -425,9 +412,6 @@ async function renderProfil(j, isOwner) {
     const pct_tps = s.matchs_equipe > 0
       ? Math.round((s.minutes_jouees||0) / (s.matchs_equipe * 90) * 100)
       : (s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0);
-    const diff = s.impact_differentiel;
-    const diffPct = diff == null ? 0 : Math.max(0, Math.min(100, 50 + diff * 50));
-    const hasImpactData = s.impact_differentiel != null || s.points_avec != null;
     const hasGPS = s.vitesse_max_kmh != null || s.vma_kmh != null || s.distance_moyenne_km != null || s.sprints_match != null;
     const round1 = (v) => v == null ? v : Math.round(v*10)/10;
     const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
@@ -481,9 +465,8 @@ async function renderProfil(j, isOwner) {
     const cleanSheetEvolutionPct = (pctCleanSheet != null && prevPctCleanSheet > 0) ? Math.round((pctCleanSheet - prevPctCleanSheet) / prevPctCleanSheet * 100) : null;
     const hasDefenseData = s.buts_encaisses_avec != null || s.clean_sheets != null;
     // Impact collectif réel : points pris par match joué (3/1/0, déduits du
-    // score de ses fiches de match) vs moyenne de points de l'équipe sur la
-    // saison — un vrai indicateur auto-déclarable, contrairement au champ
-    // legacy points_avec/points_sans (import historique, jamais resaisissable).
+    // score de ses fiches de match, ou à défaut du champ points_avec_lui
+    // saisi manuellement) vs moyenne de points de l'équipe sur la saison.
     const matchsAvecScore = matchsSaison.filter(m => m.score_pour != null && m.score_contre != null);
     const ptsAvecLui = matchsAvecScore.length > 0
       ? matchsAvecScore.reduce((sum,m) => sum + (m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0), 0) / matchsAvecScore.length
@@ -640,28 +623,6 @@ async function renderProfil(j, isOwner) {
           <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
         </div>
       </div>`) : ''}
-
-      ${!hasImpactData ? '' : canImpact ? `
-      <div class="section">
-        <div class="section-title">Impact collectif (historique)</div>
-        ${diff != null ? `
-        <div class="bar-item">
-          <div class="bar-label-row"><span class="k">Différentiel d'impact</span><span class="v" style="color:${impactTier(diff).color}">${diff>=0?'+':''}${Number(diff).toFixed(2)}</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${diffPct}%;background:${impactTier(diff).color}"></div></div>
-          <div style="font-size:0.75rem;color:${impactTier(diff).color};margin-top:6px;">${impactTier(diff).label}</div>
-          <div style="font-size:0.68rem;color:var(--muted);margin-top:4px;">Points pris par l'équipe avec ce joueur vs sans lui — donnée historique, non auto-déclarable.</div>
-        </div>` : ''}
-        ${s.points_avec != null && s.points_sans != null ? `
-        <div class="info-row"><span class="info-key">Points pris avec le joueur</span><span class="info-val">${s.points_avec}${s.pct_points_avec!=null?' ('+Math.round(s.pct_points_avec)+'%)':''}</span></div>
-        <div class="info-row"><span class="info-key">Points pris sans le joueur</span><span class="info-val">${s.points_sans}${s.pct_points_sans!=null?' ('+Math.round(s.pct_points_sans)+'%)':''}</span></div>` : ''}
-      </div>` : `
-      <div class="section">
-        <div class="section-title">Impact collectif (historique)</div>
-        <div class="locked-box">
-          <p>🔒 Réservé aux recruteurs Pro et Premium</p>
-          <a href="footlight-paiement.html?plan=pro"><button class="btn primary">Passer au plan Pro</button></a>
-        </div>
-      </div>`}
 
       ${!hasGPS ? '' : canGPS ? `
       <div class="section">
