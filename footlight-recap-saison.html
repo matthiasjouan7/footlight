@@ -260,7 +260,11 @@ function renderRecap(saison) {
   // vraie influence dessus : titulaire, ou au moins une mi-temps jouée.
   // Sinon un remplaçant entré à la 88e pèserait autant qu'un titulaire.
   const matchsImpact = matchs.filter(m => m.titulaire === true || (m.minutes_jouees||0) >= 45);
-  const pct_tps = s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0;
+  // Sur le total de matchs de l'équipe cette saison, pas seulement ceux où
+  // il a joué — sinon le % gonfle artificiellement s'il a été peu sélectionné.
+  const pct_tps = s.matchs_equipe > 0
+    ? Math.round((s.minutes_jouees||0) / (s.matchs_equipe * 90) * 100)
+    : (s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0);
   const ratioButsMatch = s.matchs_joues > 0 ? (s.buts||0) / s.matchs_joues : null;
   const contribution = (s.buts||0) + (s.passes_decisives||0);
   const ratioMinBut = (s.buts > 0) ? Math.round((s.minutes_jouees||0) / s.buts) : null;
