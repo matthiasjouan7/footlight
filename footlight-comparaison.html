@@ -170,15 +170,33 @@ const ROWS_DEFENSE = [
 
 const ROWS_COMMON_BOTTOM = [
   { label: 'Minutes jouées', get: j => j.minutes_jouees || 0, better: 'high' },
-  { label: '% temps de jeu', get: j => j.matchs_joues > 0 ? Math.round((j.minutes_jouees || 0) / (j.matchs_joues * 90) * 100) : 0, fmt: v => v + '%', better: 'high' },
+  { label: '% temps de jeu', get: j => j.matchs_equipe > 0 ? Math.round((j.minutes_jouees || 0) / (j.matchs_equipe * 90) * 100) : (j.matchs_joues > 0 ? Math.round((j.minutes_jouees || 0) / (j.matchs_joues * 90) * 100) : 0), fmt: v => v + '%', better: 'high' },
   { label: 'Cartons jaunes', get: j => j.cartons_jaunes || 0, better: 'low' },
   { label: 'Cartons rouges', get: j => j.cartons_rouges || 0, better: 'low' },
 ];
 
+// Points pris avec/sans lui, calculés comme sur footlight-profil.html.
+// Repli sur l'ancien champ impact_differentiel si le joueur n'a que les
+// données d'un import historique, sans les nouveaux champs saisis.
+function ptsAvecLuiFor(j) {
+  return (j.matchs_joues > 0 && j.points_avec_lui != null) ? j.points_avec_lui / j.matchs_joues : null;
+}
+function ptsSansLuiFor(j) {
+  const matchsSansLui = (j.matchs_equipe > 0) ? j.matchs_equipe - (j.matchs_joues || 0) : null;
+  const ptsSansLui = (j.points_equipe != null && j.points_avec_lui != null) ? j.points_equipe - j.points_avec_lui : null;
+  return (matchsSansLui > 0 && ptsSansLui != null) ? ptsSansLui / matchsSansLui : null;
+}
+function impactDiffFor(j) {
+  const avecLui = ptsAvecLuiFor(j);
+  const moyenneEquipe = (j.matchs_equipe > 0 && j.points_equipe != null) ? j.points_equipe / j.matchs_equipe : null;
+  if (avecLui != null && moyenneEquipe != null) return avecLui - moyenneEquipe;
+  return j.impact_differentiel;
+}
+
 const ROWS_IMPACT = [
-  { label: "Différentiel d'impact", get: j => j.impact_differentiel, fmt: v => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2), better: 'high' },
-  { label: 'Points avec (%)', get: j => j.pct_points_avec, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'high' },
-  { label: 'Points sans (%)', get: j => j.pct_points_sans, fmt: v => v == null ? '—' : Math.round(v) + '%', better: 'low' },
+  { label: "Différentiel d'impact", get: j => impactDiffFor(j), fmt: v => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2), better: 'high' },
+  { label: 'Points pris/match avec lui', get: j => ptsAvecLuiFor(j), fmt: v => v == null ? '—' : v.toFixed(2), better: 'high' },
+  { label: 'Points pris/match sans lui', get: j => ptsSansLuiFor(j), fmt: v => v == null ? '—' : v.toFixed(2), better: 'low' },
 ];
 
 const ROWS_OFFENSE_IMPACT = [
@@ -194,7 +212,7 @@ const ROWS_GPS = [
 
 async function loadJoueurs() {
   const { data } = await db.from('joueurs')
-    .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,impact_differentiel,pct_matchs_avec_but,points_avec,points_sans,pct_points_avec,pct_points_sans,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
+    .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,matchs_equipe,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,impact_differentiel,pct_matchs_avec_but,points_equipe,points_avec_lui,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
     .eq('profil_public', true)
     .order('nom');
   allPlayers = data || [];
