@@ -422,7 +422,9 @@ async function renderProfil(j, isOwner) {
   };
 
   function renderSeasonBlock(s) {
-    const pct_tps = s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0;
+    const pct_tps = s.matchs_equipe > 0
+      ? Math.round((s.minutes_jouees||0) / (s.matchs_equipe * 90) * 100)
+      : (s.matchs_joues > 0 ? Math.round((s.minutes_jouees||0) / (s.matchs_joues * 90) * 100) : 0);
     const diff = s.impact_differentiel;
     const diffPct = diff == null ? 0 : Math.max(0, Math.min(100, 50 + diff * 50));
     const hasImpactData = s.impact_differentiel != null || s.points_avec != null;
