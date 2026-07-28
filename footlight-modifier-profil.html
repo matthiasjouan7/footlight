@@ -257,13 +257,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
       </div>
 
       <div class="section">
-        <div class="section-title">Stats de la saison en cours</div>
+        <div class="section-title" id="stats-section-title">Stats de la saison en cours</div>
         <div class="stat-grid">
           <div class="field"><label class="field-label">Matchs de l'équipe (saison)</label><input class="field-input" type="number" id="s-matchs-equipe" min="0" oninput="recomputeMatchsJoues()"/></div>
           <div class="field"><label class="field-label">Titularisations</label><input class="field-input" type="number" id="s-titu" min="0" oninput="recomputeMatchsJoues()"/></div>
           <div class="field"><label class="field-label">Matchs remplaçant</label><input class="field-input" type="number" id="s-remplacant" min="0" oninput="recomputeMatchsJoues()"/></div>
           <div class="field"><label class="field-label">Matchs joués (calculé)</label><input class="field-input" type="number" id="s-matchs" min="0" readonly style="opacity:0.7;cursor:not-allowed;"/></div>
           <div class="field"><label class="field-label">Absences (calculé)</label><input class="field-input" type="number" id="s-absences" min="0" readonly style="opacity:0.7;cursor:not-allowed;"/></div>
+          <div class="field"><label class="field-label">Minutes</label><input class="field-input" type="number" id="s-minutes" min="0"/></div>
         </div>
         <div class="stat-grid" style="margin-top:10px;">
           <div class="field" id="field-buts-equipe"><label class="field-label">Buts de l'équipe (saison)</label><input class="field-input" type="number" id="s-buts-equipe" min="0"/></div>
@@ -279,7 +280,6 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
           <div class="field" id="field-points-sans-lui"><label class="field-label">Points sans lui (calculé)</label><input class="field-input" type="number" id="s-points-sans-lui" min="0" readonly style="opacity:0.7;cursor:not-allowed;" title="Points pris par l'équipe sur les matchs qu'il n'a pas joués"/></div>
         </div>
         <div class="stat-grid" style="margin-top:10px;">
-          <div class="field"><label class="field-label">Minutes</label><input class="field-input" type="number" id="s-minutes" min="0"/></div>
           <div class="field"><label class="field-label">Cartons jaunes</label><input class="field-input" type="number" id="s-cartj" min="0"/></div>
           <div class="field"><label class="field-label">Cartons rouges</label><input class="field-input" type="number" id="s-cartr" min="0"/></div>
         </div>
@@ -767,6 +767,9 @@ async function uploadPreuveGpsIfNeeded() {
 }
 
 function fillSeasonFields(s) {
+  document.getElementById('stats-section-title').textContent = s.isCurrent
+    ? 'Stats de la saison en cours'
+    : (s.saison ? `Stats de la saison ${s.saison}` : 'Stats de la nouvelle saison');
   document.getElementById('f-club').value = s.club || '';
   document.getElementById('f-niveau').value = s.niveau || '';
   document.getElementById('s-matchs-equipe').value = s.matchs_equipe ?? '';
