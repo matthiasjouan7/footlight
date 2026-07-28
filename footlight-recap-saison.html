@@ -290,6 +290,9 @@ function renderRecap(saison) {
     : (s.matchs_joues > 0 && s.points_avec_lui != null ? s.points_avec_lui / s.matchs_joues : null);
   const ratioPointsEquipeTotal = (s.matchs_equipe > 0 && s.points_equipe != null) ? s.points_equipe / s.matchs_equipe : null;
   const impactPointsReel = (ptsAvecLui != null && ratioPointsEquipeTotal != null) ? ptsAvecLui - ratioPointsEquipeTotal : null;
+  const pointsSansLui = (s.points_equipe != null && s.points_avec_lui != null) ? s.points_equipe - s.points_avec_lui : null;
+  const ratioPointsSansLui = (matchsSansLui > 0 && pointsSansLui != null) ? pointsSansLui / matchsSansLui : null;
+  const impactPointsReelSansLui = (ptsAvecLui != null && ratioPointsSansLui != null) ? ptsAvecLui - ratioPointsSansLui : null;
   const sIndex = seasonsData.findIndex(x => x.saison === s.saison);
   // Remonte jusqu'à 3 saisons en arrière pour trouver la plus proche avec
   // des matchs joués, plutôt que d'échouer si la saison juste avant n'a
@@ -386,6 +389,12 @@ function renderRecap(saison) {
       <div class="info-row"><span class="info-key">Points pris/match (moyenne équipe)</span><span class="info-val">${ratioPointsEquipeTotal.toFixed(2)}</span></div>
       <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${offensiveImpactTier(impactPointsReel).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
       <div style="font-size:0.78rem;color:${offensiveImpactTier(impactPointsReel).color};margin-top:4px;">${offensiveImpactTier(impactPointsReel).label}</div>
+      ${impactPointsReelSansLui != null ? `
+      <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
+      <div class="info-row"><span class="info-key">Points pris/match sans lui</span><span class="info-val">${ratioPointsSansLui.toFixed(2)}</span></div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${offensiveImpactTier(impactPointsReelSansLui).color}">${impactPointsReelSansLui>=0?'+':''}${impactPointsReelSansLui.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${offensiveImpactTier(impactPointsReelSansLui).color};margin-top:4px;">${offensiveImpactTier(impactPointsReelSansLui).label}</div>
+      ` : ''}
     </div>` : ''}
 
     <div class="section">
