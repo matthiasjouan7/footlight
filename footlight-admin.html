@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight</title>
+<meta name="robots" content="noindex, nofollow"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#1f6feb;--blue-l:#79c0ff;--green:#238636;--green-l:#56d364;--gold:#d29922;--gold-l:#e3b341;--red:#da3633;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.page{max-width:900px;margin:0 auto;padding:76px 24px 60px;}
+.loading{text-align:center;padding:80px;color:var(--muted);}
+.loading-spin{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.page-title{font-size:1.4rem;font-weight:800;margin-bottom:6px;}
+.page-sub{font-size:0.85rem;color:var(--muted);margin-bottom:24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:14px;}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.card-name{font-size:1.05rem;font-weight:700;}
+.card-meta{font-size:0.8rem;color:var(--muted);margin-top:4px;}
+.card-bio{font-size:0.82rem;color:var(--muted);margin-top:10px;font-style:italic;}
+.card-date{font-size:0.72rem;color:var(--muted);}
+.btn{padding:8px 16px;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn.primary{background:var(--green);color:#fff;}
+.btn.red{background:rgba(218,54,51,0.1);border:1px solid var(--red);color:var(--red);}
+.btn:hover{opacity:0.85;}
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.empty-hint{text-align:center;padding:60px 20px;color:var(--muted);font-size:0.9rem;}
+.not-auth{text-align:center;padding:100px 20px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+</nav>
+
+<div class="page">
+  <div class="loading" id="loading">
+    <div class="loading-spin"></div>
+    <p>Vérification...</p>
+  </div>
+
+  <div id="not-auth" style="display:none;" class="not-auth">
+    <h2>Accès refusé</h2>
+    <p style="color:var(--muted);margin-top:8px;">Cette page n'existe pas pour toi.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <div class="page-title">Profils en attente de validation</div>
+    <div class="page-sub" id="pending-count"></div>
+    <div id="pending-list"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const ADMIN_EMAIL = 'matthiasjouan@hotmail.fr';
+
+async function init() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user || (user.email||'').toLowerCase() !== ADMIN_EMAIL) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-auth').style.display = 'block';
+    return;
+  }
+
+  await loadPending();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('admin-content').style.display = 'block';
+}
+
+async function loadPending() {
+  const { data, error } = await db.from('joueurs')
+    .select('id,prenom,nom,poste,club,niveau,email,bio,created_at')
+    .eq('profil_public', false)
+    .order('created_at', { ascending: false });
+
+  const list = document.getElementById('pending-list');
+  if (error) {
+    list.innerHTML = `<div class="empty-hint">Erreur : ${error.message}</div>`;
+    return;
+  }
+  const pending = data || [];
+  document.getElementById('pending-count').textContent = `${pending.length} profil${pending.length>1?'s':''} en attente`;
+
+  if (!pending.length) {
+    list.innerHTML = '<div class="empty-hint">Aucun profil en attente. 👍</div>';
+    return;
+  }
+
+  list.innerHTML = pending.map(j => `
+    <div class="card" id="card-${j.id}">
+      <div class="card-head">
+        <div>
+          <div class="card-name">${j.prenom||''} ${j.nom||''}</div>
+          <div class="card-meta">${(j.poste||'').replace(/_/g,' ')||'—'} · ${j.club||'—'} · ${j.niveau||'—'}</div>
+          <div class="card-meta">${j.email||'—'}</div>
+        </div>
+        <div class="card-date">${j.created_at ? new Date(j.created_at).toLocaleDateString('fr-FR') : ''}</div>
+      </div>
+      ${j.bio ? `<div class="card-bio">"${j.bio}"</div>` : ''}
+      <div class="btn-row">
+        <button class="btn primary" onclick="validerProfil('${j.id}')">✓ Valider</button>
+        <button class="btn red" onclick="supprimerProfil('${j.id}')">✕ Supprimer</button>
+        <a href="footlight-profil.html?id=${j.id}" target="_blank" style="align-self:center;font-size:0.8rem;color:var(--blue-l);margin-left:6px;">Voir la fiche →</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function validerProfil(id) {
+  const { error } = await db.from('joueurs').update({ profil_public: true }).eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  document.getElementById('card-' + id).remove();
+  updateCountAfterRemoval();
+}
+
+async function supprimerProfil(id) {
+  if (!confirm('Supprimer définitivement ce profil et toutes ses données (matchs, stats, blessures) ?')) return;
+  await db.from('matchs_joueur').delete().eq('joueur_id', id);
+  await db.from('stats_saisons').delete().eq('joueur_id', id);
+  await db.from('blessures').delete().eq('joueur_id', id);
+  await db.from('shortlist').delete().eq('joueur_id', id);
+  const { error } = await db.from('joueurs').delete().eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  document.getElementById('card-' + id).remove();
+  updateCountAfterRemoval();
+}
+
+function updateCountAfterRemoval() {
+  const remaining = document.querySelectorAll('#pending-list .card').length;
+  document.getElementById('pending-count').textContent = `${remaining} profil${remaining>1?'s':''} en attente`;
+  if (!remaining) {
+    document.getElementById('pending-list').innerHTML = '<div class="empty-hint">Aucun profil en attente. 👍</div>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
