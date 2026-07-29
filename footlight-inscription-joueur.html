@@ -810,7 +810,7 @@ body {
     <div class="success-ring">🎉</div>
     <div class="success-title">Bienvenue sur FootLight !</div>
     <div class="success-sub">
-      Ton profil est créé et déjà visible pour les recruteurs.<br>
+      Ton profil est créé et en cours de vérification avant de devenir visible pour les recruteurs.<br>
       Pense à renseigner tes stats au fil de la saison pour un profil complet.
     </div>
 
@@ -1295,7 +1295,7 @@ async function submitForm() {
       cartons_rouges: parseInt(document.getElementById('s-cartr').value) || 0,
       badge: videoLinks.length ? 'video' : selectedGPS && selectedGPS !== 'Aucun' ? 'gps' : 'declaratif',
       score: 50,
-      profil_public: true,
+      profil_public: false,
     }]);
 
     if (profileError) {
