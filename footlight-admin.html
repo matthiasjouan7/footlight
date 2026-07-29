@@ -54,6 +54,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
     <div class="page-title">Profils en attente de validation</div>
     <div class="page-sub" id="pending-count"></div>
     <div id="pending-list"></div>
+
+    <div class="page-title" style="margin-top:36px;">Rechercher un profil à supprimer</div>
+    <div class="page-sub">Cherche par prénom/nom, y compris les profils déjà publiés.</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <input type="text" id="search-input" placeholder="Prénom ou nom..." onkeydown="if(event.key==='Enter')searchProfils()"
+        style="flex:1;padding:9px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;"/>
+      <button class="btn primary" style="background:var(--blue);" onclick="searchProfils()">Rechercher</button>
+    </div>
+    <div id="search-results"></div>
   </div>
 </div>
 
@@ -96,11 +105,15 @@ async function loadPending() {
     return;
   }
 
-  list.innerHTML = pending.map(j => `
-    <div class="card" id="card-${j.id}">
+  list.innerHTML = pending.map(j => profilCardHtml(j, true)).join('');
+}
+
+function profilCardHtml(j, showValider) {
+  return `
+    <div class="card" id="profile-card-${j.id}">
       <div class="card-head">
         <div>
-          <div class="card-name">${j.prenom||''} ${j.nom||''}</div>
+          <div class="card-name">${j.prenom||''} ${j.nom||''} ${j.profil_public ? '<span style="font-size:0.7rem;color:var(--green-l);font-weight:600;">· publié</span>' : ''}</div>
           <div class="card-meta">${(j.poste||'').replace(/_/g,' ')||'—'} · ${j.club||'—'} · ${j.niveau||'—'}</div>
           <div class="card-meta">${j.email||'—'}</div>
         </div>
@@ -108,30 +121,55 @@ async function loadPending() {
       </div>
       ${j.bio ? `<div class="card-bio">"${j.bio}"</div>` : ''}
       <div class="btn-row">
-        <button class="btn primary" onclick="validerProfil('${j.id}')">✓ Valider</button>
+        ${showValider ? `<button class="btn primary" onclick="validerProfil('${j.id}')">✓ Valider</button>` : ''}
         <button class="btn red" onclick="supprimerProfil('${j.id}')">✕ Supprimer</button>
         <a href="footlight-profil.html?id=${j.id}" target="_blank" style="align-self:center;font-size:0.8rem;color:var(--blue-l);margin-left:6px;">Voir la fiche →</a>
       </div>
     </div>
-  `).join('');
+  `;
+}
+
+async function searchProfils() {
+  const q = document.getElementById('search-input').value.trim();
+  const results = document.getElementById('search-results');
+  if (!q) { results.innerHTML = ''; return; }
+
+  results.innerHTML = '<div class="empty-hint">Recherche...</div>';
+  const { data, error } = await db.from('joueurs')
+    .select('id,prenom,nom,poste,club,niveau,email,bio,created_at,profil_public')
+    .or(`prenom.ilike.%${q}%,nom.ilike.%${q}%`)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    results.innerHTML = `<div class="empty-hint">Erreur : ${error.message}</div>`;
+    return;
+  }
+  if (!data || !data.length) {
+    results.innerHTML = '<div class="empty-hint">Aucun profil trouvé.</div>';
+    return;
+  }
+  results.innerHTML = data.map(j => profilCardHtml(j, !j.profil_public)).join('');
 }
 
 async function validerProfil(id) {
   const { error } = await db.from('joueurs').update({ profil_public: true }).eq('id', id);
   if (error) { alert('Erreur : ' + error.message); return; }
-  document.getElementById('card-' + id).remove();
+  document.getElementById('profile-card-' + id).remove();
   updateCountAfterRemoval();
 }
 
 async function supprimerProfil(id) {
   if (!confirm('Supprimer définitivement ce profil et toutes ses données (matchs, stats, blessures) ?')) return;
-  await db.from('matchs_joueur').delete().eq('joueur_id', id);
-  await db.from('stats_saisons').delete().eq('joueur_id', id);
-  await db.from('blessures').delete().eq('joueur_id', id);
-  await db.from('shortlist').delete().eq('joueur_id', id);
-  const { error } = await db.from('joueurs').delete().eq('id', id);
-  if (error) { alert('Erreur : ' + error.message); return; }
-  document.getElementById('card-' + id).remove();
+  const { error: e1 } = await db.from('matchs_joueur').delete().eq('joueur_id', id);
+  const { error: e2 } = await db.from('stats_saisons').delete().eq('joueur_id', id);
+  const { error: e3 } = await db.from('blessures').delete().eq('joueur_id', id);
+  const { error: e4 } = await db.from('shortlist').delete().eq('joueur_id', id);
+  const { error, count } = await db.from('joueurs').delete({ count: 'exact' }).eq('id', id);
+  const firstError = e1 || e2 || e3 || e4 || error;
+  if (firstError) { alert('Erreur : ' + firstError.message); return; }
+  if (count === 0) { alert("La suppression n'a rien supprimé (bloqué par les droits d'accès) — vérifie la policy RLS admin_delete_joueurs."); return; }
+  document.getElementById('profile-card-' + id).remove();
   updateCountAfterRemoval();
 }
 
