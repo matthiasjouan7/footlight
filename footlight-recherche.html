@@ -692,12 +692,17 @@ async function saveAddPlayer() {
   if (existing) {
     var goToExisting = confirm(
       'Un joueur du même nom existe déjà dans la base : ' + existing.prenom + ' ' + existing.nom +
-      ' (' + (existing.club || 'club inconnu') + '). Voir sa fiche au lieu d\'en créer une nouvelle ?'
+      ' (' + (existing.club || 'club inconnu') + '). Voir sa fiche au lieu d\'en créer une nouvelle ?\n\n' +
+      '(Annuler pour créer quand même un nouveau profil distinct, si c\'est un homonyme différent)'
     );
     if (goToExisting) {
       window.location.href = 'footlight-profil.html?id=' + existing.id;
+      return;
     }
-    return;
+    var continuerQuandMeme = confirm(
+      'Créer un nouveau profil distinct pour ' + prenom + ' ' + nom + ' (homonyme différent) ?'
+    );
+    if (!continuerQuandMeme) return;
   }
 
   var btn = document.getElementById('btn-add-player');
