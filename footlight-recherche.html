@@ -280,9 +280,7 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
         </select>
       </div>
       <div class="form-group" style="grid-column:1/-1"><label class="form-label">Club</label><input class="form-input" id="a-club" placeholder="FC Exemple"/></div>
-      <div class="form-group"><label class="form-label">Matchs</label><input class="form-input" type="number" id="a-matchs" placeholder="0" min="0"/></div>
-      <div class="form-group"><label class="form-label">Buts</label><input class="form-input" type="number" id="a-buts" placeholder="0" min="0"/></div>
-      <div class="form-group" style="grid-column:1/-1"><label class="form-label">Note</label><input class="form-input" id="a-note" placeholder="Ex: Vu en match le 12/04..."/></div>
+      <div class="form-group" style="grid-column:1/-1"><label class="form-label">Date de naissance</label><input class="form-input" type="date" id="a-naissance"/></div>
     </div>
     <div class="modal-actions">
       <button class="modal-btn outline" onclick="closeAddPlayer()">Annuler</button>
@@ -684,9 +682,7 @@ async function saveAddPlayer() {
 
   var niveau = document.getElementById('a-niveau').value;
   var club = document.getElementById('a-club').value.trim() || null;
-  var matchs = parseInt(document.getElementById('a-matchs').value) || 0;
-  var buts = parseInt(document.getElementById('a-buts').value) || 0;
-  var note = document.getElementById('a-note').value.trim();
+  var dateNaissance = document.getElementById('a-naissance').value || null;
 
   // Anti-doublon : un joueur du même nom (accents/casse ignorés) existe-t-il déjà ?
   var np = normalizeName(prenom), nn = normalizeName(nom);
@@ -714,9 +710,9 @@ async function saveAddPlayer() {
     prenom, nom, email,
     poste: POSTE_MODAL_MAP[posteDisplay] || 'autre',
     niveau, club,
-    matchs_joues: matchs,
-    buts,
-    bio: note || null,
+    date_naissance: dateNaissance,
+    matchs_joues: 0,
+    buts: 0,
     badge: 'declaratif',
     profil_public: true,
     saison: '2026-2027'
@@ -733,7 +729,7 @@ async function saveAddPlayer() {
   allPlayers.unshift(data);
   applyFilters();
   closeAddPlayer();
-  ['a-prenom','a-nom','a-club','a-matchs','a-buts','a-note'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['a-prenom','a-nom','a-club','a-naissance'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('a-poste').value = '';
 }
 
