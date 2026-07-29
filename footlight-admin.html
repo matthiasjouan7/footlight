@@ -63,6 +63,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
       <button class="btn primary" style="background:var(--blue);" onclick="searchProfils()">Rechercher</button>
     </div>
     <div id="search-results"></div>
+
+    <div class="page-title" style="margin-top:36px;">Tous les joueurs inscrits</div>
+    <div class="page-sub">Liste complète, les plus récents en premier — pratique pour repérer et supprimer plusieurs profils d'un coup sans chercher un par un.</div>
+    <button class="btn primary" style="background:var(--blue);margin-bottom:16px;" onclick="loadAllProfils()">Afficher tous les profils</button>
+    <div id="all-results"></div>
   </div>
 </div>
 
@@ -150,6 +155,26 @@ async function searchProfils() {
     return;
   }
   results.innerHTML = data.map(j => profilCardHtml(j, !j.profil_public)).join('');
+}
+
+async function loadAllProfils() {
+  const results = document.getElementById('all-results');
+  results.innerHTML = '<div class="empty-hint">Chargement...</div>';
+  const { data, error } = await db.from('joueurs')
+    .select('id,prenom,nom,poste,club,niveau,email,bio,created_at,profil_public')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (error) {
+    results.innerHTML = `<div class="empty-hint">Erreur : ${error.message}</div>`;
+    return;
+  }
+  if (!data || !data.length) {
+    results.innerHTML = '<div class="empty-hint">Aucun profil.</div>';
+    return;
+  }
+  results.innerHTML = `<div class="page-sub">${data.length} profil${data.length>1?'s':''} (limité aux 200 plus récents)</div>` +
+    data.map(j => profilCardHtml(j, !j.profil_public)).join('');
 }
 
 async function validerProfil(id) {
