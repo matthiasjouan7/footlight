@@ -233,6 +233,13 @@ function normalizeName(s) {
     .toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+function getAge(dateNaissance) {
+  if (!dateNaissance) return null;
+  const d = new Date(dateNaissance);
+  const diff = Date.now() - d.getTime();
+  return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+}
+
 // Si le joueur a changé son email de connexion (via footlight-modifier-profil.html)
 // et l'a confirmé, sa fiche joueurs a encore l'ancien email : on la retrouve par
 // nom et on la relie automatiquement au nouvel email.
@@ -726,9 +733,10 @@ async function renderProfil(j, isOwner) {
 
     <div id="season-block">${renderSeasonBlock(currentSeason)}</div>
 
-    ${(j.poste_secondaire || j.taille || j.poids || j.nationalite) ? `
+    ${(j.date_naissance || j.poste_secondaire || j.taille || j.poids || j.nationalite) ? `
     <div class="section">
       <div class="section-title">Profil</div>
+      ${j.date_naissance && getAge(j.date_naissance) != null ? `<div class="info-row"><span class="info-key">Âge</span><span class="info-val">${getAge(j.date_naissance)} ans</span></div>` : ''}
       ${j.poste_secondaire ? `<div class="info-row"><span class="info-key">Poste secondaire</span><span class="info-val">${j.poste_secondaire.replace(/_/g,' ')}</span></div>` : ''}
       ${j.taille ? `<div class="info-row"><span class="info-key">Taille</span><span class="info-val">${j.taille} cm</span></div>` : ''}
       ${j.poids ? `<div class="info-row"><span class="info-key">Poids</span><span class="info-val">${j.poids} kg</span></div>` : ''}
