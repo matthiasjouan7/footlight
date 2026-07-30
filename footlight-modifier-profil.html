@@ -317,6 +317,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         <div class="section-title">Historique des matchs</div>
         <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">Ajoute une fiche par match joué cette saison : adversaire, score, tes stats perso, et un lien si tu en as un. Ça vient en plus de ton total de saison ci-dessus, et ça montre ton sérieux au fil de la saison.</div>
         <div id="matchs-list"></div>
+        <button type="button" class="btn outline" id="btn-generer-calendrier" onclick="genererCalendrier()" style="width:100%;margin-top:8px;">📅 Générer mon calendrier depuis le calendrier officiel FFF</button>
+        <div id="generer-calendrier-hint" style="font-size:0.7rem;color:var(--muted);margin-top:6px;">Disponible pour National 1 et National 2 : remplit automatiquement dates et adversaires de la saison à partir de ton club, il ne te reste plus qu'à ajouter le score et tes stats après chaque match.</div>
         <button type="button" class="btn outline" id="btn-add-match" onclick="showMatchForm()" style="width:100%;margin-top:8px;">+ Ajouter un match</button>
 
         <div id="match-form-panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--bg4);">
@@ -490,6 +492,72 @@ async function findCalendrierMatch(dateStr, clubJoueur) {
   return { id: row.id, adversaire };
 }
 
+// Génère d'un coup toutes les fiches de match de la saison à partir du
+// calendrier officiel FFF (National 1 / National 2), pour le club renseigné.
+// Chaque fiche générée n'a que date/adversaire/domicile-extérieur pré-remplis
+// et "vérifié FFF" : le joueur n'a plus qu'à ajouter le score et ses stats.
+async function genererCalendrier() {
+  const saison = getSelectedSaisonText();
+  if (!saison) { alert('Choisis ou saisis une saison avant de générer ton calendrier.'); return; }
+  const club = document.getElementById('f-club').value.trim();
+  if (!club) { alert('Renseigne ton club avant de générer ton calendrier.'); return; }
+  const clubNorm = normalizeClub(club);
+
+  const btn = document.getElementById('btn-generer-calendrier');
+  btn.disabled = true;
+  btn.textContent = 'Recherche...';
+
+  const { data, error } = await db.from('calendrier_officiel').select('*').eq('saison', saison);
+
+  btn.disabled = false;
+  btn.textContent = '📅 Générer mon calendrier depuis le calendrier officiel FFF';
+
+  if (error) { alert('Erreur lors de la recherche : ' + error.message); return; }
+
+  const matchsClub = (data || []).filter(row =>
+    normalizeClub(row.equipe_domicile) === clubNorm || normalizeClub(row.equipe_exterieur) === clubNorm
+  );
+  if (!matchsClub.length) {
+    alert(`Aucun match trouvé dans le calendrier officiel pour "${club}" en ${saison}. Vérifie l'orthographe du club, ou ton championnat n'est pas encore couvert (National 1 et National 2 uniquement pour l'instant).`);
+    return;
+  }
+
+  const idsExistants = new Set(currentMatchsList.filter(m => m.calendrier_officiel_id).map(m => String(m.calendrier_officiel_id)));
+  const datesExistantes = new Set(currentMatchsList.filter(m => m.date_match).map(m => m.date_match));
+  const aInserer = matchsClub.filter(row => !idsExistants.has(String(row.id)) && !datesExistantes.has(row.date_match)).map(row => {
+    const domicile = normalizeClub(row.equipe_domicile) === clubNorm;
+    return {
+      joueur_id: joueur.id,
+      saison,
+      date_match: row.date_match,
+      adversaire: domicile ? row.equipe_exterieur : row.equipe_domicile,
+      competition: 'championnat',
+      domicile,
+      verifie: true,
+      calendrier_officiel_id: row.id,
+    };
+  });
+
+  if (!aInserer.length) {
+    alert('Toutes les journées de ce championnat sont déjà dans ton historique de matchs.');
+    return;
+  }
+
+  const confirme = confirm(`Générer ${aInserer.length} match${aInserer.length>1?'s':''} pour la saison ${saison} avec ${club} ?\n\nTu n'auras plus qu'à remplir le score et tes stats après chaque match.`);
+  if (!confirme) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Génération...';
+  const { error: insError } = await db.from('matchs_joueur').insert(aInserer);
+  btn.disabled = false;
+  btn.textContent = '📅 Générer mon calendrier depuis le calendrier officiel FFF';
+
+  if (insError) { alert('Erreur lors de la génération : ' + insError.message); return; }
+
+  await loadMatchsForSeason(saison);
+  alert(`${aInserer.length} match${aInserer.length>1?'s':''} ajouté${aInserer.length>1?'s':''} à ton calendrier !`);
+}
+
 // Si l'email de connexion a changé (via changeEmail ci-dessous) et a été
 // confirmé, la fiche joueurs a encore l'ancien email : on la retrouve par
 // nom et on la relie automatiquement au nouvel email.
@@ -553,6 +621,8 @@ async function init() {
     document.getElementById('recruteur-banner').style.display = 'block';
     document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
     document.querySelector('#blessures-section > div:nth-child(2)').textContent = `Visible uniquement par les recruteurs en offre Pro et Premium. Indique les blessures de ${target.prenom} pour montrer sa régularité — ou l'absence de récidive.`;
+    document.getElementById('btn-generer-calendrier').style.display = 'none';
+    document.getElementById('generer-calendrier-hint').style.display = 'none';
     document.getElementById('identite-section').style.display = 'block';
     document.getElementById('id-prenom').value = target.prenom || '';
     document.getElementById('id-nom').value = target.nom || '';
