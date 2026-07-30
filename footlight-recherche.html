@@ -265,11 +265,18 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       <div class="form-group"><label class="form-label">Poste *</label>
         <select class="form-select" id="a-poste">
           <option value="">—</option>
-          <option value="Gardien">Gardien</option>
-          <option value="Défenseur">Défenseur</option>
-          <option value="Latéral">Latéral</option>
-          <option value="Milieu">Milieu</option>
-          <option value="Attaquant">Attaquant</option>
+          <option value="gardien">Gardien</option>
+          <option value="defenseur_central">Défenseur central</option>
+          <option value="lateral_droit">Latéral droit</option>
+          <option value="lateral_gauche">Latéral gauche</option>
+          <option value="milieu_defensif">Milieu défensif</option>
+          <option value="milieu_central">Milieu central</option>
+          <option value="milieu_offensif">Milieu offensif</option>
+          <option value="milieu_gauche">Milieu gauche</option>
+          <option value="ailier_droit">Ailier droit</option>
+          <option value="ailier_gauche">Ailier gauche</option>
+          <option value="attaquant">Attaquant</option>
+          <option value="autre">Autre</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Niveau</label>
@@ -665,8 +672,6 @@ async function toggleShortlist(btn, e, id) {
 function openAddPlayer() { document.getElementById('add-modal').classList.add('visible'); }
 function closeAddPlayer() { document.getElementById('add-modal').classList.remove('visible'); }
 
-const POSTE_MODAL_MAP = { 'Gardien':'gardien', 'Défenseur':'defenseur_central', 'Latéral':'lateral_droit', 'Milieu':'milieu_central', 'Attaquant':'attaquant' };
-
 function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
@@ -679,8 +684,8 @@ async function saveAddPlayer() {
 
   var prenom = document.getElementById('a-prenom').value.trim();
   var nom = document.getElementById('a-nom').value.trim();
-  var posteDisplay = document.getElementById('a-poste').value;
-  if (!prenom || !nom || !posteDisplay) { alert('Prénom, Nom et Poste obligatoires.'); return; }
+  var poste = document.getElementById('a-poste').value;
+  if (!prenom || !nom || !poste) { alert('Prénom, Nom et Poste obligatoires.'); return; }
 
   var niveau = document.getElementById('a-niveau').value;
   var club = document.getElementById('a-club').value.trim() || null;
@@ -715,7 +720,7 @@ async function saveAddPlayer() {
 
   const { data, error } = await db.from('joueurs').insert([{
     prenom, nom, email,
-    poste: POSTE_MODAL_MAP[posteDisplay] || 'autre',
+    poste,
     niveau, club,
     date_naissance: dateNaissance,
     matchs_joues: 0,
