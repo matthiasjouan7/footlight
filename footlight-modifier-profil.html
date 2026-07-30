@@ -491,9 +491,14 @@ function clubWordsMatch(a, b) {
 
 // Cherche un match du calendrier officiel FFF \u00e0 cette date impliquant le
 // club du joueur. Retourne { adversaire, id } si trouv\u00e9 sans ambigu\u00eft\u00e9.
-async function findCalendrierMatch(dateStr, clubJoueur) {
+// niveauJoueur (optionnel) l\u00e8ve l'ambigu\u00eft\u00e9 quand un m\u00eame nom de club existe
+// dans plusieurs championnats (ex: "SM CAEN" en Ligue 3 et sa r\u00e9serve
+// "Sm Caen 2" en National 2, qui se rapprochent du m\u00eame nom une fois normalis\u00e9s).
+async function findCalendrierMatch(dateStr, clubJoueur, niveauJoueur) {
   if (!dateStr || !normalizeClub(clubJoueur)) return null;
-  const { data } = await db.from('calendrier_officiel').select('*').eq('date_match', dateStr);
+  let query = db.from('calendrier_officiel').select('*').eq('date_match', dateStr);
+  if (['N1', 'N2', 'Ligue 3'].includes(niveauJoueur)) query = query.eq('division', niveauJoueur);
+  const { data } = await query;
   if (!data || !data.length) return null;
   const candidats = data.filter(row =>
     clubWordsMatch(row.equipe_domicile, clubJoueur) || clubWordsMatch(row.equipe_exterieur, clubJoueur)
@@ -514,11 +519,21 @@ async function genererCalendrier() {
   const club = document.getElementById('f-club').value.trim();
   if (!club) { alert('Renseigne ton club avant de générer ton calendrier.'); return; }
 
+  // Un même nom de club peut exister dans plusieurs championnats à la fois
+  // (ex: "SM CAEN" en Ligue 3 et sa réserve "Sm Caen 2" en National 2, qui
+  // se rapprochent tous les deux du même club une fois normalisés) : on
+  // utilise le niveau déjà renseigné par le joueur pour lever l'ambiguïté
+  // à la source plutôt que de mélanger deux calendriers différents.
+  const niveau = document.getElementById('f-niveau').value;
+  const diviserParNiveau = ['N1', 'N2', 'Ligue 3'].includes(niveau);
+
   const btn = document.getElementById('btn-generer-calendrier');
   btn.disabled = true;
   btn.textContent = 'Recherche...';
 
-  const { data, error } = await db.from('calendrier_officiel').select('*').eq('saison', saison);
+  let query = db.from('calendrier_officiel').select('*').eq('saison', saison);
+  if (diviserParNiveau) query = query.eq('division', niveau);
+  const { data, error } = await query;
 
   btn.disabled = false;
   btn.textContent = '📅 Générer mon calendrier depuis le calendrier officiel FFF';
@@ -529,21 +544,22 @@ async function genererCalendrier() {
     clubWordsMatch(row.equipe_domicile, club) || clubWordsMatch(row.equipe_exterieur, club)
   );
   if (!matchsClub.length) {
-    alert(`Aucun match trouvé dans le calendrier officiel pour "${club}" en ${saison}. Vérifie l'orthographe du club, ou ton championnat n'est pas encore couvert (National 1, National 2 et Ligue 3 uniquement pour l'instant).`);
+    alert(`Aucun match trouvé dans le calendrier officiel pour "${club}"${diviserParNiveau ? ` en ${niveau}` : ''} en ${saison}. Vérifie l'orthographe du club et ton niveau renseigné, ou ton championnat n'est pas encore couvert (National 1, National 2 et Ligue 3 uniquement pour l'instant).`);
     return;
   }
 
   // Le rapprochement par mots est volontairement tolérant (ordre, mots
-  // manquants) : si ça fait remonter plusieurs clubs officiels différents,
-  // mieux vaut demander une orthographe plus précise que mélanger deux
-  // calendriers différents.
-  const nomsRencontres = new Set();
+  // manquants) : si ça fait quand même remonter plusieurs clubs différents
+  // (ex: niveau non renseigné), mieux vaut demander de préciser que mélanger
+  // deux calendriers différents.
+  const rencontres = new Map();
   matchsClub.forEach(row => {
-    if (clubWordsMatch(row.equipe_domicile, club)) nomsRencontres.add(row.equipe_domicile);
-    if (clubWordsMatch(row.equipe_exterieur, club)) nomsRencontres.add(row.equipe_exterieur);
+    if (clubWordsMatch(row.equipe_domicile, club)) rencontres.set(row.equipe_domicile, row.division);
+    if (clubWordsMatch(row.equipe_exterieur, club)) rencontres.set(row.equipe_exterieur, row.division);
   });
-  if (nomsRencontres.size > 1) {
-    alert(`Plusieurs clubs différents du calendrier officiel correspondent à "${club}" : ${[...nomsRencontres].join(', ')}. Précise le nom exact du club dans le champ Club pour lever l'ambiguïté.`);
+  if (rencontres.size > 1) {
+    const liste = [...rencontres.entries()].map(([nom, div]) => `${nom} (${div})`).join(', ');
+    alert(`Plusieurs clubs différents du calendrier officiel correspondent à "${club}" : ${liste}. Renseigne ton niveau (Ligue 3, N1, N2...) ci-dessus pour lever l'ambiguïté, ou précise le nom exact du club.`);
     return;
   }
 
@@ -1191,7 +1207,8 @@ async function onMatchDateChange() {
   const adversaireInput = document.getElementById('m-adversaire');
   if (!dateStr || adversaireInput.value.trim()) return;
   const club = document.getElementById('f-club').value;
-  const found = await findCalendrierMatch(dateStr, club);
+  const niveau = document.getElementById('f-niveau').value;
+  const found = await findCalendrierMatch(dateStr, club, niveau);
   if (found) {
     adversaireInput.value = found.adversaire;
     document.getElementById('m-verifie-id').value = found.id;
