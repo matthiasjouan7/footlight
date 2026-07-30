@@ -738,11 +738,7 @@ async function saveAddPlayer() {
     return;
   }
 
-  allPlayers.unshift(data);
-  applyFilters();
-  closeAddPlayer();
-  ['a-prenom','a-nom','a-club','a-naissance'].forEach(function(id){ document.getElementById(id).value=''; });
-  document.getElementById('a-poste').value = '';
+  window.location.href = 'footlight-profil.html?id=' + data.id;
 }
 
 // ── INIT ──
