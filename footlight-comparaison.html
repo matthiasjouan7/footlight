@@ -143,6 +143,8 @@ let viewerRole = 'anonyme';
 let viewerPlan = 'free';
 let allPlayers = [];
 let picked = { a: null, b: null };
+let seasonsFor = { a: [], b: [] };
+let selectedSeason = { a: null, b: null };
 
 const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
 
@@ -209,7 +211,7 @@ const ROWS_GPS = [
 
 async function loadJoueurs() {
   const { data } = await db.from('joueurs')
-    .select('id,prenom,nom,poste,club,niveau,score,buts,passes_decisives,matchs_joues,matchs_equipe,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,pct_matchs_avec_but,points_equipe,points_avec_lui,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
+    .select('id,prenom,nom,poste,club,niveau,saison,score,buts,passes_decisives,matchs_joues,matchs_equipe,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,pct_matchs_avec_but,points_equipe,points_avec_lui,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
     .eq('profil_public', true)
     .order('nom');
   allPlayers = data || [];
@@ -232,17 +234,52 @@ function onSearchInput(slot) {
   box.style.display = 'block';
 }
 
-function pickPlayer(slot, id) {
+async function pickPlayer(slot, id) {
   picked[slot] = allPlayers.find(p => p.id === id) || null;
   document.getElementById('search-' + slot).value = '';
   document.getElementById('results-' + slot).style.display = 'none';
+  await loadSeasonsFor(slot);
   renderPicked(slot);
   renderComparison();
 }
 
 function clearPicked(slot) {
   picked[slot] = null;
+  seasonsFor[slot] = [];
+  selectedSeason[slot] = null;
   renderPicked(slot);
+  renderComparison();
+}
+
+// Construit la liste des saisons disponibles (actuelle + historique) pour
+// pouvoir comparer deux joueurs sur une saison précise, pas seulement la
+// saison en cours.
+async function loadSeasonsFor(slot) {
+  const j = picked[slot];
+  if (!j) { seasonsFor[slot] = []; selectedSeason[slot] = null; return; }
+
+  const currentSeasonObj = {
+    saison: j.saison || 'Actuelle', isCurrent: true,
+    club: j.club, niveau: j.niveau,
+    matchs_joues: j.matchs_joues, matchs_equipe: j.matchs_equipe, titularisations: j.titularisations,
+    buts: j.buts, passes_decisives: j.passes_decisives,
+    buts_encaisses_avec: j.buts_encaisses_avec, clean_sheets: j.clean_sheets,
+    points_equipe: j.points_equipe, points_avec_lui: j.points_avec_lui,
+    minutes_jouees: j.minutes_jouees,
+    cartons_jaunes: j.cartons_jaunes, cartons_rouges: j.cartons_rouges,
+    pct_matchs_avec_but: j.pct_matchs_avec_but,
+    vitesse_max_kmh: j.vitesse_max_kmh, vma_kmh: j.vma_kmh,
+    distance_moyenne_km: j.distance_moyenne_km, sprints_match: j.sprints_match,
+  };
+
+  const { data: historique } = await db.from('stats_saisons').select('*').eq('joueur_id', j.id).order('saison', { ascending: false });
+  seasonsFor[slot] = [currentSeasonObj, ...(historique || [])];
+  selectedSeason[slot] = currentSeasonObj;
+}
+
+function onSeasonChange(slot) {
+  const val = document.getElementById('season-' + slot).value;
+  selectedSeason[slot] = seasonsFor[slot].find(s => s.saison === val) || seasonsFor[slot][0];
   renderComparison();
 }
 
@@ -252,12 +289,19 @@ function renderPicked(slot) {
   if (!j) { el.style.display = 'none'; el.innerHTML = ''; return; }
   const couleur = COULEURS[j.poste || 'autre'] || '#6e7681';
   const initiales = ((j.prenom || '?')[0] + (j.nom || '?')[0]).toUpperCase();
+  const seasons = seasonsFor[slot] || [];
+  const seasonSelect = seasons.length > 1 ? `
+    <select class="picker-input" style="margin-top:8px;padding:7px 10px;font-size:0.8rem;" id="season-${slot}" onchange="onSeasonChange('${slot}')">
+      ${seasons.map(s => `<option value="${s.saison}" ${selectedSeason[slot] && selectedSeason[slot].saison === s.saison ? 'selected' : ''}>${s.saison}${s.isCurrent ? ' (actuelle)' : ''}</option>`).join('')}
+    </select>` : '';
   el.style.display = 'flex';
+  el.style.flexWrap = 'wrap';
   el.innerHTML = `
     <div class="picked-avatar" style="background:linear-gradient(135deg,${couleur},${couleur}88)">${initiales}</div>
-    <div>
+    <div style="flex:1;min-width:0;">
       <div class="picked-name">${j.prenom} ${j.nom}</div>
       <div class="picked-sub">${(j.poste || '').replace(/_/g, ' ')} · ${j.club || '—'}</div>
+      ${seasonSelect}
     </div>
     <button class="picked-clear" onclick="clearPicked('${slot}')">✕</button>
   `;
@@ -288,13 +332,22 @@ function buildRowsTable(rows, a, b) {
   `;
 }
 
+// Fusionne l'identité du joueur (nom, poste - invariants) avec les stats de
+// la saison sélectionnée pour lui, pour comparer sur n'importe quelle saison
+// et pas seulement la saison en cours.
+function dataFor(slot) {
+  const identity = picked[slot];
+  const season = selectedSeason[slot] || {};
+  return { ...season, prenom: identity.prenom, nom: identity.nom, poste: identity.poste };
+}
+
 function renderComparison() {
   const el = document.getElementById('comparison-content');
-  const a = picked.a, b = picked.b;
-  if (!a || !b) {
+  if (!picked.a || !picked.b) {
     el.innerHTML = '<div class="empty-hint">Choisis deux joueurs ci-dessus pour lancer la comparaison.</div>';
     return;
   }
+  const a = dataFor('a'), b = dataFor('b');
 
   const aDef = POSTES_DEFENSIFS.includes(a.poste);
   const bDef = POSTES_DEFENSIFS.includes(b.poste);
