@@ -645,6 +645,11 @@ async function findOwnJoueur(user) {
 let isRecruiterEditing = false;
 let recruiterCanEditHistory = true;
 let seasonsData = [];
+// Saison affichée par les champs du formulaire avant le changement en cours,
+// pour pouvoir enregistrer ses modifications avant de charger une autre
+// saison (sans ça, changer de saison sans avoir cliqué "Enregistrer" perdait
+// silencieusement ce qui venait d'être tapé).
+let previousSaisonValue = null;
 
 async function init() {
   const { data: { user } } = await db.auth.getUser();
@@ -740,6 +745,7 @@ async function finishInit() {
   fillPlayerFields(joueur);
   populateSeasonSelect();
   document.getElementById('f-saison').value = currentSeason.saison;
+  previousSaisonValue = currentSeason.saison;
   fillSeasonFields(currentSeason);
   loadMatchsForSeason(currentSeason.saison);
   loadBlessures();
@@ -764,19 +770,44 @@ function populateSeasonSelect() {
   ).join('') + `<option value="__new__">+ Ajouter une nouvelle saison</option>`;
 }
 
-function onSeasonSelectChange() {
+async function onSeasonSelectChange() {
   const val = document.getElementById('f-saison').value;
+  await autoSavePreviousSaison();
+
   if (val === '__new__') {
     document.getElementById('new-season-field').style.display = '';
     document.getElementById('f-new-saison').value = '';
     fillSeasonFields({ club: joueur.club, niveau: joueur.niveau });
     loadMatchsForSeason('');
+    previousSaisonValue = null;
     return;
   }
   document.getElementById('new-season-field').style.display = 'none';
   const s = seasonsData.find(x => x.saison === val);
   if (s) fillSeasonFields(s);
   loadMatchsForSeason(val);
+  previousSaisonValue = val;
+}
+
+// Enregistre silencieusement la saison affichée avant de la quitter, pour
+// ne pas perdre ce qui vient d'être tapé quand on change de saison sans
+// avoir cliqué "Enregistrer".
+async function autoSavePreviousSaison() {
+  if (!previousSaisonValue) return;
+  let saisonAEnregistrer = previousSaisonValue;
+  if (saisonAEnregistrer === '__new__') {
+    saisonAEnregistrer = document.getElementById('f-new-saison').value.trim();
+    if (!saisonAEnregistrer) return; // Nouvelle saison jamais nommée : rien à garder.
+  }
+  const msg = document.getElementById('form-msg');
+  const { error } = await persistSeasonFromForm(saisonAEnregistrer);
+  if (error) {
+    msg.className = 'msg error';
+    msg.textContent = `Erreur lors de l'enregistrement automatique de ${saisonAEnregistrer} : ${error.message}`;
+  } else {
+    msg.className = 'msg success';
+    msg.textContent = `Modifications de ${saisonAEnregistrer} enregistrées automatiquement.`;
+  }
 }
 
 function getSelectedSaisonText() {
@@ -1061,26 +1092,14 @@ async function changeEmail() {
   msg.textContent = 'Vérifie ta boîte mail : un lien de confirmation a été envoyé à ' + newEmail + '. Une fois cliqué, reconnecte-toi — ta fiche joueur sera reliée automatiquement à ton nouvel email.';
 }
 
-document.getElementById('edit-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById('btn-save');
-  const msg = document.getElementById('form-msg');
-  msg.className = 'msg';
-  btn.disabled = true;
-  btn.textContent = 'Enregistrement...';
-
-  let selectedSaison = document.getElementById('f-saison').value;
-  if (selectedSaison === '__new__') {
-    selectedSaison = document.getElementById('f-new-saison').value.trim();
-    if (!selectedSaison) {
-      btn.disabled = false;
-      btn.textContent = 'Enregistrer';
-      msg.classList.add('error');
-      msg.textContent = 'Indique le nom de la nouvelle saison (ex: 2024-2025).';
-      return;
-    }
-  }
-
+// Construit playerUpdates/seasonUpdates à partir des champs actuellement
+// affichés dans le formulaire, et les enregistre pour la saison donnée.
+// Partagé entre le clic "Enregistrer" et la sauvegarde silencieuse qui se
+// déclenche quand on change de saison sans avoir cliqué (voir
+// onSeasonSelectChange) — sans ça, changer de saison sans enregistrer
+// perdait silencieusement ce qui venait d'être tapé pour la saison
+// précédente (ex: un changement de club sur la saison en cours).
+async function persistSeasonFromForm(saisonValue) {
   const playerUpdates = {
     poste: document.getElementById('f-poste').value,
     poste_secondaire: document.getElementById('f-poste2').value || null,
@@ -1125,18 +1144,43 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     preuve_gps_url: preuveGpsUrl,
   };
 
-  const isCurrentSeason = selectedSaison === (joueur.saison || '2026-2027');
+  const isCurrentSeason = saisonValue === (joueur.saison || '2026-2027');
   let error;
 
   if (isCurrentSeason) {
-    ({ error } = await db.from('joueurs').update({ ...playerUpdates, ...seasonUpdates, saison: selectedSaison }).eq('id', joueur.id));
+    ({ error } = await db.from('joueurs').update({ ...playerUpdates, ...seasonUpdates, saison: saisonValue }).eq('id', joueur.id));
   } else {
     ({ error } = await db.from('joueurs').update(playerUpdates).eq('id', joueur.id));
     if (!error) {
       ({ error } = await db.from('stats_saisons')
-        .upsert({ joueur_id: joueur.id, saison: selectedSaison, ...seasonUpdates }, { onConflict: 'joueur_id,saison' }));
+        .upsert({ joueur_id: joueur.id, saison: saisonValue, ...seasonUpdates }, { onConflict: 'joueur_id,saison' }));
     }
   }
+
+  return { error };
+}
+
+document.getElementById('edit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('btn-save');
+  const msg = document.getElementById('form-msg');
+  msg.className = 'msg';
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement...';
+
+  let selectedSaison = document.getElementById('f-saison').value;
+  if (selectedSaison === '__new__') {
+    selectedSaison = document.getElementById('f-new-saison').value.trim();
+    if (!selectedSaison) {
+      btn.disabled = false;
+      btn.textContent = 'Enregistrer';
+      msg.classList.add('error');
+      msg.textContent = 'Indique le nom de la nouvelle saison (ex: 2024-2025).';
+      return;
+    }
+  }
+
+  const { error } = await persistSeasonFromForm(selectedSaison);
 
   btn.disabled = false;
   btn.textContent = 'Enregistrer';
