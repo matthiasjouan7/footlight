@@ -473,22 +473,34 @@ function normalizeClub(s) {
     .replace(/\s\d+$/, '');
 }
 
+// D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
+// \u00e0 l'ordre des mots et aux mots manquants (ex: "Pontivy", "GSI Pontivy" et
+// "Pontivy GSI" doivent tous matcher le m\u00eame club officiel "PONTIVY GSI").
+function clubWords(s) {
+  return normalizeClub(s).split(' ').filter(Boolean);
+}
+function clubWordsMatch(a, b) {
+  const wa = clubWords(a), wb = clubWords(b);
+  if (!wa.length || !wb.length) return false;
+  const setA = new Set(wa), setB = new Set(wb);
+  const small = wa.length <= wb.length ? setA : setB;
+  const big = wa.length <= wb.length ? setB : setA;
+  for (const w of small) if (!big.has(w)) return false;
+  return true;
+}
+
 // Cherche un match du calendrier officiel FFF \u00e0 cette date impliquant le
 // club du joueur. Retourne { adversaire, id } si trouv\u00e9 sans ambigu\u00eft\u00e9.
 async function findCalendrierMatch(dateStr, clubJoueur) {
-  const clubNorm = normalizeClub(clubJoueur);
-  if (!dateStr || !clubNorm) return null;
+  if (!dateStr || !normalizeClub(clubJoueur)) return null;
   const { data } = await db.from('calendrier_officiel').select('*').eq('date_match', dateStr);
   if (!data || !data.length) return null;
-  const candidats = data.filter(row => {
-    const dom = normalizeClub(row.equipe_domicile);
-    const ext = normalizeClub(row.equipe_exterieur);
-    return dom === clubNorm || ext === clubNorm;
-  });
+  const candidats = data.filter(row =>
+    clubWordsMatch(row.equipe_domicile, clubJoueur) || clubWordsMatch(row.equipe_exterieur, clubJoueur)
+  );
   if (candidats.length !== 1) return null;
   const row = candidats[0];
-  const domNorm = normalizeClub(row.equipe_domicile);
-  const adversaire = domNorm === clubNorm ? row.equipe_exterieur : row.equipe_domicile;
+  const adversaire = clubWordsMatch(row.equipe_domicile, clubJoueur) ? row.equipe_exterieur : row.equipe_domicile;
   return { id: row.id, adversaire };
 }
 
@@ -501,7 +513,6 @@ async function genererCalendrier() {
   if (!saison) { alert('Choisis ou saisis une saison avant de générer ton calendrier.'); return; }
   const club = document.getElementById('f-club').value.trim();
   if (!club) { alert('Renseigne ton club avant de générer ton calendrier.'); return; }
-  const clubNorm = normalizeClub(club);
 
   const btn = document.getElementById('btn-generer-calendrier');
   btn.disabled = true;
@@ -515,17 +526,31 @@ async function genererCalendrier() {
   if (error) { alert('Erreur lors de la recherche : ' + error.message); return; }
 
   const matchsClub = (data || []).filter(row =>
-    normalizeClub(row.equipe_domicile) === clubNorm || normalizeClub(row.equipe_exterieur) === clubNorm
+    clubWordsMatch(row.equipe_domicile, club) || clubWordsMatch(row.equipe_exterieur, club)
   );
   if (!matchsClub.length) {
     alert(`Aucun match trouvé dans le calendrier officiel pour "${club}" en ${saison}. Vérifie l'orthographe du club, ou ton championnat n'est pas encore couvert (National 1 et National 2 uniquement pour l'instant).`);
     return;
   }
 
+  // Le rapprochement par mots est volontairement tolérant (ordre, mots
+  // manquants) : si ça fait remonter plusieurs clubs officiels différents,
+  // mieux vaut demander une orthographe plus précise que mélanger deux
+  // calendriers différents.
+  const nomsRencontres = new Set();
+  matchsClub.forEach(row => {
+    if (clubWordsMatch(row.equipe_domicile, club)) nomsRencontres.add(row.equipe_domicile);
+    if (clubWordsMatch(row.equipe_exterieur, club)) nomsRencontres.add(row.equipe_exterieur);
+  });
+  if (nomsRencontres.size > 1) {
+    alert(`Plusieurs clubs différents du calendrier officiel correspondent à "${club}" : ${[...nomsRencontres].join(', ')}. Précise le nom exact du club dans le champ Club pour lever l'ambiguïté.`);
+    return;
+  }
+
   const idsExistants = new Set(currentMatchsList.filter(m => m.calendrier_officiel_id).map(m => String(m.calendrier_officiel_id)));
   const datesExistantes = new Set(currentMatchsList.filter(m => m.date_match).map(m => m.date_match));
   const aInserer = matchsClub.filter(row => !idsExistants.has(String(row.id)) && !datesExistantes.has(row.date_match)).map(row => {
-    const domicile = normalizeClub(row.equipe_domicile) === clubNorm;
+    const domicile = clubWordsMatch(row.equipe_domicile, club);
     return {
       joueur_id: joueur.id,
       saison,
