@@ -318,7 +318,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">Ajoute une fiche par match joué cette saison : adversaire, score, tes stats perso, et un lien si tu en as un. Ça vient en plus de ton total de saison ci-dessus, et ça montre ton sérieux au fil de la saison.</div>
         <div id="matchs-list"></div>
         <button type="button" class="btn outline" id="btn-generer-calendrier" onclick="genererCalendrier()" style="width:100%;margin-top:8px;">📅 Générer mon calendrier depuis le calendrier officiel FFF</button>
-        <div id="generer-calendrier-hint" style="font-size:0.7rem;color:var(--muted);margin-top:6px;">Disponible pour National 1 et National 2 : remplit automatiquement dates et adversaires de la saison à partir de ton club, il ne te reste plus qu'à ajouter le score et tes stats après chaque match.</div>
+        <div id="generer-calendrier-hint" style="font-size:0.7rem;color:var(--muted);margin-top:6px;">Disponible pour National 1, National 2 et Ligue 3 : remplit automatiquement dates et adversaires de la saison à partir de ton club, il ne te reste plus qu'à ajouter le score et tes stats après chaque match.</div>
         <button type="button" class="btn outline" id="btn-add-match" onclick="showMatchForm()" style="width:100%;margin-top:8px;">+ Ajouter un match</button>
 
         <div id="match-form-panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--bg4);">
@@ -529,7 +529,7 @@ async function genererCalendrier() {
     clubWordsMatch(row.equipe_domicile, club) || clubWordsMatch(row.equipe_exterieur, club)
   );
   if (!matchsClub.length) {
-    alert(`Aucun match trouvé dans le calendrier officiel pour "${club}" en ${saison}. Vérifie l'orthographe du club, ou ton championnat n'est pas encore couvert (National 1 et National 2 uniquement pour l'instant).`);
+    alert(`Aucun match trouvé dans le calendrier officiel pour "${club}" en ${saison}. Vérifie l'orthographe du club, ou ton championnat n'est pas encore couvert (National 1, National 2 et Ligue 3 uniquement pour l'instant).`);
     return;
   }
 
@@ -646,7 +646,7 @@ async function init() {
     document.getElementById('recruteur-banner').style.display = 'block';
     document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
     document.querySelector('#blessures-section > div:nth-child(2)').textContent = `Visible uniquement par les recruteurs en offre Pro et Premium. Indique les blessures de ${target.prenom} pour montrer sa régularité — ou l'absence de récidive.`;
-    document.getElementById('generer-calendrier-hint').textContent = `Disponible pour National 1 et National 2 : remplit automatiquement dates et adversaires de la saison à partir du club de ${target.prenom}, il ne reste plus qu'à ajouter le score et ses stats après chaque match.`;
+    document.getElementById('generer-calendrier-hint').textContent = `Disponible pour National 1, National 2 et Ligue 3 : remplit automatiquement dates et adversaires de la saison à partir du club de ${target.prenom}, il ne reste plus qu'à ajouter le score et ses stats après chaque match.`;
     document.getElementById('identite-section').style.display = 'block';
     document.getElementById('id-prenom').value = target.prenom || '';
     document.getElementById('id-nom').value = target.nom || '';
