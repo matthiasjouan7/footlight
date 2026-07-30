@@ -726,7 +726,8 @@ async function saveAddPlayer() {
     matchs_joues: 0,
     buts: 0,
     badge: 'declaratif',
-    profil_public: true,
+    profil_public: false,
+    ajoute_par_email: viewerEmail,
     saison: '2026-2027'
   }]).select().single();
 
