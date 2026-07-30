@@ -473,11 +473,24 @@ function normalizeClub(s) {
     .replace(/\s\d+$/, '');
 }
 
+// Mots g\u00e9n\u00e9riques de d\u00e9nomination de club (statut, forme juridique...) qui
+// ne servent pas \u00e0 identifier le club \u2014 seul le nom de ville/lieu compte
+// vraiment. Ex: "Olympique Saumur" et "SAUMUR OFC" d\u00e9signent le m\u00eame club :
+// une fois ces mots retir\u00e9s, il ne reste que "saumur" des deux c\u00f4t\u00e9s.
+const CLUB_MOTS_GENERIQUES = new Set([
+  'fc','ofc','afc','asc','ac','sc','csc','cs','us','uso','as','ol','om','rc',
+  'fco','osc','sco','ent','entente','athletic','olympique','football','club',
+  'sporting','racing','stade',
+]);
+
 // D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
-// \u00e0 l'ordre des mots et aux mots manquants (ex: "Pontivy", "GSI Pontivy" et
-// "Pontivy GSI" doivent tous matcher le m\u00eame club officiel "PONTIVY GSI").
+// \u00e0 l'ordre des mots, aux mots manquants (ex: "Pontivy", "GSI Pontivy" et
+// "Pontivy GSI" doivent tous matcher "PONTIVY GSI") et aux mots g\u00e9n\u00e9riques
+// de d\u00e9nomination qui varient d'une source \u00e0 l'autre pour le m\u00eame club.
 function clubWords(s) {
-  return normalizeClub(s).split(' ').filter(Boolean);
+  const mots = normalizeClub(s).split(' ').filter(Boolean);
+  const sansGeneriques = mots.filter(w => !CLUB_MOTS_GENERIQUES.has(w));
+  return sansGeneriques.length ? sansGeneriques : mots;
 }
 function clubWordsMatch(a, b) {
   const wa = clubWords(a), wb = clubWords(b);
@@ -549,16 +562,25 @@ async function genererCalendrier() {
   }
 
   // Le rapprochement par mots est volontairement tolérant (ordre, mots
-  // manquants) : si ça fait quand même remonter plusieurs clubs différents
-  // (ex: niveau non renseigné), mieux vaut demander de préciser que mélanger
-  // deux calendriers différents.
+  // manquants, mots génériques) : si ça fait quand même remonter plusieurs
+  // clubs différents (ex: niveau non renseigné), mieux vaut demander de
+  // préciser que mélanger deux calendriers différents. On regroupe par
+  // (mots significatifs + division), pas par nom brut, pour ne pas confondre
+  // une simple variante d'écriture du même club (même division) avec deux
+  // clubs réellement différents.
   const rencontres = new Map();
   matchsClub.forEach(row => {
-    if (clubWordsMatch(row.equipe_domicile, club)) rencontres.set(row.equipe_domicile, row.division);
-    if (clubWordsMatch(row.equipe_exterieur, club)) rencontres.set(row.equipe_exterieur, row.division);
+    if (clubWordsMatch(row.equipe_domicile, club)) {
+      const cle = clubWords(row.equipe_domicile).sort().join(' ') + '|' + row.division;
+      if (!rencontres.has(cle)) rencontres.set(cle, { nom: row.equipe_domicile, division: row.division });
+    }
+    if (clubWordsMatch(row.equipe_exterieur, club)) {
+      const cle = clubWords(row.equipe_exterieur).sort().join(' ') + '|' + row.division;
+      if (!rencontres.has(cle)) rencontres.set(cle, { nom: row.equipe_exterieur, division: row.division });
+    }
   });
   if (rencontres.size > 1) {
-    const liste = [...rencontres.entries()].map(([nom, div]) => `${nom} (${div})`).join(', ');
+    const liste = [...rencontres.values()].map(({nom, division}) => `${nom} (${division})`).join(', ');
     alert(`Plusieurs clubs différents du calendrier officiel correspondent à "${club}" : ${liste}. Renseigne ton niveau (Ligue 3, N1, N2...) ci-dessus pour lever l'ambiguïté, ou précise le nom exact du club.`);
     return;
   }
