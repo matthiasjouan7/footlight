@@ -220,6 +220,14 @@ function defensiveImpactTier(diff) {
   return { color: 'var(--red)', label: '🔴 L\'équipe encaisse plus avec lui — à surveiller' };
 }
 
+const SEUIL_ECHANTILLON_FAIBLE = 5;
+function tierSansLui(diff, nbMatchsSansLui, tierFn) {
+  if (nbMatchsSansLui != null && nbMatchsSansLui < SEUIL_ECHANTILLON_FAIBLE) {
+    return { color: 'var(--muted)', label: `⚪ Échantillon trop faible (${nbMatchsSansLui} match${nbMatchsSansLui>1?'s':''} sans lui) pour être fiable` };
+  }
+  return tierFn(diff);
+}
+
 function offensiveImpactTier(diff) {
   if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe prend clairement plus de points avec lui' };
   if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
@@ -596,8 +604,8 @@ async function renderProfil(j, isOwner) {
         <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
         <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
         <div class="bar-item" style="margin-top:12px;">
-          <div class="bar-label-row"><span class="k">Différentiel sans lui - avec lui</span><span class="v" style="color:${defensiveImpactTier(impactDefReelSansLui).color}">${impactDefReelSansLui>=0?'+':''}${impactDefReelSansLui.toFixed(2)}</span></div>
-          <div style="font-size:0.75rem;color:${defensiveImpactTier(impactDefReelSansLui).color};margin-top:6px;">${defensiveImpactTier(impactDefReelSansLui).label}</div>
+          <div class="bar-label-row"><span class="k">Différentiel sans lui - avec lui</span><span class="v" style="color:${tierSansLui(impactDefReelSansLui, matchsSansLui, defensiveImpactTier).color}">${impactDefReelSansLui>=0?'+':''}${impactDefReelSansLui.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${tierSansLui(impactDefReelSansLui, matchsSansLui, defensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactDefReelSansLui, matchsSansLui, defensiveImpactTier).label}</div>
         </div>
         <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Matchs sans lui déduits (matchs de l'équipe − matchs joués) : donnée approximative si des absences ne sont pas liées à des matchs manqués (blessure, banc...).</div>
         ` : `<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Différentiel "sans lui" indisponible : il a joué la totalité (ou la quasi-totalité) des matchs de l'équipe cette saison, aucun match "sans lui" à comparer.</div>`}

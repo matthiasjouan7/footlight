@@ -140,6 +140,14 @@ function defensiveImpactTier(diff) {
   return { color: 'var(--red)', label: '🔴 L\'équipe encaisse plus avec lui — à surveiller' };
 }
 
+const SEUIL_ECHANTILLON_FAIBLE = 5;
+function tierSansLui(diff, nbMatchsSansLui, tierFn) {
+  if (nbMatchsSansLui != null && nbMatchsSansLui < SEUIL_ECHANTILLON_FAIBLE) {
+    return { color: 'var(--muted)', label: `⚪ Échantillon trop faible (${nbMatchsSansLui} match${nbMatchsSansLui>1?'s':''} sans lui) pour être fiable` };
+  }
+  return tierFn(diff);
+}
+
 function offensiveImpactTier(diff) {
   if (diff > 0.30) return { color: 'var(--green-l)', label: '🟢 Très fort signal — l\'équipe prend clairement plus de points avec lui' };
   if (diff >= 0.10) return { color: 'var(--gold-l)', label: '🟡 Impact léger mais positif' };
@@ -392,8 +400,8 @@ function renderRecap(saison) {
       ${impactDefReelSansLui != null ? `
       <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
       <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
-      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${defensiveImpactTier(impactDefReelSansLui).color}">${impactDefReelSansLui>=0?'+':''}${impactDefReelSansLui.toFixed(2)}</span></div>
-      <div style="font-size:0.78rem;color:${defensiveImpactTier(impactDefReelSansLui).color};margin-top:4px;">${defensiveImpactTier(impactDefReelSansLui).label}</div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${tierSansLui(impactDefReelSansLui, matchsSansLui, defensiveImpactTier).color}">${impactDefReelSansLui>=0?'+':''}${impactDefReelSansLui.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${tierSansLui(impactDefReelSansLui, matchsSansLui, defensiveImpactTier).color};margin-top:4px;">${tierSansLui(impactDefReelSansLui, matchsSansLui, defensiveImpactTier).label}</div>
       ` : ''}
     </div>` : ''}
 
@@ -409,8 +417,8 @@ function renderRecap(saison) {
       ${impactPointsReelSansLui != null ? `
       <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
       <div class="info-row"><span class="info-key">Points pris/match sans lui</span><span class="info-val">${ratioPointsSansLui.toFixed(2)}</span></div>
-      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${offensiveImpactTier(impactPointsReelSansLui).color}">${impactPointsReelSansLui>=0?'+':''}${impactPointsReelSansLui.toFixed(2)}</span></div>
-      <div style="font-size:0.78rem;color:${offensiveImpactTier(impactPointsReelSansLui).color};margin-top:4px;">${offensiveImpactTier(impactPointsReelSansLui).label}</div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).color}">${impactPointsReelSansLui>=0?'+':''}${impactPointsReelSansLui.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).color};margin-top:4px;">${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).label}</div>
       ` : ''}
     </div>` : ''}
 
