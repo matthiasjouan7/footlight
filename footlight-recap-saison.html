@@ -395,8 +395,8 @@ function renderRecap(saison) {
       <div class="info-row"><span class="info-key">Buts encaissés par l'équipe (saison)</span><span class="info-val">${s.buts_encaisses_equipe}</span></div>
       <div class="info-row" style="margin-top:6px;"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
       <div class="info-row"><span class="info-key">Buts encaissés/match (moyenne équipe)</span><span class="info-val">${ratioEncaissesTotal.toFixed(2)}</span></div>
-      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${defensiveImpactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
-      <div style="font-size:0.78rem;color:${defensiveImpactTier(impactDefReel).color};margin-top:4px;">${defensiveImpactTier(impactDefReel).label}</div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${tierSansLui(impactDefReel, matchsSansLui, defensiveImpactTier).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${tierSansLui(impactDefReel, matchsSansLui, defensiveImpactTier).color};margin-top:4px;">${tierSansLui(impactDefReel, matchsSansLui, defensiveImpactTier).label}</div>
       ${impactDefReelSansLui != null ? `
       <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
       <div class="info-row"><span class="info-key">Buts encaissés/match sans lui</span><span class="info-val">${ratioEncaissesSansLui.toFixed(2)}</span></div>
@@ -412,8 +412,8 @@ function renderRecap(saison) {
       <div class="info-row"><span class="info-key">Points de l'équipe (saison)</span><span class="info-val">${s.points_equipe}</span></div>
       <div class="info-row" style="margin-top:6px;"><span class="info-key">Points pris/match avec lui</span><span class="info-val">${ptsAvecLui.toFixed(2)}</span></div>
       <div class="info-row"><span class="info-key">Points pris/match (moyenne équipe)</span><span class="info-val">${ratioPointsEquipeTotal.toFixed(2)}</span></div>
-      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${offensiveImpactTier(impactPointsReel).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
-      <div style="font-size:0.78rem;color:${offensiveImpactTier(impactPointsReel).color};margin-top:4px;">${offensiveImpactTier(impactPointsReel).label}</div>
+      <div style="margin-top:10px;"><span style="font-size:0.85rem;font-weight:700;color:${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
+      <div style="font-size:0.78rem;color:${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).color};margin-top:4px;">${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).label}</div>
       ${impactPointsReelSansLui != null ? `
       <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
       <div class="info-row"><span class="info-key">Points pris/match sans lui</span><span class="info-val">${ratioPointsSansLui.toFixed(2)}</span></div>

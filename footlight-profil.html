@@ -597,8 +597,8 @@ async function renderProfil(j, isOwner) {
         <div class="info-row" style="margin-top:6px;"><span class="info-key">Buts encaissés/match avec lui</span><span class="info-val">${ratioEncaissesMatch.toFixed(2)}</span></div>
         <div class="info-row"><span class="info-key">Buts encaissés/match (moyenne équipe)</span><span class="info-val">${ratioEncaissesTotal.toFixed(2)}</span></div>
         <div class="bar-item" style="margin-top:12px;">
-          <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${defensiveImpactTier(impactDefReel).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
-          <div style="font-size:0.75rem;color:${defensiveImpactTier(impactDefReel).color};margin-top:6px;">${defensiveImpactTier(impactDefReel).label}</div>
+          <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${tierSansLui(impactDefReel, matchsSansLui, defensiveImpactTier).color}">${impactDefReel>=0?'+':''}${impactDefReel.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${tierSansLui(impactDefReel, matchsSansLui, defensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactDefReel, matchsSansLui, defensiveImpactTier).label}</div>
         </div>
         ${impactDefReelSansLui != null ? `
         <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
@@ -626,8 +626,8 @@ async function renderProfil(j, isOwner) {
         <div class="info-row" style="margin-top:6px;"><span class="info-key">Points pris/match avec lui</span><span class="info-val">${ptsAvecLui.toFixed(2)}</span></div>
         <div class="info-row"><span class="info-key">Points pris/match (moyenne équipe)</span><span class="info-val">${ratioPointsEquipeTotal.toFixed(2)}</span></div>
         <div class="bar-item" style="margin-top:12px;">
-          <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${offensiveImpactTier(impactPointsReel).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
-          <div style="font-size:0.75rem;color:${offensiveImpactTier(impactPointsReel).color};margin-top:6px;">${offensiveImpactTier(impactPointsReel).label}</div>
+          <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).label}</div>
         </div>
         <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Points pris (3 victoire, 1 nul) déduits du score de ses fiches de match de championnat.</div>
       </div>` : `
