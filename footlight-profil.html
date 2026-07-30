@@ -103,14 +103,29 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 
 /* Fiche imprimable / PDF */
 @media print{
+  @page{margin:10mm;}
   nav,.no-print,.locked-box{display:none !important;}
-  body{background:#fff !important;color:#111 !important;}
-  .page{padding:10px 0;max-width:100%;}
+  body{background:#fff !important;color:#111 !important;font-size:0.85em;}
+  .page{padding:0;max-width:100%;}
   .profile-header,.section,.stat-card{background:#fff !important;border:1px solid #ccc !important;}
   .profile-name,.stat-val,.info-val{color:#111 !important;}
   .info-key,.stat-lbl,.muted,.section-title{color:#555 !important;}
   a{color:#111 !important;}
   .bar-track{background:#eee !important;}
+
+  /* Ne jamais couper une carte/section en plein milieu entre deux pages —
+     les chiffres se retrouvaient tronqués en bas de page sinon. */
+  .section,.stat-card,.ratio-card,.info-row,.bar-item{break-inside:avoid;page-break-inside:avoid;}
+
+  /* Mise en page plus compacte pour tenir sur moins de pages. */
+  .section{padding:12px 14px;margin-bottom:10px;}
+  .stats-grid{gap:8px;margin-bottom:12px;}
+  .stat-card{padding:10px;}
+  .ratio-grid{gap:8px;}
+  .ratio-card{padding:10px;}
+  .info-row{padding:4px 0;}
+  .bar-item{margin-bottom:8px;}
+  .section-title{margin-bottom:8px;padding-bottom:6px;}
 }
 </style>
 </head>
