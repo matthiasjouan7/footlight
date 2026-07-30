@@ -140,12 +140,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
       <div class="section">
         <div class="section-title">Club & niveau</div>
         <div class="field">
-          <label class="field-label">Club actuel</label>
+          <label class="field-label" id="f-club-label">Club actuel</label>
           <input class="field-input" type="text" id="f-club" placeholder="VFC La Roche-sur-Yon"/>
         </div>
         <div class="field-row">
           <div class="field">
-            <label class="field-label">Niveau</label>
+            <label class="field-label" id="f-niveau-label">Niveau</label>
             <select class="field-select" id="f-niveau">
               <option value="">—</option>
               <option value="Ligue 3">Ligue 3</option>
@@ -779,6 +779,12 @@ function fillSeasonFields(s) {
   document.getElementById('stats-section-title').textContent = s.isCurrent
     ? 'Stats de la saison en cours'
     : (s.saison ? `Stats de la saison ${s.saison}` : 'Stats de la nouvelle saison');
+  document.getElementById('f-club-label').textContent = s.isCurrent
+    ? 'Club actuel'
+    : (s.saison ? `Club (saison ${s.saison})` : 'Club (nouvelle saison)');
+  document.getElementById('f-niveau-label').textContent = s.isCurrent
+    ? 'Niveau'
+    : (s.saison ? `Niveau (saison ${s.saison})` : 'Niveau (nouvelle saison)');
   document.getElementById('f-club').value = s.club || '';
   document.getElementById('f-niveau').value = s.niveau || '';
   document.getElementById('s-matchs-equipe').value = s.matchs_equipe ?? '';
