@@ -549,11 +549,11 @@ async function init() {
     isRecruiterEditing = true;
     joueur = target;
     document.getElementById('account-section').style.display = 'none';
-    document.getElementById('blessures-section').style.display = 'none';
     document.getElementById('page-title').textContent = `Compléter le profil de ${target.prenom} ${target.nom}`;
     document.getElementById('page-sub').textContent = 'Aide ce joueur à avoir un profil complet en renseignant club, niveau et stats manquantes.';
     document.getElementById('recruteur-banner').style.display = 'block';
     document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
+    document.querySelector('#blessures-section > div:nth-child(2)').textContent = `Visible uniquement par les recruteurs en offre Pro et Premium. Indique les blessures de ${target.prenom} pour montrer sa régularité — ou l'absence de récidive.`;
     document.getElementById('identite-section').style.display = 'block';
     document.getElementById('id-prenom').value = target.prenom || '';
     document.getElementById('id-nom').value = target.nom || '';
@@ -611,7 +611,7 @@ async function finishInit() {
   document.getElementById('f-saison').value = currentSeason.saison;
   fillSeasonFields(currentSeason);
   loadMatchsForSeason(currentSeason.saison);
-  if (!isRecruiterEditing) loadBlessures();
+  loadBlessures();
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('form-content').style.display = 'block';
