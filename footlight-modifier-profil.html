@@ -621,8 +621,7 @@ async function init() {
     document.getElementById('recruteur-banner').style.display = 'block';
     document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
     document.querySelector('#blessures-section > div:nth-child(2)').textContent = `Visible uniquement par les recruteurs en offre Pro et Premium. Indique les blessures de ${target.prenom} pour montrer sa régularité — ou l'absence de récidive.`;
-    document.getElementById('btn-generer-calendrier').style.display = 'none';
-    document.getElementById('generer-calendrier-hint').style.display = 'none';
+    document.getElementById('generer-calendrier-hint').textContent = `Disponible pour National 1 et National 2 : remplit automatiquement dates et adversaires de la saison à partir du club de ${target.prenom}, il ne reste plus qu'à ajouter le score et ses stats après chaque match.`;
     document.getElementById('identite-section').style.display = 'block';
     document.getElementById('id-prenom').value = target.prenom || '';
     document.getElementById('id-nom').value = target.nom || '';
