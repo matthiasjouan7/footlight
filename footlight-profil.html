@@ -507,11 +507,10 @@ async function renderProfil(j, isOwner) {
 
     return `
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-val">${s.matchs_joues||0}</div><div class="stat-lbl">Matchs joués</div></div>
         ${isDefensif ? `
+        <div class="stat-card"><div class="stat-val">${s.matchs_joues||0}</div><div class="stat-lbl">Matchs joués</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.buts_encaisses_avec ?? '—'}</div><div class="stat-lbl">Buts encaissés</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.clean_sheets ?? '—'}</div><div class="stat-lbl">Clean sheets</div></div>
-        ` : ''}
         <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.buts||0}</div><div class="stat-lbl">Buts</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${s.passes_decisives||0}</div><div class="stat-lbl">Passes déc.</div></div>
         <div class="stat-card"><div class="stat-val">${s.minutes_jouees||0}</div><div class="stat-lbl">Minutes</div></div>
@@ -519,6 +518,16 @@ async function renderProfil(j, isOwner) {
         <div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${s.cartons_jaunes||0}</div><div class="stat-lbl">Cartons jaunes</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.cartons_rouges||0}</div><div class="stat-lbl">Cartons rouges</div></div>
         <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
+        ` : `
+        <div class="stat-card"><div class="stat-val">${s.matchs_joues||0}</div><div class="stat-lbl">Matchs joués</div></div>
+        <div class="stat-card"><div class="stat-val">${s.titularisations||0}</div><div class="stat-lbl">Titularisations</div></div>
+        <div class="stat-card"><div class="stat-val">${s.minutes_jouees||0}</div><div class="stat-lbl">Minutes</div></div>
+        <div class="stat-card"><div class="stat-val">${pct_tps}%</div><div class="stat-lbl">Temps de jeu</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.buts||0}</div><div class="stat-lbl">Buts</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${s.passes_decisives||0}</div><div class="stat-lbl">Passes déc.</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${s.cartons_jaunes||0}</div><div class="stat-lbl">Cartons jaunes</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.cartons_rouges||0}</div><div class="stat-lbl">Cartons rouges</div></div>
+        `}
       </div>
 
       ${(s.matchs_equipe != null && s.matchs_remplacant != null) ? `
