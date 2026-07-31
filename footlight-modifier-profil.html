@@ -538,7 +538,11 @@ const CLUB_SYNONYMES_COMPLETS = {
   // dans les m\u00eames donn\u00e9es : une \u00e9galit\u00e9 de signature exacte est requise ici
   // pour ne jamais les confondre (contrairement \u00e0 un simple remplacement
   // singulier/pluriel "sables"\u2192"sable", qui les aurait fait collisionner).
+  // Deux cl\u00e9s (singulier et pluriel) pointent vers le m\u00eame club car un
+  // joueur peut taper "Sable Vend\u00e9e" ou "Sables Vend\u00e9e" indiff\u00e9remment.
   'sables vf': ['sable', 'vendee'],
+  'sable vendee': ['sable', 'vendee'],
+  'sables vendee': ['sable', 'vendee'],
 };
 
 // D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
