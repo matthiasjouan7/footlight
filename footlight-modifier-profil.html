@@ -512,17 +512,34 @@ const CLUB_MOTS_REMPLACEMENT = {
   // calendrier officiel actuel ("St Philbert Gd Lieu") : on tol\u00e8re la
   // confusion fr\u00e9quente sans risque de collision avec un autre club.
   philibert: 'philbert',
+  // Gentil\u00e9s (adjectif de ville) utilis\u00e9s dans le nom officiel du club, qui
+  // ne partagent aucune lettre commune en pr\u00e9fixe avec le nom de la ville
+  // elle-m\u00eame (contrairement \u00e0 un simple singulier/pluriel) : remplacement
+  // mot-\u00e0-mot s\u00fbr, valid\u00e9 sans collision sur l'ensemble des clubs.
+  virois: 'vire',
+  bayonnais: 'bayonne',
+  briochin: 'brieuc',
 };
 
 // Certains clubs sont d\u00e9sign\u00e9s dans le calendrier officiel par un sigle qui
 // ne partage aucun mot avec leur nom complet (ex: "QRM" pour "Quevilly Rouen
-// M\u00e9tropole"). Contrairement \u00e0 CLUB_MOTS_REMPLACEMENT, on ne peut pas se
-// contenter d'un remplacement mot-\u00e0-mot : traiter "qrm" comme \u00e9quivalent \u00e0
-// "quevilly"+"rouen"+"metropole" ferait que le seul mot "rouen" (ex: "FC
-// ROUEN 1899") deviendrait un sous-ensemble de cet ensemble \u00e0 3 mots \u2192 faux
-// positif entre deux clubs diff\u00e9rents. On exige donc une \u00e9galit\u00e9 EXACTE de
+// M\u00e9tropole", "ASTDV" pour "AS Touques Deauville"). Contrairement \u00e0
+// CLUB_MOTS_REMPLACEMENT, on ne peut pas se contenter d'un remplacement
+// mot-\u00e0-mot : traiter "qrm" comme \u00e9quivalent \u00e0 "quevilly"+"rouen"+
+// "metropole" ferait que le seul mot "rouen" (ex: "FC ROUEN 1899")
+// deviendrait un sous-ensemble de cet ensemble \u00e0 3 mots \u2192 faux positif
+// entre deux clubs diff\u00e9rents. On exige donc une \u00e9galit\u00e9 EXACTE de
 // signature (nom entier), jamais une simple inclusion.
-const CLUB_SYNONYMES_COMPLETS = { qrm: ['quevilly', 'rouen', 'metropole'] };
+const CLUB_SYNONYMES_COMPLETS = {
+  qrm: ['quevilly', 'rouen', 'metropole'],
+  astdv: ['touques', 'deauville'],
+  // "Les Sables Vf" (Les Sables-d'Olonne, Vend\u00e9e Football) \u2014 \u00e0 ne pas
+  // confondre avec "Sable Fc" (Sabl\u00e9-sur-Sarthe), un club diff\u00e9rent pr\u00e9sent
+  // dans les m\u00eames donn\u00e9es : une \u00e9galit\u00e9 de signature exacte est requise ici
+  // pour ne jamais les confondre (contrairement \u00e0 un simple remplacement
+  // singulier/pluriel "sables"\u2192"sable", qui les aurait fait collisionner).
+  'sables vf': ['sable', 'vendee'],
+};
 
 // D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
 // \u00e0 l'ordre des mots, aux mots manquants (ex: "Pontivy", "GSI Pontivy" et
@@ -570,14 +587,29 @@ async function loadClubsCalendrier() {
   clubsCalendrierCache = [...set].sort();
   return clubsCalendrierCache;
 }
+// Comme clubWords(), mais ajoute aussi les mots du nom complet quand le club
+// a une entrée dans CLUB_SYNONYMES_COMPLETS (ex: "quevilly"/"rouen"/
+// "metropole" pour "QRM"). Uniquement pour la liste de suggestions : cliquer
+// une suggestion remplit le champ avec le nom officiel exact, donc être plus
+// permissif ici ne risque jamais de mélanger deux calendriers différents
+// (contrairement à clubWordsMatch, qui doit rester strict).
+function clubWordsPourSuggestion(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? [...mots, ...synonyme] : mots;
+}
 function suggestClubs(inputValue, clubs) {
   const iw = clubWords(inputValue);
   if (!iw.length) return [];
   return clubs.filter(nomOfficiel => {
-    const mots = clubWords(nomOfficiel);
+    const mots = clubWordsPourSuggestion(nomOfficiel);
     const small = iw.length <= mots.length ? iw : mots;
     const big = iw.length <= mots.length ? mots : iw;
-    return small.every(w => big.some(m => m.startsWith(w) || w.startsWith(m)));
+    // m.length>=3 sur la deuxième branche : un mot très court ("s", "v"...)
+    // est presque toujours un préfixe de ce que tape le joueur, ce qui
+    // ferait remonter des clubs sans rapport (ex: "SA Epinal" pour "sable").
+    return small.every(w => big.some(m => m.startsWith(w) || (m.length >= 3 && w.startsWith(m))));
   }).slice(0, 8);
 }
 function renderClubSuggestions(suggestions) {
