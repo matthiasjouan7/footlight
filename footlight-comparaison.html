@@ -351,16 +351,16 @@ function renderComparison() {
 
   const aDef = POSTES_DEFENSIFS.includes(a.poste);
   const bDef = POSTES_DEFENSIFS.includes(b.poste);
-  const anyOffense = !aDef || !bDef;
   const anyDefense = aDef || bDef;
 
-  let statRows = ROWS_COMMON_TOP.slice();
-  if (anyOffense) statRows = statRows.concat(ROWS_OFFENSE);
+  // Buts/passes décisives sont toujours affichés, même pour deux postes
+  // défensifs : un latéral ou un milieu défensif peut tout à fait
+  // contribuer offensivement, ça ne doit pas être caché.
+  let statRows = ROWS_COMMON_TOP.slice().concat(ROWS_OFFENSE);
   if (anyDefense) statRows = statRows.concat(ROWS_DEFENSE);
   statRows = statRows.concat(ROWS_COMMON_BOTTOM);
 
-  let impactRows = ROWS_IMPACT.slice();
-  if (anyOffense) impactRows = impactRows.concat(ROWS_OFFENSE_IMPACT);
+  let impactRows = ROWS_IMPACT.slice().concat(ROWS_OFFENSE_IMPACT);
 
   el.innerHTML = `
     <div class="section">
