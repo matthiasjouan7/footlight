@@ -140,9 +140,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
     <form id="edit-form">
       <div class="section">
         <div class="section-title">Club & niveau</div>
-        <div class="field">
+        <div class="field" style="position:relative;">
           <label class="field-label" id="f-club-label">Club actuel</label>
-          <input class="field-input" type="text" id="f-club" placeholder="VFC La Roche-sur-Yon"/>
+          <input class="field-input" type="text" id="f-club" placeholder="VFC La Roche-sur-Yon" autocomplete="off"/>
+          <div id="f-club-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:220px;overflow-y:auto;"></div>
         </div>
         <div class="field-row">
           <div class="field">
@@ -519,6 +520,73 @@ function clubWordsMatch(a, b) {
   for (const w of small) if (!big.has(w)) return false;
   return true;
 }
+
+// Suggestions de club pendant la saisie (ex: taper "quevilly" propose "QRM").
+// Charge une seule fois la liste des clubs du calendrier officiel, puis
+// compare par mots avec tolérance de préfixe (le joueur est en train de
+// taper, donc son dernier mot est probablement incomplet).
+let clubsCalendrierCache = null;
+async function loadClubsCalendrier() {
+  if (clubsCalendrierCache) return clubsCalendrierCache;
+  const { data } = await db.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur');
+  const set = new Set();
+  (data || []).forEach(r => {
+    if (r.equipe_domicile) set.add(r.equipe_domicile);
+    if (r.equipe_exterieur) set.add(r.equipe_exterieur);
+  });
+  clubsCalendrierCache = [...set].sort();
+  return clubsCalendrierCache;
+}
+function suggestClubs(inputValue, clubs) {
+  const iw = clubWords(inputValue);
+  if (!iw.length) return [];
+  return clubs.filter(nomOfficiel => {
+    const mots = clubWords(nomOfficiel);
+    const small = iw.length <= mots.length ? iw : mots;
+    const big = iw.length <= mots.length ? mots : iw;
+    return small.every(w => big.some(m => m.startsWith(w) || w.startsWith(m)));
+  }).slice(0, 8);
+}
+function renderClubSuggestions(suggestions) {
+  const box = document.getElementById('f-club-suggestions');
+  if (!suggestions.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.innerHTML = suggestions.map(nom =>
+    `<div class="club-suggestion" style="padding:8px 12px;cursor:pointer;font-size:0.85rem;" data-club="${nom.replace(/"/g, '&quot;')}">${nom}</div>`
+  ).join('');
+  box.style.display = 'block';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('f-club');
+  const box = document.getElementById('f-club-suggestions');
+  if (!input || !box) return;
+  input.addEventListener('input', async () => {
+    const clubs = await loadClubsCalendrier();
+    renderClubSuggestions(suggestClubs(input.value, clubs));
+  });
+  input.addEventListener('focus', async () => {
+    if (!input.value.trim()) return;
+    const clubs = await loadClubsCalendrier();
+    renderClubSuggestions(suggestClubs(input.value, clubs));
+  });
+  box.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.club-suggestion');
+    if (!item) return;
+    input.value = item.dataset.club;
+    box.style.display = 'none';
+    box.innerHTML = '';
+  });
+  input.addEventListener('blur', () => {
+    setTimeout(() => { box.style.display = 'none'; }, 150);
+  });
+  box.addEventListener('mouseover', (e) => {
+    const item = e.target.closest('.club-suggestion');
+    if (item) item.style.background = 'var(--bg4)';
+  });
+  box.addEventListener('mouseout', (e) => {
+    const item = e.target.closest('.club-suggestion');
+    if (item) item.style.background = '';
+  });
+});
 
 // Cherche un match du calendrier officiel FFF \u00e0 cette date impliquant le
 // club du joueur. Retourne { adversaire, id } si trouv\u00e9 sans ambigu\u00eft\u00e9.
