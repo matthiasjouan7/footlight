@@ -23,7 +23,37 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 .nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
 .nav-links a:hover{color:var(--text);}
 
-.page{max-width:900px;margin:0 auto;padding:76px 24px 60px;}
+/* LAYOUT + BARRE LATÉRALE DE RECHERCHE (pour changer de profil sans revenir
+   à la page recherche) */
+.layout{display:grid;grid-template-columns:260px 1fr;padding-top:56px;min-height:100vh;}
+@media(max-width:800px){.layout{grid-template-columns:1fr;}}
+.sidebar{border-right:1px solid var(--border);padding:20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;}
+@media(max-width:800px){.sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border);}}
+.sidebar-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:16px;}
+.filter-group{margin-bottom:20px;}
+.filter-label{font-size:0.82rem;font-weight:600;margin-bottom:8px;display:block;}
+.filter-input{width:100%;padding:9px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;}
+.filter-select{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:0.85rem;cursor:pointer;width:100%;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{padding:5px 12px;border-radius:20px;font-size:0.78rem;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;transition:all .15s;}
+.chip:hover{border-color:var(--muted);color:var(--text);}
+.chip.active{background:#1f6feb22;border-color:var(--blue);color:var(--blue-l);}
+.range-wrap{padding:4px 0;}
+.range-row{display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);margin-bottom:6px;}
+input[type=range]{width:100%;accent-color:var(--blue);}
+.reset-btn{width:100%;padding:9px;border-radius:8px;font-size:0.82rem;font-weight:600;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;margin-top:8px;}
+.reset-btn:hover{border-color:var(--muted);color:var(--text);}
+hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.result-item{display:block;padding:8px 10px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:border-color .15s;margin-bottom:6px;text-decoration:none;}
+.result-item:hover{border-color:var(--blue);}
+.result-item .ri-name{font-size:0.82rem;font-weight:600;color:var(--text);}
+.result-item .ri-meta{font-size:0.7rem;color:var(--muted);margin-top:2px;}
+.result-item.current{border-color:var(--gold);}
+#sb-resultats-liste{max-height:340px;overflow-y:auto;}
+.sb-empty{font-size:0.78rem;color:var(--muted);padding:8px 2px;}
+
+.main{padding:20px 24px 60px;}
+.page{max-width:900px;margin:0 auto;}
 
 /* Loading */
 .loading{text-align:center;padding:80px 20px;color:var(--muted);}
@@ -104,8 +134,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 /* Fiche imprimable / PDF */
 @media print{
   @page{margin:10mm;}
-  nav,.no-print,.locked-box{display:none !important;}
+  nav,.no-print,.locked-box,.sidebar{display:none !important;}
+  .layout{display:block;padding-top:0;}
   body{background:#fff !important;color:#111 !important;font-size:0.85em;}
+  .main{padding:0;}
   .page{padding:0;max-width:100%;}
   .profile-header,.section,.stat-card{background:#fff !important;border:1px solid #ccc !important;}
   .profile-name,.stat-val,.info-val{color:#111 !important;}
@@ -141,21 +173,124 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
   </div>
 </nav>
 
-<div class="page">
-  <!-- LOADING -->
-  <div class="loading" id="loading">
-    <div class="loading-spin"></div>
-    <p>Chargement du profil...</p>
+<div class="layout">
+
+  <!-- SIDEBAR : filtres de recherche, pour changer de profil sans revenir
+       à la page recherche -->
+  <div class="sidebar no-print">
+    <div class="sidebar-title">Filtres</div>
+
+    <div class="filter-group">
+      <span class="filter-label">Nom du joueur</span>
+      <input type="text" id="sb-search" class="filter-input" placeholder="Rechercher un nom, prénom..."
+        oninput="sbSearchQuery=this.value;sbApplyFilters()"/>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Poste</span>
+      <select class="filter-select" id="sb-poste" onchange="sbFilters.poste=this.value;sbApplyFilters()">
+        <option value="tous">Tous les postes</option>
+        <option value="gardien">Gardien</option>
+        <option value="defenseur_central">Défenseur central</option>
+        <option value="lateral_droit">Latéral droit</option>
+        <option value="lateral_gauche">Latéral gauche</option>
+        <option value="piston_droit">Piston droit</option>
+        <option value="piston_gauche">Piston gauche</option>
+        <option value="milieu_defensif">Milieu défensif</option>
+        <option value="milieu_central">Milieu central</option>
+        <option value="milieu_offensif">Milieu offensif</option>
+        <option value="milieu_gauche">Milieu gauche</option>
+        <option value="ailier_droit">Ailier droit</option>
+        <option value="ailier_gauche">Ailier gauche</option>
+        <option value="attaquant">Attaquant</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Niveau</span>
+      <div class="chips" id="sb-niveau">
+        <div class="chip active" data-val="tous" onclick="sbSetFilter('niveau','tous',this)">Tous</div>
+        <div class="chip" data-val="Ligue 3" onclick="sbSetFilter('niveau','Ligue 3',this)">Ligue 3</div>
+        <div class="chip" data-val="N1" onclick="sbSetFilter('niveau','N1',this)">N1</div>
+        <div class="chip" data-val="N2" onclick="sbSetFilter('niveau','N2',this)">N2</div>
+        <div class="chip" data-val="R1" onclick="sbSetFilter('niveau','R1',this)">R1</div>
+        <div class="chip" data-val="Autre" onclick="sbSetFilter('niveau','Autre',this)">Autre</div>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Âge</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="number" id="sb-age-min" class="filter-input" placeholder="Min" min="14" max="45"
+          oninput="sbMinAge=this.value?parseInt(this.value):null;sbApplyFilters()"/>
+        <span style="color:var(--muted);">–</span>
+        <input type="number" id="sb-age-max" class="filter-input" placeholder="Max" min="14" max="45"
+          oninput="sbMaxAge=this.value?parseInt(this.value):null;sbApplyFilters()"/>
+      </div>
+    </div>
+
+    <hr class="fdiv"/>
+
+    <div id="sb-advanced-filters">
+      <div class="filter-group">
+        <span class="filter-label">Buts minimum</span>
+        <div class="range-wrap">
+          <div class="range-row"><span>0</span><span id="sb-buts-val">0</span></div>
+          <input type="range" min="0" max="30" value="0" step="1" oninput="document.getElementById('sb-buts-val').textContent=this.value;sbMinButs=parseInt(this.value);sbApplyFilters()"/>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Matchs joués minimum</span>
+        <div class="range-wrap">
+          <div class="range-row"><span>0</span><span id="sb-matchs-val">0</span></div>
+          <input type="range" min="0" max="40" value="0" step="1" oninput="document.getElementById('sb-matchs-val').textContent=this.value;sbMinMatchs=parseInt(this.value);sbApplyFilters()"/>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Club</span>
+        <input type="text" id="sb-club" class="filter-input" placeholder="Nom du club..."
+          oninput="sbClubQuery=this.value;sbApplyFilters()"/>
+      </div>
+
+      <div id="sb-custom-criteria"></div>
+
+      <div class="filter-group">
+        <select class="filter-select" id="sb-add-criterion-select" onchange="if(this.value)sbAddCriterion(this.value);this.value='';">
+          <option value="">+ Ajouter un critère…</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="fdiv"/>
+    <button class="reset-btn" onclick="sbResetFilters()">Réinitialiser</button>
+
+    <div class="filter-group" style="margin-top:20px;">
+      <span class="filter-label">Résultats (<span id="sb-result-count">0</span>)</span>
+      <div id="sb-resultats-liste"><div class="sb-empty">Chargement…</div></div>
+    </div>
   </div>
 
-  <!-- PROFIL -->
-  <div id="profil-content" style="display:none;"></div>
+  <!-- MAIN -->
+  <div class="main">
+    <div class="page">
+      <!-- LOADING -->
+      <div class="loading" id="loading">
+        <div class="loading-spin"></div>
+        <p>Chargement du profil...</p>
+      </div>
 
-  <!-- NOT FOUND -->
-  <div class="not-found" id="not-found" style="display:none;">
-    <h2>Profil introuvable</h2>
-    <p>Ce joueur n'existe pas ou son profil n'est pas public.</p>
-    <a href="footlight-recherche.html"><button class="btn primary">Retour à la recherche</button></a>
+      <!-- PROFIL -->
+      <div id="profil-content" style="display:none;"></div>
+
+      <!-- NOT FOUND -->
+      <div class="not-found" id="not-found" style="display:none;">
+        <h2>Profil introuvable</h2>
+        <p>Ce joueur n'existe pas ou son profil n'est pas public.</p>
+        <a href="footlight-recherche.html"><button class="btn primary">Retour à la recherche</button></a>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -874,7 +1009,216 @@ async function renderProfil(j, isOwner) {
   }
 }
 
+// ── BARRE LATÉRALE DE RECHERCHE ──
+// Permet de changer de profil sans revenir à la page recherche. Réutilise
+// db, normalizeName et getAge déjà définis plus haut. Fait sa propre
+// vérification de session (indépendante de loadProfil()) pour éviter toute
+// dépendance à son ordre d'exécution.
+let sbAllPlayers = [];
+let sbFilters = { poste: 'tous', niveau: 'tous' };
+let sbMinButs = 0;
+let sbMinMatchs = 0;
+let sbMinAge = null;
+let sbMaxAge = null;
+let sbSearchQuery = '';
+let sbClubQuery = '';
+let sbCustomCriteria = {};
+let sbCanAdvanced = false;
+
+const SB_CRITERIA_DEFS = [
+  { key: 'minutes_jouees', label: 'Minutes jouées (min)', column: 'minutes_jouees', type: 'range', min: 0, max: 3000, step: 50, direction: 'min' },
+  { key: 'titularisations', label: 'Titularisations (min)', column: 'titularisations', type: 'range', min: 0, max: 40, step: 1, direction: 'min' },
+  { key: 'passes_decisives', label: 'Passes décisives (min)', column: 'passes_decisives', type: 'range', min: 0, max: 30, step: 1, direction: 'min' },
+  { key: 'cartons_jaunes', label: 'Cartons jaunes (max)', column: 'cartons_jaunes', type: 'range', min: 0, max: 20, step: 1, direction: 'max' },
+  { key: 'cartons_rouges', label: 'Cartons rouges (max)', column: 'cartons_rouges', type: 'range', min: 0, max: 5, step: 1, direction: 'max' },
+  { key: 'vitesse_max_kmh', label: 'Vitesse max km/h (min)', column: 'vitesse_max_kmh', type: 'range', min: 0, max: 40, step: 0.5, direction: 'min' },
+  { key: 'vma_kmh', label: 'VMA km/h (min)', column: 'vma_kmh', type: 'range', min: 0, max: 25, step: 0.5, direction: 'min' },
+  { key: 'distance_moyenne_km', label: 'Distance moy./match km (min)', column: 'distance_moyenne_km', type: 'range', min: 0, max: 15, step: 0.5, direction: 'min' },
+  { key: 'sprints_match', label: 'Sprints/match (min)', column: 'sprints_match', type: 'range', min: 0, max: 40, step: 1, direction: 'min' },
+  { key: 'pied_fort', label: 'Pied fort', column: 'pied_fort', type: 'select', options: [{v:'Droit',l:'Droit'},{v:'Gauche',l:'Gauche'},{v:'Les deux',l:'Les deux'}] },
+  { key: 'badge', label: 'Badge minimum', column: 'badge', type: 'select', tierOrder: true, options: [{v:'declaratif',l:'⚪ Déclaratif'},{v:'video',l:'🎥 Vérifié vidéo'},{v:'gps',l:'📍 Vérifié GPS'},{v:'elite',l:'⭐ Elite'}] },
+];
+
+function sbSetFilter(key, val, el) {
+  sbFilters[key] = val;
+  document.querySelectorAll('#sb-'+key+' .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  sbApplyFilters();
+}
+
+function sbMatchesCustomCriteria(j) {
+  for (const key in sbCustomCriteria) {
+    const def = SB_CRITERIA_DEFS.find(d => d.key === key);
+    const val = sbCustomCriteria[key];
+    if (!def || val == null || val === '') continue;
+    if (def.type === 'range') {
+      const jv = j[def.column] || 0;
+      if (def.direction === 'min' && jv < val) return false;
+      if (def.direction === 'max' && jv > val) return false;
+    } else if (def.type === 'select') {
+      if (def.tierOrder) {
+        const order = def.options.map(o => o.v);
+        if (order.indexOf(j[def.column]) < order.indexOf(val)) return false;
+      } else if (j[def.column] !== val) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function sbApplyFilters() {
+  const filtered = sbAllPlayers.filter(j => {
+    if (sbFilters.poste !== 'tous' && (j.poste||'autre') !== sbFilters.poste) return false;
+    if (sbFilters.niveau !== 'tous' && (j.niveau||'N2') !== sbFilters.niveau) return false;
+    if (sbMinAge != null || sbMaxAge != null) {
+      const age = getAge(j.date_naissance);
+      if (age == null) return false;
+      if (sbMinAge != null && age < sbMinAge) return false;
+      if (sbMaxAge != null && age > sbMaxAge) return false;
+    }
+    if (sbCanAdvanced) {
+      if ((j.buts||0) < sbMinButs) return false;
+      if ((j.matchs_joues||0) < sbMinMatchs) return false;
+      if (sbClubQuery.trim() && !(j.club||'').toLowerCase().includes(sbClubQuery.trim().toLowerCase())) return false;
+      if (!sbMatchesCustomCriteria(j)) return false;
+    }
+    if (sbSearchQuery.trim()) {
+      const q = normalizeName(sbSearchQuery);
+      const fullName = normalizeName((j.prenom||'') + ' ' + (j.nom||''));
+      if (fullName.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+  sbRenderResults(filtered);
+}
+
+function sbRenderResults(players) {
+  const box = document.getElementById('sb-resultats-liste');
+  document.getElementById('sb-result-count').textContent = players.length;
+  if (!players.length) {
+    box.innerHTML = '<div class="sb-empty">Aucun joueur trouvé.</div>';
+    return;
+  }
+  const currentId = new URLSearchParams(window.location.search).get('id');
+  box.innerHTML = players.slice(0, 50).map(j => {
+    const clubTxt = j.club || '—';
+    const niveauTxt = j.niveau || '';
+    const isCurrent = currentId && String(j.id) === String(currentId);
+    return `<a class="result-item${isCurrent?' current':''}" href="footlight-profil.html?id=${j.id}">
+      <div class="ri-name">${j.prenom||''} ${j.nom||''}</div>
+      <div class="ri-meta">${(j.poste||'').replace(/_/g,' ')} · ${clubTxt}${niveauTxt?' · '+niveauTxt:''}</div>
+    </a>`;
+  }).join('') + (players.length > 50 ? `<div class="sb-empty">+ ${players.length - 50} autres — affine ta recherche.</div>` : '');
+}
+
+function sbPopulateAddCriterionSelect() {
+  const sel = document.getElementById('sb-add-criterion-select');
+  if (!sel) return;
+  const added = new Set(Object.keys(sbCustomCriteria));
+  sel.innerHTML = '<option value="">+ Ajouter un critère…</option>' +
+    SB_CRITERIA_DEFS.filter(d => !added.has(d.key)).map(d => `<option value="${d.key}">${d.label}</option>`).join('');
+}
+
+function sbAddCriterion(key) {
+  const def = SB_CRITERIA_DEFS.find(d => d.key === key);
+  if (!def) return;
+  sbCustomCriteria[key] = def.type === 'range' ? def.min : '';
+  const wrap = document.createElement('div');
+  wrap.className = 'filter-group';
+  wrap.id = 'sb-criterion-' + key;
+  if (def.type === 'range') {
+    wrap.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="filter-label">${def.label}</span>
+        <span onclick="sbRemoveCriterion('${key}')" style="cursor:pointer;color:var(--muted);font-size:0.9rem;" title="Retirer ce critère">✕</span>
+      </div>
+      <div class="range-wrap">
+        <div class="range-row"><span>${def.min}</span><span id="sb-crit-val-${key}">${def.min}</span></div>
+        <input type="range" min="${def.min}" max="${def.max}" value="${def.min}" step="${def.step}"
+          oninput="document.getElementById('sb-crit-val-${key}').textContent=this.value;sbCustomCriteria['${key}']=parseFloat(this.value);sbApplyFilters()"/>
+      </div>`;
+  } else {
+    wrap.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="filter-label">${def.label}</span>
+        <span onclick="sbRemoveCriterion('${key}')" style="cursor:pointer;color:var(--muted);font-size:0.9rem;" title="Retirer ce critère">✕</span>
+      </div>
+      <select class="filter-select" onchange="sbCustomCriteria['${key}']=this.value;sbApplyFilters()">
+        <option value="">—</option>
+        ${def.options.map(o => `<option value="${o.v}">${o.l}</option>`).join('')}
+      </select>`;
+  }
+  document.getElementById('sb-custom-criteria').appendChild(wrap);
+  sbPopulateAddCriterionSelect();
+  sbApplyFilters();
+}
+
+function sbRemoveCriterion(key) {
+  delete sbCustomCriteria[key];
+  const el = document.getElementById('sb-criterion-' + key);
+  if (el) el.remove();
+  sbPopulateAddCriterionSelect();
+  sbApplyFilters();
+}
+
+function sbResetFilters() {
+  sbFilters = { poste: 'tous', niveau: 'tous' };
+  sbMinButs = 0; sbMinMatchs = 0; sbMinAge = null; sbMaxAge = null;
+  sbSearchQuery = ''; sbClubQuery = ''; sbCustomCriteria = {};
+  document.getElementById('sb-poste').value = 'tous';
+  document.querySelectorAll('#sb-niveau .chip').forEach(c => c.classList.remove('active'));
+  document.querySelector('#sb-niveau .chip[data-val="tous"]').classList.add('active');
+  document.querySelectorAll('.sidebar input[type=range]').forEach(r => r.value = 0);
+  document.getElementById('sb-buts-val').textContent = '0';
+  document.getElementById('sb-matchs-val').textContent = '0';
+  document.getElementById('sb-club').value = '';
+  document.getElementById('sb-search').value = '';
+  document.getElementById('sb-age-min').value = '';
+  document.getElementById('sb-age-max').value = '';
+  document.getElementById('sb-custom-criteria').innerHTML = '';
+  sbPopulateAddCriterionSelect();
+  sbApplyFilters();
+}
+
+function sbLockAdvancedFilters() {
+  document.getElementById('sb-advanced-filters').innerHTML = `
+    <div style="background:rgba(31,111,235,0.06);border:1px solid rgba(31,111,235,0.2);border-radius:10px;padding:14px;text-align:center;">
+      <p style="font-size:0.75rem;color:var(--blue-l);margin-bottom:8px;">🔒 Filtres avancés réservés aux recruteurs Pro et Premium</p>
+      <a href="footlight-paiement.html?plan=pro"><button style="padding:7px 14px;border-radius:8px;font-size:0.75rem;font-weight:600;background:var(--blue);border:none;color:#fff;cursor:pointer;">Passer au plan Pro</button></a>
+    </div>
+  `;
+}
+
+async function sbLoadJoueurs() {
+  const { data, error } = await db
+    .from('joueurs')
+    .select('id,prenom,nom,poste,club,niveau,buts,matchs_joues,minutes_jouees,titularisations,passes_decisives,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,badge,pied_fort,date_naissance')
+    .eq('profil_public', true)
+    .order('matchs_joues', { ascending: false });
+  if (error || !data) {
+    document.getElementById('sb-resultats-liste').innerHTML = '<div class="sb-empty">Erreur de chargement.</div>';
+    return;
+  }
+  sbAllPlayers = data;
+  sbApplyFilters();
+}
+
+async function initSidebarRecherche() {
+  try {
+    const { data: { user } } = await db.auth.getUser();
+    if (user) {
+      const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
+      if (recruteur) sbCanAdvanced = recruteur.plan === 'pro' || recruteur.plan === 'premium';
+    }
+  } catch(e) {}
+  if (!sbCanAdvanced) sbLockAdvancedFilters();
+  sbPopulateAddCriterionSelect();
+  sbLoadJoueurs();
+}
+
 loadProfil();
+initSidebarRecherche();
 </script>
 </body>
 </html>
