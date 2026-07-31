@@ -489,17 +489,40 @@ function normalizeClub(s) {
 const CLUB_MOTS_GENERIQUES = new Set([
   'fc','ofc','afc','asc','ac','sc','csc','cs','us','uso','as','ol','om','rc',
   'fco','osc','sco','ent','entente','athletic','olympique','football','club',
-  'sporting','racing','stade','sm',
+  'sporting','racing','stade',
   'sur','sous','en','la','le','les','de','du','des',
 ]);
+// Remarque : "sm" a \u00e9t\u00e9 volontairement retir\u00e9 de cette liste. Le stripper
+// aurait permis \u00e0 "SM CAEN" de matcher "Stade Malherbe Caen" \u00e9crit en
+// toutes lettres, mais r\u00e9duisait aussi "SM CAEN" au seul mot "caen", qui
+// devenait alors un sous-ensemble de n'importe quel autre club contenant
+// "caen" (ex: "As Ptt Caen", un club diff\u00e9rent) \u2192 faux positif dangereux.
+// Taper "Caen" seul ou "SM Caen" continue de fonctionner sans ce strip.
+
+// Remplacements mot-\u00e0-mot (abr\u00e9viation \u2194 forme longue) : ne changent pas le
+// nombre de mots, donc sans risque pour la comparaison par sous-ensemble
+// (contrairement \u00e0 une expansion 1 mot \u2192 plusieurs mots, voir
+// CLUB_SYNONYMES_COMPLETS ci-dessous).
+const CLUB_MOTS_REMPLACEMENT = {
+  st: 'saint',
+  ste: 'sainte',
+  gd: 'grand',
+  // "Saint-Philibert" et "Saint-Philbert" existent tous deux comme noms de
+  // lieu r\u00e9els en France, mais seul "Philbert" (sans "i") appara\u00eet dans le
+  // calendrier officiel actuel ("St Philbert Gd Lieu") : on tol\u00e8re la
+  // confusion fr\u00e9quente sans risque de collision avec un autre club.
+  philibert: 'philbert',
+};
 
 // Certains clubs sont d\u00e9sign\u00e9s dans le calendrier officiel par un sigle qui
 // ne partage aucun mot avec leur nom complet (ex: "QRM" pour "Quevilly Rouen
-// M\u00e9tropole") \u2014 le rapprochement par mots communs \u00e9choue sinon selon que le
-// joueur tape le sigle ou le nom complet.
-const CLUB_ALIAS_MOTS = {
-  qrm: ['quevilly', 'rouen', 'metropole'],
-};
+// M\u00e9tropole"). Contrairement \u00e0 CLUB_MOTS_REMPLACEMENT, on ne peut pas se
+// contenter d'un remplacement mot-\u00e0-mot : traiter "qrm" comme \u00e9quivalent \u00e0
+// "quevilly"+"rouen"+"metropole" ferait que le seul mot "rouen" (ex: "FC
+// ROUEN 1899") deviendrait un sous-ensemble de cet ensemble \u00e0 3 mots \u2192 faux
+// positif entre deux clubs diff\u00e9rents. On exige donc une \u00e9galit\u00e9 EXACTE de
+// signature (nom entier), jamais une simple inclusion.
+const CLUB_SYNONYMES_COMPLETS = { qrm: ['quevilly', 'rouen', 'metropole'] };
 
 // D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
 // \u00e0 l'ordre des mots, aux mots manquants (ex: "Pontivy", "GSI Pontivy" et
@@ -507,11 +530,21 @@ const CLUB_ALIAS_MOTS = {
 // de d\u00e9nomination qui varient d'une source \u00e0 l'autre pour le m\u00eame club.
 function clubWords(s) {
   const mots = normalizeClub(s).split(' ').filter(Boolean);
-  const avecAlias = mots.flatMap(w => CLUB_ALIAS_MOTS[w] || [w]);
-  const sansGeneriques = avecAlias.filter(w => !CLUB_MOTS_GENERIQUES.has(w));
-  return sansGeneriques.length ? sansGeneriques : avecAlias;
+  const remplaces = mots.map(w => CLUB_MOTS_REMPLACEMENT[w] || w);
+  const sansGeneriques = remplaces.filter(w => !CLUB_MOTS_GENERIQUES.has(w));
+  return sansGeneriques.length ? sansGeneriques : remplaces;
+}
+// Signature d'identit\u00e9 d'un club (mots tri\u00e9s, sigle r\u00e9solu vers son nom
+// complet). Deux clubs avec la m\u00eame signature sont consid\u00e9r\u00e9s comme le
+// m\u00eame club, sans passer par la comparaison par sous-ensemble plus permissive.
+function clubIdentitySignature(s) {
+  const cle = clubWords(s).slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? synonyme.slice().sort().join(' ') : cle;
 }
 function clubWordsMatch(a, b) {
+  const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
+  if (sigA && sigB && sigA === sigB) return true;
   const wa = clubWords(a), wb = clubWords(b);
   if (!wa.length || !wb.length) return false;
   const setA = new Set(wa), setB = new Set(wb);
@@ -657,11 +690,11 @@ async function genererCalendrier() {
   const rencontres = new Map();
   matchsClub.forEach(row => {
     if (clubWordsMatch(row.equipe_domicile, club)) {
-      const cle = clubWords(row.equipe_domicile).sort().join(' ') + '|' + row.division;
+      const cle = clubIdentitySignature(row.equipe_domicile) + '|' + row.division;
       if (!rencontres.has(cle)) rencontres.set(cle, { nom: row.equipe_domicile, division: row.division });
     }
     if (clubWordsMatch(row.equipe_exterieur, club)) {
-      const cle = clubWords(row.equipe_exterieur).sort().join(' ') + '|' + row.division;
+      const cle = clubIdentitySignature(row.equipe_exterieur) + '|' + row.division;
       if (!rencontres.has(cle)) rencontres.set(cle, { nom: row.equipe_exterieur, division: row.division });
     }
   });
