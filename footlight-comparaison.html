@@ -127,6 +127,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const COULEURS = {
   'gardien':'#1f6feb','defenseur_central':'#da3633',
   'lateral_droit':'#8957e5','lateral_gauche':'#8957e5',
+  'piston_droit':'#8957e5','piston_gauche':'#8957e5',
   'milieu_central':'#238636','milieu_offensif':'#238636',
   'milieu_defensif':'#238636','milieu_gauche':'#238636',
   'ailier_droit':'#d29922','ailier_gauche':'#d29922',
@@ -146,7 +147,7 @@ let picked = { a: null, b: null };
 let seasonsFor = { a: [], b: [] };
 let selectedSeason = { a: null, b: null };
 
-const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
+const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','piston_droit','piston_gauche','milieu_defensif'];
 
 const ROWS_COMMON_TOP = [
   { label: 'Club', get: j => j.club || '—' },
