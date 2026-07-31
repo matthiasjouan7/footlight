@@ -843,6 +843,22 @@ async function checkSession() {
     }
   }
 
+  // Pré-remplit niveau/poste depuis l'URL (ex: lien "Ligue 3" ou un poste
+  // cliqué depuis la barre latérale d'un profil joueur).
+  const urlParams = new URLSearchParams(window.location.search);
+  const niveauParam = urlParams.get('niveau');
+  const posteParam = urlParams.get('poste');
+  if (niveauParam) {
+    filters.niveau = niveauParam;
+    document.querySelectorAll('#f-niveau .chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.val === niveauParam);
+    });
+  }
+  if (posteParam) {
+    filters.poste = posteParam;
+    document.getElementById('f-poste').value = posteParam;
+  }
+
   populateAddCriterionSelect();
   loadJoueurs();
 }

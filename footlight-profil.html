@@ -188,7 +188,7 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 
     <div class="filter-group">
       <span class="filter-label">Poste</span>
-      <select class="filter-select" id="sb-poste" onchange="sbFilters.poste=this.value;sbApplyFilters()">
+      <select class="filter-select" id="sb-poste" onchange="sbGoToRecherche('poste', this.value)">
         <option value="tous">Tous les postes</option>
         <option value="gardien">Gardien</option>
         <option value="defenseur_central">Défenseur central</option>
@@ -210,11 +210,11 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       <span class="filter-label">Niveau</span>
       <div class="chips" id="sb-niveau">
         <div class="chip active" data-val="tous" onclick="sbSetFilter('niveau','tous',this)">Tous</div>
-        <div class="chip" data-val="Ligue 3" onclick="sbSetFilter('niveau','Ligue 3',this)">Ligue 3</div>
-        <div class="chip" data-val="N1" onclick="sbSetFilter('niveau','N1',this)">N1</div>
-        <div class="chip" data-val="N2" onclick="sbSetFilter('niveau','N2',this)">N2</div>
-        <div class="chip" data-val="R1" onclick="sbSetFilter('niveau','R1',this)">R1</div>
-        <div class="chip" data-val="Autre" onclick="sbSetFilter('niveau','Autre',this)">Autre</div>
+        <div class="chip" data-val="Ligue 3" onclick="sbGoToRecherche('niveau','Ligue 3')">Ligue 3</div>
+        <div class="chip" data-val="N1" onclick="sbGoToRecherche('niveau','N1')">N1</div>
+        <div class="chip" data-val="N2" onclick="sbGoToRecherche('niveau','N2')">N2</div>
+        <div class="chip" data-val="R1" onclick="sbGoToRecherche('niveau','R1')">R1</div>
+        <div class="chip" data-val="Autre" onclick="sbGoToRecherche('niveau','Autre')">Autre</div>
       </div>
     </div>
 
@@ -1044,6 +1044,20 @@ function sbSetFilter(key, val, el) {
   document.querySelectorAll('#sb-'+key+' .chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   sbApplyFilters();
+}
+
+// Niveau et poste sont des filtres "parcourir une catégorie" plutôt que
+// "retrouver un joueur précis" : mieux vaut emmener directement vers la
+// page recherche complète (cartes, tri...) déjà filtrée, plutôt que de
+// limiter l'affichage à la petite liste de la barre latérale. "tous" reste
+// géré localement (pas de raison de quitter la page pour ça).
+function sbGoToRecherche(key, val) {
+  if (val === 'tous') {
+    sbFilters[key] = 'tous';
+    sbApplyFilters();
+    return;
+  }
+  window.location.href = 'footlight-recherche.html?' + key + '=' + encodeURIComponent(val);
 }
 
 function sbMatchesCustomCriteria(j) {
