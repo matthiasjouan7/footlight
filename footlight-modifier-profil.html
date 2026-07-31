@@ -471,7 +471,7 @@ function normalizeName(s) {
 // "Us Creteil Football 2").
 function normalizeClub(s) {
   return normalizeName(s)
-    .replace(/[.']/g, ' ')
+    .replace(/[.'/-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/\s\d+$/, '');
@@ -481,10 +481,15 @@ function normalizeClub(s) {
 // ne servent pas \u00e0 identifier le club \u2014 seul le nom de ville/lieu compte
 // vraiment. Ex: "Olympique Saumur" et "SAUMUR OFC" d\u00e9signent le m\u00eame club :
 // une fois ces mots retir\u00e9s, il ne reste que "saumur" des deux c\u00f4t\u00e9s.
+// Inclut aussi les connecteurs g\u00e9ographiques ("sur", "en"...) car le
+// calendrier officiel abr\u00e8ge parfois "sur" en "/" (ex: "LA ROCHE/YON" pour
+// "La Roche-sur-Yon") \u2014 sans ce mot dans la liste, la comparaison \u00e9choue
+// selon que le joueur l'\u00e9crit en toutes lettres ou pas.
 const CLUB_MOTS_GENERIQUES = new Set([
   'fc','ofc','afc','asc','ac','sc','csc','cs','us','uso','as','ol','om','rc',
   'fco','osc','sco','ent','entente','athletic','olympique','football','club',
   'sporting','racing','stade',
+  'sur','sous','en','la','le','les','de','du','des',
 ]);
 
 // D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
