@@ -488,9 +488,17 @@ function normalizeClub(s) {
 const CLUB_MOTS_GENERIQUES = new Set([
   'fc','ofc','afc','asc','ac','sc','csc','cs','us','uso','as','ol','om','rc',
   'fco','osc','sco','ent','entente','athletic','olympique','football','club',
-  'sporting','racing','stade',
+  'sporting','racing','stade','sm',
   'sur','sous','en','la','le','les','de','du','des',
 ]);
+
+// Certains clubs sont d\u00e9sign\u00e9s dans le calendrier officiel par un sigle qui
+// ne partage aucun mot avec leur nom complet (ex: "QRM" pour "Quevilly Rouen
+// M\u00e9tropole") \u2014 le rapprochement par mots communs \u00e9choue sinon selon que le
+// joueur tape le sigle ou le nom complet.
+const CLUB_ALIAS_MOTS = {
+  qrm: ['quevilly', 'rouen', 'metropole'],
+};
 
 // D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
 // \u00e0 l'ordre des mots, aux mots manquants (ex: "Pontivy", "GSI Pontivy" et
@@ -498,8 +506,9 @@ const CLUB_MOTS_GENERIQUES = new Set([
 // de d\u00e9nomination qui varient d'une source \u00e0 l'autre pour le m\u00eame club.
 function clubWords(s) {
   const mots = normalizeClub(s).split(' ').filter(Boolean);
-  const sansGeneriques = mots.filter(w => !CLUB_MOTS_GENERIQUES.has(w));
-  return sansGeneriques.length ? sansGeneriques : mots;
+  const avecAlias = mots.flatMap(w => CLUB_ALIAS_MOTS[w] || [w]);
+  const sansGeneriques = avecAlias.filter(w => !CLUB_MOTS_GENERIQUES.has(w));
+  return sansGeneriques.length ? sansGeneriques : avecAlias;
 }
 function clubWordsMatch(a, b) {
   const wa = clubWords(a), wb = clubWords(b);
