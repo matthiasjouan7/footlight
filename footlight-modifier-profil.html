@@ -523,26 +523,32 @@ const CLUB_MOTS_REMPLACEMENT = {
 
 // Certains clubs sont d\u00e9sign\u00e9s dans le calendrier officiel par un sigle qui
 // ne partage aucun mot avec leur nom complet (ex: "QRM" pour "Quevilly Rouen
-// M\u00e9tropole", "ASTDV" pour "AS Touques Deauville"). Contrairement \u00e0
-// CLUB_MOTS_REMPLACEMENT, on ne peut pas se contenter d'un remplacement
-// mot-\u00e0-mot : traiter "qrm" comme \u00e9quivalent \u00e0 "quevilly"+"rouen"+
-// "metropole" ferait que le seul mot "rouen" (ex: "FC ROUEN 1899")
-// deviendrait un sous-ensemble de cet ensemble \u00e0 3 mots \u2192 faux positif
-// entre deux clubs diff\u00e9rents. On exige donc une \u00e9galit\u00e9 EXACTE de
-// signature (nom entier), jamais une simple inclusion.
+// M\u00e9tropole", "ASTDV" pour "AS Touques Deauville"). "elargi: true" autorise
+// en plus la comparaison par sous-ensemble habituelle (donc un mot seul,
+// ex: "Deauville", suffit \u00e0 matcher) \u2014 s\u00fbr uniquement si aucun mot d\u00e9velopp\u00e9
+// ne colle par ailleurs \u00e0 un autre club, ou si le joueur pr\u00e9f\u00e8re qu'on lui
+// propose les clubs possibles plut\u00f4t que d'exiger le nom exact. "QRM" reste
+// volontairement "elargi: false" (\u00e9galit\u00e9 de signature exacte uniquement) :
+// son mot d\u00e9velopp\u00e9 "Rouen" collisionnerait avec le club diff\u00e9rent "FC
+// ROUEN 1899", ce qui ferait appara\u00eetre une fausse ambigu\u00eft\u00e9 \u00e0 chaque
+// joueur de FC Rouen qui g\u00e9n\u00e8re son calendrier.
 const CLUB_SYNONYMES_COMPLETS = {
-  qrm: ['quevilly', 'rouen', 'metropole'],
-  astdv: ['touques', 'deauville'],
+  qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
+  astdv: { mots: ['touques', 'deauville'], elargi: true },
   // "Les Sables Vf" (Les Sables-d'Olonne, Vend\u00e9e Football) \u2014 \u00e0 ne pas
   // confondre avec "Sable Fc" (Sabl\u00e9-sur-Sarthe), un club diff\u00e9rent pr\u00e9sent
-  // dans les m\u00eames donn\u00e9es : une \u00e9galit\u00e9 de signature exacte est requise ici
-  // pour ne jamais les confondre (contrairement \u00e0 un simple remplacement
-  // singulier/pluriel "sables"\u2192"sable", qui les aurait fait collisionner).
+  // dans les m\u00eames donn\u00e9es. "elargi: false" ici (contrairement \u00e0 Astdv) :
+  // ses mots d\u00e9velopp\u00e9s "sable" et "vendee" collent tous les deux \u00e0 d'autres
+  // clubs r\u00e9els du calendrier (Sable Fc, Fontenay Vend\u00e9e, Vend\u00e9e FC La
+  // Roche/Yon) \u2014 les \u00e9largir ferait remonter "Les Sables Vf" \u00e0 chaque
+  // recherche "Sable Fc", m\u00eame tap\u00e9e en entier. Comme "Sable Vend\u00e9e" et
+  // "Sables Vend\u00e9e" sont d\u00e9j\u00e0 enregistr\u00e9s ci-dessous comme cl\u00e9s exactes,
+  // ces deux formulations pr\u00e9cises fonctionnent d\u00e9j\u00e0 sans \u00e9largissement.
   // Deux cl\u00e9s (singulier et pluriel) pointent vers le m\u00eame club car un
   // joueur peut taper "Sable Vend\u00e9e" ou "Sables Vend\u00e9e" indiff\u00e9remment.
-  'sables vf': ['sable', 'vendee'],
-  'sable vendee': ['sable', 'vendee'],
-  'sables vendee': ['sable', 'vendee'],
+  'sables vf': { mots: ['sable', 'vendee'], elargi: false },
+  'sable vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'sables vendee': { mots: ['sable', 'vendee'], elargi: false },
 };
 
 // D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
@@ -561,12 +567,22 @@ function clubWords(s) {
 function clubIdentitySignature(s) {
   const cle = clubWords(s).slice().sort().join(' ');
   const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
-  return synonyme ? synonyme.slice().sort().join(' ') : cle;
+  return synonyme ? synonyme.mots.slice().sort().join(' ') : cle;
+}
+// Mots d'un club, augment\u00e9s du nom d\u00e9velopp\u00e9 pour les sigles marqu\u00e9s
+// "elargi: true" (voir CLUB_SYNONYMES_COMPLETS) : permet \u00e0 clubWordsMatch
+// d'accepter un mot seul du nom complet (ex: "Deauville") sans risquer les
+// collisions qu'une expansion syst\u00e9matique (comme pour QRM) cr\u00e9erait.
+function clubWordsElargi(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
 }
 function clubWordsMatch(a, b) {
   const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
   if (sigA && sigB && sigA === sigB) return true;
-  const wa = clubWords(a), wb = clubWords(b);
+  const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
   if (!wa.length || !wb.length) return false;
   const setA = new Set(wa), setB = new Set(wb);
   const small = wa.length <= wb.length ? setA : setB;
@@ -601,7 +617,7 @@ function clubWordsPourSuggestion(s) {
   const mots = clubWords(s);
   const cle = mots.slice().sort().join(' ');
   const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
-  return synonyme ? [...mots, ...synonyme] : mots;
+  return synonyme ? [...mots, ...synonyme.mots] : mots;
 }
 function suggestClubs(inputValue, clubs) {
   const iw = clubWords(inputValue);
