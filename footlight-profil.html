@@ -510,10 +510,9 @@ async function renderProfil(j, isOwner) {
         ${isDefensif ? `
         <div class="stat-card"><div class="stat-val" style="color:var(--red)">${s.buts_encaisses_avec ?? '—'}</div><div class="stat-lbl">Buts encaissés</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.clean_sheets ?? '—'}</div><div class="stat-lbl">Clean sheets</div></div>
-        ` : `
+        ` : ''}
         <div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${s.buts||0}</div><div class="stat-lbl">Buts</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${s.passes_decisives||0}</div><div class="stat-lbl">Passes déc.</div></div>
-        `}
         <div class="stat-card"><div class="stat-val">${s.minutes_jouees||0}</div><div class="stat-lbl">Minutes</div></div>
         <div class="stat-card"><div class="stat-val">${s.titularisations||0}</div><div class="stat-lbl">Titularisations</div></div>
         <div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${s.cartons_jaunes||0}</div><div class="stat-lbl">Cartons jaunes</div></div>
@@ -537,6 +536,7 @@ async function renderProfil(j, isOwner) {
           ${isDefensif ? ratioCardSorted([
             { displayVal: ratioEncaissesMatch != null ? ratioEncaissesMatch.toFixed(2) : null, label: 'Buts encaissés / match', rawValue: ratioEncaissesMatch, tiers: {elite:0.5, gold:1.0}, invert: true, title: 'En moyenne, nombre de buts encaissés par l\'équipe à chaque match où il joue.' },
             { displayVal: pctCleanSheet != null ? pctCleanSheet+'%' : null, label: '% clean sheet (titularisations)', rawValue: pctCleanSheet, tiers: {elite:40, gold:30}, invert: false, title: 'Pourcentage de ses titularisations où l\'équipe n\'a encaissé aucun but.' },
+            { displayVal: contribution, label: 'Buts + passes décisives', rawValue: s.matchs_joues > 0 ? contribution / s.matchs_joues : null, tiers: {elite:0.3, gold:0.15}, invert: false, always: true, title: 'Total de buts marqués et passes décisives sur la saison — un poste défensif peut aussi contribuer offensivement.' },
             { displayVal: ratioCartons != null ? ratioCartons.toFixed(2) : null, label: 'Cartons / match (discipline)', rawValue: ratioCartons, tiers: {elite:0.15, gold:0.30}, invert: true, title: 'En moyenne, nombre de cartons (jaunes + rouges) reçus par match joué.' },
             { displayVal: tauxPresence != null ? tauxPresence+'%' : null, label: 'Taux de présence', rawValue: tauxPresence, tiers: {elite:85, gold:60}, invert: false, title: 'Pourcentage des matchs de l\'équipe cette saison où il a été utilisé.' },
             { displayVal: ptsAvecLui != null ? ptsAvecLui.toFixed(2) : null, label: 'Points pris / match (moyenne)', rawValue: ptsAvecLui, tiers: {elite:2.2, gold:1.5}, invert: false, title: 'En moyenne, nombre de points pris par l\'équipe (3 victoire, 1 nul) sur les matchs où il joue — déduit du score de ses fiches de match.' },
