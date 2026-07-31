@@ -179,6 +179,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
               <option value="defenseur_central">Défenseur central</option>
               <option value="lateral_droit">Latéral droit</option>
               <option value="lateral_gauche">Latéral gauche</option>
+              <option value="piston_droit">Piston droit</option>
+              <option value="piston_gauche">Piston gauche</option>
               <option value="milieu_defensif">Milieu défensif</option>
               <option value="milieu_central">Milieu central</option>
               <option value="milieu_offensif">Milieu offensif</option>
@@ -197,6 +199,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
               <option value="defenseur_central">Défenseur central</option>
               <option value="lateral_droit">Latéral droit</option>
               <option value="lateral_gauche">Latéral gauche</option>
+              <option value="piston_droit">Piston droit</option>
+              <option value="piston_gauche">Piston gauche</option>
               <option value="milieu_defensif">Milieu défensif</option>
               <option value="milieu_central">Milieu central</option>
               <option value="milieu_offensif">Milieu offensif</option>
@@ -816,7 +820,7 @@ function getSelectedSaisonText() {
   return val;
 }
 
-const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','milieu_defensif'];
+const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','piston_droit','piston_gauche','milieu_defensif'];
 
 function recomputeMatchsJoues() {
   const titu = parseInt(document.getElementById('s-titu').value) || 0;

@@ -528,9 +528,21 @@ body {
           <div class="pos-icon">🛡️</div>
           <div class="pos-name">Défenseur central</div>
         </div>
-        <div class="pos-card" onclick="selectPoste('lateral',this)">
+        <div class="pos-card" onclick="selectPoste('lateral_droit',this)">
           <div class="pos-icon">↔️</div>
-          <div class="pos-name">Latéral</div>
+          <div class="pos-name">Latéral droit</div>
+        </div>
+        <div class="pos-card" onclick="selectPoste('lateral_gauche',this)">
+          <div class="pos-icon">↔️</div>
+          <div class="pos-name">Latéral gauche</div>
+        </div>
+        <div class="pos-card" onclick="selectPoste('piston_droit',this)">
+          <div class="pos-icon">🏃</div>
+          <div class="pos-name">Piston droit</div>
+        </div>
+        <div class="pos-card" onclick="selectPoste('piston_gauche',this)">
+          <div class="pos-icon">🏃</div>
+          <div class="pos-name">Piston gauche</div>
         </div>
         <div class="pos-card" onclick="selectPoste('milieu_defensif',this)">
           <div class="pos-icon">⚙️</div>
@@ -544,9 +556,13 @@ body {
           <div class="pos-icon">✨</div>
           <div class="pos-name">Milieu off.</div>
         </div>
-        <div class="pos-card" onclick="selectPoste('ailier',this)">
+        <div class="pos-card" onclick="selectPoste('ailier_droit',this)">
           <div class="pos-icon">⚡</div>
-          <div class="pos-name">Ailier</div>
+          <div class="pos-name">Ailier droit</div>
+        </div>
+        <div class="pos-card" onclick="selectPoste('ailier_gauche',this)">
+          <div class="pos-icon">⚡</div>
+          <div class="pos-name">Ailier gauche</div>
         </div>
         <div class="pos-card" onclick="selectPoste('attaquant',this)">
           <div class="pos-icon">⚽</div>
@@ -587,11 +603,15 @@ body {
         <option value="">Aucun</option>
         <option value="gardien">Gardien</option>
         <option value="defenseur_central">Défenseur central</option>
-        <option value="lateral">Latéral</option>
+        <option value="lateral_droit">Latéral droit</option>
+        <option value="lateral_gauche">Latéral gauche</option>
+        <option value="piston_droit">Piston droit</option>
+        <option value="piston_gauche">Piston gauche</option>
         <option value="milieu_defensif">Milieu défensif</option>
         <option value="milieu_central">Milieu central</option>
         <option value="milieu_offensif">Milieu offensif</option>
-        <option value="ailier">Ailier</option>
+        <option value="ailier_droit">Ailier droit</option>
+        <option value="ailier_gauche">Ailier gauche</option>
         <option value="attaquant">Attaquant</option>
       </select>
     </div>
@@ -1137,7 +1157,7 @@ function checkPassword() {
 }
 
 // ── SÉLECTEURS ──
-const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral','milieu_defensif'];
+const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','piston_droit','piston_gauche','milieu_defensif'];
 
 function selectPoste(val, el) {
   selectedPoste = val;

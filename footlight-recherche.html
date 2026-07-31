@@ -139,6 +139,8 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
         <option value="defenseur_central">Défenseur central</option>
         <option value="lateral_droit">Latéral droit</option>
         <option value="lateral_gauche">Latéral gauche</option>
+        <option value="piston_droit">Piston droit</option>
+        <option value="piston_gauche">Piston gauche</option>
         <option value="milieu_defensif">Milieu défensif</option>
         <option value="milieu_central">Milieu central</option>
         <option value="milieu_offensif">Milieu offensif</option>
@@ -269,6 +271,8 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
           <option value="defenseur_central">Défenseur central</option>
           <option value="lateral_droit">Latéral droit</option>
           <option value="lateral_gauche">Latéral gauche</option>
+          <option value="piston_droit">Piston droit</option>
+          <option value="piston_gauche">Piston gauche</option>
           <option value="milieu_defensif">Milieu défensif</option>
           <option value="milieu_central">Milieu central</option>
           <option value="milieu_offensif">Milieu offensif</option>
@@ -343,6 +347,7 @@ function normalizeName(s) {
 const POSTE_DISPLAY = {
   'gardien':'Gardien','defenseur_central':'Défenseur',
   'lateral_droit':'Latéral','lateral_gauche':'Latéral',
+  'piston_droit':'Latéral','piston_gauche':'Latéral',
   'milieu_central':'Milieu','milieu_offensif':'Milieu',
   'milieu_defensif':'Milieu','milieu_gauche':'Milieu',
   'ailier_droit':'Attaquant','ailier_gauche':'Attaquant',
@@ -351,6 +356,7 @@ const POSTE_DISPLAY = {
 const COULEURS = {
   'gardien':'#1f6feb','defenseur_central':'#da3633',
   'lateral_droit':'#8957e5','lateral_gauche':'#8957e5',
+  'piston_droit':'#8957e5','piston_gauche':'#8957e5',
   'milieu_central':'#238636','milieu_offensif':'#238636',
   'milieu_defensif':'#238636','milieu_gauche':'#238636',
   'ailier_droit':'#d29922','ailier_gauche':'#d29922',
