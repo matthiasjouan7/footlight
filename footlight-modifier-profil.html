@@ -598,7 +598,9 @@ function clubWordsMatch(a, b) {
 let clubsCalendrierCache = null;
 async function loadClubsCalendrier() {
   if (clubsCalendrierCache) return clubsCalendrierCache;
-  const { data } = await db.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur');
+  const { data } = await fetchToutesLesLignes(() =>
+    db.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur')
+  );
   const set = new Set();
   (data || []).forEach(r => {
     if (r.equipe_domicile) set.add(r.equipe_domicile);
@@ -673,6 +675,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// R\u00e9cup\u00e8re toutes les lignes d'une requ\u00eate, m\u00eame au-del\u00e0 de la limite par
+// d\u00e9faut de lignes par page de Supabase/PostgREST (souvent 1000) : au-del\u00e0,
+// un calendrier complet (ex: tout le National 2, ~1450 lignes pour une
+// saison) serait silencieusement tronqu\u00e9 sans erreur ni avertissement \u2014 les
+// derniers groupes ins\u00e9r\u00e9s (ex: groupe H) dispara\u00eetraient du r\u00e9sultat alors
+// que les donn\u00e9es existent bel et bien en base. construireRequete doit
+// renvoyer une NOUVELLE requ\u00eate \u00e0 chaque appel (pas la m\u00eame r\u00e9utilis\u00e9e),
+// pour pouvoir encha\u00eener .range() sur une requ\u00eate pas encore ex\u00e9cut\u00e9e.
+async function fetchToutesLesLignes(construireRequete) {
+  const TAILLE_PAGE = 1000;
+  let toutes = [];
+  let page = 0;
+  while (true) {
+    const { data, error } = await construireRequete().range(page * TAILLE_PAGE, (page + 1) * TAILLE_PAGE - 1);
+    if (error) return { data: null, error };
+    toutes = toutes.concat(data || []);
+    if (!data || data.length < TAILLE_PAGE) break;
+    page++;
+  }
+  return { data: toutes, error: null };
+}
+
 // Cherche un match du calendrier officiel FFF \u00e0 cette date impliquant le
 // club du joueur. Retourne { adversaire, id } si trouv\u00e9 sans ambigu\u00eft\u00e9.
 // niveauJoueur (optionnel) l\u00e8ve l'ambigu\u00eft\u00e9 quand un m\u00eame nom de club existe
@@ -680,9 +704,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // "Sm Caen 2" en National 2, qui se rapprochent du m\u00eame nom une fois normalis\u00e9s).
 async function findCalendrierMatch(dateStr, clubJoueur, niveauJoueur) {
   if (!dateStr || !normalizeClub(clubJoueur)) return null;
-  let query = db.from('calendrier_officiel').select('*').eq('date_match', dateStr);
-  if (['N1', 'N2', 'Ligue 3'].includes(niveauJoueur)) query = query.eq('division', niveauJoueur);
-  const { data } = await query;
+  const { data } = await fetchToutesLesLignes(() => {
+    let q = db.from('calendrier_officiel').select('*').eq('date_match', dateStr);
+    if (['N1', 'N2', 'Ligue 3'].includes(niveauJoueur)) q = q.eq('division', niveauJoueur);
+    return q;
+  });
   if (!data || !data.length) return null;
   const candidats = data.filter(row =>
     clubWordsMatch(row.equipe_domicile, clubJoueur) || clubWordsMatch(row.equipe_exterieur, clubJoueur)
@@ -715,9 +741,11 @@ async function genererCalendrier() {
   btn.disabled = true;
   btn.textContent = 'Recherche...';
 
-  let query = db.from('calendrier_officiel').select('*').eq('saison', saison);
-  if (diviserParNiveau) query = query.eq('division', niveau);
-  const { data, error } = await query;
+  const { data, error } = await fetchToutesLesLignes(() => {
+    let q = db.from('calendrier_officiel').select('*').eq('saison', saison);
+    if (diviserParNiveau) q = q.eq('division', niveau);
+    return q;
+  });
 
   btn.disabled = false;
   btn.textContent = '📅 Générer mon calendrier depuis le calendrier officiel FFF';
