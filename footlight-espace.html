@@ -11,7 +11,7 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
 .logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
-.nav-links{display:flex;gap:16px;align-items:center;}
+.nav-links{display:flex;gap:16px;align-items:center;overflow-x:auto;min-width:0;scrollbar-width:none;-ms-overflow-style:none;}.nav-links::-webkit-scrollbar{display:none;}.nav-links a{flex-shrink:0;}
 .nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
 .nav-links a:hover{color:var(--text);}
 .page{max-width:800px;margin:0 auto;padding:76px 24px 60px;}

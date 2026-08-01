@@ -42,10 +42,11 @@ nav {
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   text-decoration: none;
 }
-.nav-links { display: flex; gap: 20px; align-items: center; }
+.nav-links { display: flex; gap: 20px; align-items: center; overflow-x: auto; min-width: 0; scrollbar-width: none; -ms-overflow-style: none; }
+.nav-links::-webkit-scrollbar { display: none; }
 .nav-links a {
   font-size: 0.82rem; color: var(--muted); text-decoration: none;
-  transition: color .2s;
+  transition: color .2s; flex-shrink: 0;
 }
 .nav-links a:hover { color: var(--text); }
 .nav-links a.active { color: var(--blue); }
