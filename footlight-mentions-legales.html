@@ -75,6 +75,15 @@ nav {
 .info-row span:first-child { color: var(--muted); }
 .info-row span:last-child { color: var(--text); font-weight: 500; }
 </style>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0d1117"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FootLight"/>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
 </head>
 <body>
 <nav>
