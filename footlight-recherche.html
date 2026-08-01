@@ -31,6 +31,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 
 /* SIDEBAR */
 .sidebar{border-right:1px solid var(--border);padding:20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;}
+/* Sur mobile, le layout passe en une seule colonne (voir .layout ci-dessus)
+   mais sans ceci, la sidebar restait en position:sticky sur toute la
+   hauteur de l'écran et masquait les résultats en dessous — impossible
+   de voir les joueurs sans comprendre qu'il fallait défiler la sidebar
+   elle-même plutôt que la page. */
+@media(max-width:800px){.sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border);}}
 .sidebar-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:16px;}
 .filter-group{margin-bottom:20px;}
 .filter-label{font-size:0.82rem;font-weight:600;margin-bottom:8px;display:block;}
