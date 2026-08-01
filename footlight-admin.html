@@ -43,6 +43,56 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
 </head>
 <body>
+<div id="fl-install-banner" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:300;background:#161b22;border:1px solid #30363d;border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.4);align-items:center;gap:12px;max-width:480px;margin:0 auto;">
+  <div style="font-size:1.6rem;line-height:1;flex-shrink:0;">📲</div>
+  <div style="flex:1;font-size:0.82rem;color:#e6edf3;" id="fl-install-text">Installe FootLight sur ton téléphone pour un accès plus rapide.</div>
+  <button id="fl-install-btn" style="padding:8px 14px;border-radius:8px;background:#1f6feb;border:none;color:#fff;font-size:0.8rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Installer</button>
+  <button id="fl-install-close" aria-label="Fermer" style="background:none;border:none;color:#8b949e;font-size:1rem;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
+</div>
+<script>
+(function(){
+  var KEY = 'fl_install_dismissed_at';
+  var DAYS = 14;
+  var dismissed = localStorage.getItem(KEY);
+  if (dismissed && (Date.now() - parseInt(dismissed,10)) < DAYS*24*60*60*1000) return;
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) return;
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var banner = document.getElementById('fl-install-banner');
+  var textEl = document.getElementById('fl-install-text');
+  var btn = document.getElementById('fl-install-btn');
+  var closeBtn = document.getElementById('fl-install-close');
+  var deferredPrompt = null;
+
+  function show() { if (banner) banner.style.display = 'flex'; }
+  function dismiss() {
+    localStorage.setItem(KEY, String(Date.now()));
+    if (banner) banner.style.display = 'none';
+  }
+  if (closeBtn) closeBtn.onclick = dismiss;
+
+  if (isIOS) {
+    if (textEl) textEl.textContent = "Installe FootLight : appuie sur Partager (\u2B06\uFE0F) puis \"Sur l'écran d'accueil\".";
+    if (btn) btn.style.display = 'none';
+    show();
+  } else {
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      show();
+    });
+    if (btn) btn.onclick = function() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function() {
+        deferredPrompt = null;
+        dismiss();
+      });
+    };
+  }
+})();
+</script>
+
 
 <nav>
   <a href="index.html" class="logo">FootLight</a>
