@@ -698,6 +698,16 @@ async function renderProfil(j, isOwner) {
       : (s.matchs_joues > 0 && s.points_avec_lui != null ? s.points_avec_lui / s.matchs_joues : null);
     const ratioPointsEquipeTotal = (s.matchs_equipe > 0 && s.points_equipe != null) ? s.points_equipe / s.matchs_equipe : null;
     const impactPointsReel = (ptsAvecLui != null && ratioPointsEquipeTotal != null) ? ptsAvecLui - ratioPointsEquipeTotal : null;
+    // Comme pour l'impact défensif, la comparaison à la moyenne globale de
+    // l'équipe dilue l'écart réel (ses propres matchs sont inclus dans cette
+    // moyenne). On calcule aussi "sans lui" : les points pris par l'équipe
+    // uniquement sur les matchs où il n'a pas joué, déduits du total saison.
+    const ptsAvecLuiTotal = matchsAvecScore.length > 0
+      ? matchsAvecScore.reduce((sum,m) => sum + (m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0), 0)
+      : s.points_avec_lui;
+    const ptsSansLuiTotal = (s.points_equipe != null && ptsAvecLuiTotal != null) ? s.points_equipe - ptsAvecLuiTotal : null;
+    const ptsSansLui = (matchsSansLui > 0 && ptsSansLuiTotal != null) ? ptsSansLuiTotal / matchsSansLui : null;
+    const impactPointsReelSansLui = (ptsAvecLui != null && ptsSansLui != null) ? ptsAvecLui - ptsSansLui : null;
 
     return `
       <div class="stats-grid">
@@ -848,7 +858,15 @@ async function renderProfil(j, isOwner) {
           <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
           <div style="font-size:0.75rem;color:${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).label}</div>
         </div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Points pris (3 victoire, 1 nul) déduits du score de ses fiches de match de championnat.</div>
+        ${impactPointsReelSansLui != null ? `
+        <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
+        <div class="info-row"><span class="info-key">Points pris/match sans lui</span><span class="info-val">${ptsSansLui.toFixed(2)}</span></div>
+        <div class="bar-item" style="margin-top:12px;">
+          <div class="bar-label-row"><span class="k">Différentiel avec lui - sans lui</span><span class="v" style="color:${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).color}">${impactPointsReelSansLui>=0?'+':''}${impactPointsReelSansLui.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).label}</div>
+        </div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Matchs sans lui déduits (matchs de l'équipe − matchs joués) : donnée approximative si des absences ne sont pas liées à des matchs manqués (blessure, banc...).</div>
+        ` : `<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Différentiel "sans lui" indisponible : il a joué la totalité (ou la quasi-totalité) des matchs de l'équipe cette saison, aucun match "sans lui" à comparer.</div>`}
       </div>` : `
       <div class="section">
         <div class="section-title">Impact collectif réel</div>
