@@ -1,8 +1,9 @@
 // Phase 1 : vérifie qu'on peut atteindre foot-national.com depuis GitHub
 // Actions (impossible à tester depuis l'environnement de dev) et inspecte
 // la structure réelle de la page avant d'écrire le vrai parseur.
-// N'écrit rien en base — se contente de logguer.
+// N'écrit rien en base — se contente de logguer + sauvegarder le HTML brut.
 import * as cheerio from 'cheerio';
+import { writeFile, mkdir } from 'node:fs/promises';
 
 const targetUrl = process.env.TARGET_URL;
 
@@ -28,18 +29,43 @@ if (!res.ok) {
   process.exit(1);
 }
 
-const html = await res.text();
+// fetch() ne respecte pas toujours le charset déclaré dans le Content-Type
+// pour le décodage automatique — beaucoup de vieux sites français (dont
+// celui-ci) servent de l'ISO-8859-1/Windows-1252, pas de l'UTF-8. On décode
+// donc manuellement en se basant sur l'en-tête, avec un repli raisonnable.
+const buffer = await res.arrayBuffer();
+const contentType = res.headers.get('content-type') || '';
+const charsetMatch = contentType.match(/charset=([^;]+)/i);
+const charset = (charsetMatch ? charsetMatch[1].trim().toLowerCase() : 'iso-8859-1');
+console.log(`Content-Type : ${contentType || '(absent)'} → charset utilisé : ${charset}`);
+
+let html;
+try {
+  html = new TextDecoder(charset).decode(buffer);
+} catch (e) {
+  console.warn(`Charset "${charset}" non reconnu par TextDecoder, repli sur iso-8859-1.`);
+  html = new TextDecoder('iso-8859-1').decode(buffer);
+}
+
 console.log(`Taille de la réponse : ${html.length} caractères`);
 
 const $ = cheerio.load(html);
 console.log(`Titre de la page : ${$('title').text().trim()}`);
 
-const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
-console.log('--- Extrait du texte visible de la page (4000 premiers caractères) ---');
-console.log(bodyText.slice(0, 4000));
-console.log('--- Fin de l\'extrait ---');
+const bodyText = $('body').text().replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
 
-// Repère grossièrement des motifs de score (ex: "2 - 1", "2-1") pour avoir
-// une première idée de la quantité de résultats présents sur la page.
-const scoreMatches = bodyText.match(/\d{1,2}\s*-\s*\d{1,2}/g) || [];
-console.log(`Motifs ressemblant à un score détectés : ${scoreMatches.length}`);
+// Repère les motifs de score (ex: "2 - 1") et affiche le texte autour de
+// chacun, pour voir à quoi ressemble une ligne de résultat sans avoir à
+// parcourir tout le menu de navigation qui précède le contenu utile.
+const scoreRegex = /.{60}\d{1,2}\s*-\s*\d{1,2}.{60}/g;
+const contexts = bodyText.match(scoreRegex) || [];
+console.log(`Motifs ressemblant à un score détectés : ${contexts.length}`);
+console.log('--- Contexte autour de chaque motif de score ---');
+contexts.forEach((c, i) => console.log(`[${i}] ...${c.replace(/\s+/g, ' ').trim()}...`));
+console.log('--- Fin ---');
+
+// Sauvegarde le HTML brut (décodé) comme artefact pour inspection manuelle
+// de la structure réelle (tableaux, classes CSS) avant d'écrire le parseur.
+await mkdir('output', { recursive: true });
+await writeFile('output/page.html', html, 'utf-8');
+console.log('HTML sauvegardé dans output/page.html (uploadé comme artefact).');
