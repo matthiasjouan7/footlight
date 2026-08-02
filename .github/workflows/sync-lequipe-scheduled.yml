@@ -2,10 +2,10 @@ name: Sync lequipe.fr -> calendrier_officiel (automatique)
 
 on:
   schedule:
-    # Chaque dimanche à 6h UTC — les matchs se jouent presque toujours le
-    # samedi pour ces championnats, donc la journée est jouée avant ce
-    # déclenchement.
-    - cron: "0 6 * * 0"
+    # Chaque lundi à 6h UTC — laisse une marge après les matchs du samedi
+    # (et d'éventuels matchs du dimanche) pour être sûr que les résultats
+    # sont bien finalisés avant de synchroniser.
+    - cron: "0 6 * * 1"
   workflow_dispatch: {}
 
 jobs:
@@ -15,12 +15,13 @@ jobs:
       fail-fast: false
       matrix:
         url:
+          # National 2 volontairement exclu pour l'instant : pas encore à
+          # jour vers le nouveau format à 8 groupes, on attend avant de
+          # l'automatiser (voir aussi les Actions manuelles de test/découverte
+          # dédiées à vérifier cette mise à jour).
           - "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-a/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-b/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-c/page-calendrier-resultats"
     steps:
       - uses: actions/checkout@v4
 
