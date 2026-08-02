@@ -1,0 +1,29 @@
+name: Discover foot-national.com URLs (test)
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "URLs candidates à tester, une par ligne (ou séparées par des virgules)"
+        required: true
+        type: string
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Tester les URLs candidates
+        working-directory: scripts
+        env:
+          CANDIDATE_URLS: ${{ inputs.urls }}
+        run: node discover-urls.js
