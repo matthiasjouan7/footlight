@@ -1,6 +1,6 @@
-// Inspecte la page lequipe.fr pour trouver la source de données la plus
-// fiable à parser : un bloc <script type="application/ld+json"> (JSON
-// valide, standard SEO) est bien préférable à un objet JS minifié.
+// Inspecte la structure d'une ligne de match complète sur lequipe.fr :
+// comment la date est associée à chaque match TeamScore (au niveau de la
+// journée entière, ou par match individuellement).
 import * as cheerio from 'cheerio';
 
 const targetUrl = process.env.TARGET_URL;
@@ -21,55 +21,30 @@ console.log(`Taille : ${html.length} caractères`);
 
 const $ = cheerio.load(html);
 
-const ldJsonScripts = $('script[type="application/ld+json"]');
-console.log(`Blocs application/ld+json trouvés : ${ldJsonScripts.length}`);
-ldJsonScripts.each(function (i) {
-  const content = $(this).html();
-  console.log(`--- ld+json [${i}] (${content.length} caractères) ---`);
-  try {
-    const parsed = JSON.parse(content);
-    console.log(JSON.stringify(parsed, null, 2).slice(0, 3000));
-  } catch (e) {
-    console.log('(non parseable) extrait: ' + content.slice(0, 500));
+console.log(`Nombre de blocs .TeamScore : ${$('.TeamScore').length}`);
+
+// Remonte l'ancêtre de chaque .TeamScore jusqu'à trouver un conteneur
+// contenant une date (ex: "16 mai", jour de la semaine), et imprime le HTML
+// complet de ce conteneur pour les 3 premiers matchs.
+$('.TeamScore').slice(0, 3).each(function (i) {
+  console.log(`\n=== Match [${i}] ===`);
+  console.log(`Équipes/score (texte) : "${$(this).text().trim()}"`);
+
+  let ancestor = $(this).parent();
+  for (let level = 1; level <= 5; level++) {
+    const text = ancestor.text().trim();
+    console.log(`  Ancêtre niveau ${level} <${ancestor.prop('tagName')}> class="${ancestor.attr('class') || ''}" — longueur texte: ${text.length}`);
+    ancestor = ancestor.parent();
   }
-  console.log('---');
 });
 
-// Cherche aussi un éventuel __NEXT_DATA__ (Next.js) : JSON valide complet.
-const nextData = $('#__NEXT_DATA__').html();
-if (nextData) {
-  console.log(`__NEXT_DATA__ trouvé, ${nextData.length} caractères.`);
-  try {
-    const parsed = JSON.parse(nextData);
-    console.log('Clés de premier niveau : ' + Object.keys(parsed).join(', '));
-  } catch (e) {
-    console.log('__NEXT_DATA__ non parseable en JSON.');
-  }
-} else {
-  console.log('Pas de __NEXT_DATA__.');
-}
-
-// Cherche le mot "score" dans le texte brut pour voir s'il y a des scores
-// quelque part sur la page (calendrier à venir vs résultats déjà joués).
-const scoreIdx = html.search(/score/i);
-if (scoreIdx >= 0) {
-  console.log('--- Contexte autour de "score" ---');
-  console.log(html.slice(Math.max(0, scoreIdx - 100), scoreIdx + 300));
-} else {
-  console.log('Aucune occurrence de "score" dans le HTML.');
-}
-
-// L'app est en Vue/Nuxt (attributs data-v-xxxxx repérés) : on cible
-// directement les composants CalendarResults/TeamScore vus dans le CSS pour
-// extraire les vraies valeurs rendues côté serveur (équipes, scores).
-console.log('\n--- Éléments [class*="CalendarResults"] (max 5, HTML complet) ---');
-$('[class*="CalendarResults"]').slice(0, 5).each(function (i) {
-  console.log(`[${i}] <${this.tagName}> class="${$(this).attr('class')}"`);
-  console.log($.html(this).slice(0, 1500));
-  console.log('---');
-});
-
-console.log('\n--- Éléments [class*="TeamScore"] (max 10, texte seul) ---');
-$('[class*="TeamScore"]').slice(0, 10).each(function (i) {
-  console.log(`[${i}] <${this.tagName}> class="${$(this).attr('class')}" texte="${$(this).text().trim()}"`);
+// Cherche des éléments dont le texte ressemble à une date (jours de la
+// semaine en français) proches des scores.
+console.log('\n--- Éléments contenant un jour de semaine (max 5) ---');
+const jours = /lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche/i;
+$('*').filter(function () {
+  const own = $(this).contents().filter(function () { return this.type === 'text'; }).text();
+  return jours.test(own);
+}).slice(0, 5).each(function (i) {
+  console.log(`[${i}] <${this.tagName}> class="${$(this).attr('class') || ''}" texte="${$(this).text().trim().slice(0, 100)}"`);
 });
