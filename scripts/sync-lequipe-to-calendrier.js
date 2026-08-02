@@ -87,6 +87,10 @@ const dateCaption = $('.caption.caption--small')
   .filter((i, el) => /lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche/i.test($(el).text()))
   .first().text().trim() || null;
 
+const journeeLabel = $('.SelectNav__label').first().text().trim() || null;
+const journeeMatch = journeeLabel ? journeeLabel.match(/(\d+)/) : null;
+const journee = journeeMatch ? parseInt(journeeMatch[1], 10) : null;
+
 const pageTitle = $('title').text().trim();
 const saisonMatch = pageTitle.match(/(\d{4})-(\d{4})/);
 const saison = saisonMatch ? `${saisonMatch[1]}-${saisonMatch[2]}` : null;
@@ -96,10 +100,11 @@ const groupe = extraireGroupe(competitionLabel);
 const dateMatch = calculerDateMatch(dateCaption, saison);
 
 console.log(`Compétition : ${competitionLabel} → division : ${division}, groupe : ${groupe}`);
+console.log(`Journée : "${journeeLabel}" → ${journee}`);
 console.log(`Date : "${dateCaption}" (saison ${saison}) → ${dateMatch}`);
 
-if (!division || !groupe || !dateMatch || !saison) {
-  console.error('Impossible de déterminer division/groupe/date/saison — abandon.');
+if (!division || !groupe || !journee || !dateMatch || !saison) {
+  console.error('Impossible de déterminer division/groupe/journée/date/saison — abandon.');
   process.exit(1);
 }
 
@@ -111,7 +116,7 @@ $('.TeamScore').each((i, el) => {
     .filter((j, teamEl) => !$(teamEl).hasClass('TeamScore__team--home'))
     .first().text().trim() || null;
   if (home && away) {
-    matchs.push({ equipe_domicile: home, equipe_exterieur: away, date_match: dateMatch, division, groupe, saison });
+    matchs.push({ equipe_domicile: home, equipe_exterieur: away, date_match: dateMatch, division, groupe, journee, saison });
   }
 });
 
