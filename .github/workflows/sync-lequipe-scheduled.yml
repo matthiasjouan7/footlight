@@ -1,0 +1,42 @@
+name: Sync lequipe.fr -> calendrier_officiel (automatique)
+
+on:
+  schedule:
+    # Chaque lundi à 6h UTC — laisse une marge après les matchs du samedi
+    # (et d'éventuels matchs du dimanche) pour être sûr que les résultats
+    # sont bien finalisés avant de synchroniser.
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        url:
+          # National 2 volontairement exclu pour l'instant : pas encore à
+          # jour vers le nouveau format à 8 groupes, on attend avant de
+          # l'automatiser (voir aussi les Actions manuelles de test/découverte
+          # dédiées à vérifier cette mise à jour).
+          - "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Synchroniser
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ matrix.url }}
+          DRY_RUN: "false"
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node sync-lequipe-to-calendrier.js
