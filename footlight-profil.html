@@ -708,6 +708,21 @@ async function renderProfil(j, isOwner) {
     const ptsSansLuiTotal = (s.points_equipe != null && ptsAvecLuiTotal != null) ? s.points_equipe - ptsAvecLuiTotal : null;
     const ptsSansLui = (matchsSansLui > 0 && ptsSansLuiTotal != null) ? ptsSansLuiTotal / matchsSansLui : null;
     const impactPointsReelSansLui = (ptsAvecLui != null && ptsSansLui != null) ? ptsAvecLui - ptsSansLui : null;
+    // Matchs décisifs : sur ses fiches de match, on retire ses buts perso du
+    // score final et on recalcule les points — si le résultat aurait été
+    // moins bon sans ses buts (victoire → nul/défaite, ou nul → défaite),
+    // le match est "décisif" et on compte les points gagnés grâce à lui.
+    const matchsDecisifsButs = matchsAvecScore
+      .filter(m => (m.buts||0) > 0)
+      .map(m => {
+        const ptsReel = m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0;
+        const scoreSansSesButs = m.score_pour - m.buts;
+        const ptsSansSesButs = scoreSansSesButs > m.score_contre ? 3 : scoreSansSesButs === m.score_contre ? 1 : 0;
+        return ptsReel - ptsSansSesButs;
+      })
+      .filter(diff => diff > 0);
+    const nbMatchsDecisifs = matchsDecisifsButs.length;
+    const ptsGagnesGraceASesButs = matchsDecisifsButs.reduce((sum,diff) => sum + diff, 0);
 
     return `
       <div class="stats-grid">
@@ -867,6 +882,11 @@ async function renderProfil(j, isOwner) {
         </div>
         <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Matchs sans lui déduits (matchs de l'équipe − matchs joués) : donnée approximative si des absences ne sont pas liées à des matchs manqués (blessure, banc...).</div>
         ` : `<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Différentiel "sans lui" indisponible : il a joué la totalité (ou la quasi-totalité) des matchs de l'équipe cette saison, aucun match "sans lui" à comparer.</div>`}
+        ${nbMatchsDecisifs > 0 ? `
+        <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs décisifs (ses buts ont fait gagner des points)</span><span class="info-val" style="color:var(--green-l)">${nbMatchsDecisifs}</span></div>
+        <div class="info-row"><span class="info-key">Points gagnés grâce à ses buts</span><span class="info-val" style="color:var(--green-l)">+${ptsGagnesGraceASesButs}</span></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Un match est compté "décisif" quand, sans ses buts personnels, le résultat de l'équipe aurait été moins bon (victoire → nul ou défaite, ou nul → défaite) — calculé à partir de ses fiches de match avec score et buts renseignés.</div>
+        ` : (matchsAvecScore.filter(m => (m.buts||0) > 0).length > 0 ? `<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Aucun de ses buts n'a été décisif pour le résultat sur les fiches renseignées cette saison.</div>` : '')}
       </div>` : `
       <div class="section">
         <div class="section-title">Impact collectif réel</div>
