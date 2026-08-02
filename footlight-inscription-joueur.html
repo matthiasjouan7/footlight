@@ -958,9 +958,16 @@ function addVideoLinkField(value) {
 }
 addVideoLinkField();
 
+function normalizeVideoUrl(url) {
+  if (!url) return url;
+  const trimmed = String(url).trim();
+  if (!trimmed) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+}
+
 function getVideoLinks() {
   return Array.from(document.querySelectorAll('.video-link-input'))
-    .map(i => i.value.trim())
+    .map(i => normalizeVideoUrl(i.value.trim()))
     .filter(Boolean);
 }
 
@@ -980,7 +987,7 @@ function addPointFortField(label, video) {
 function getPointsForts() {
   return Array.from(document.querySelectorAll('#points-forts-list > div')).map(row => ({
     label: row.querySelector('.point-fort-label').value.trim(),
-    video_url: row.querySelector('.point-fort-video').value.trim() || null,
+    video_url: normalizeVideoUrl(row.querySelector('.point-fort-video').value.trim()) || null,
   })).filter(p => p.label);
 }
 

@@ -451,6 +451,13 @@ function normalizeName(s) {
     .toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+function normalizeVideoUrl(url) {
+  if (!url) return url;
+  const trimmed = String(url).trim();
+  if (!trimmed) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+}
+
 function getAge(dateNaissance) {
   if (!dateNaissance) return null;
   const d = new Date(dateNaissance);
@@ -1029,7 +1036,7 @@ async function renderProfil(j, isOwner) {
       ${j.points_forts.map(p => `
       <div class="info-row">
         <span class="info-key">${p.label}</span>
-        ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color:var(--blue-l);font-size:0.82rem;">🎥 Voir la vidéo →</a>` : `<span class="info-val">—</span>`}
+        ${p.video_url ? `<a href="${normalizeVideoUrl(p.video_url)}" target="_blank" style="color:var(--blue-l);font-size:0.82rem;">🎥 Voir la vidéo →</a>` : `<span class="info-val">—</span>`}
       </div>`).join('')}
     </div>` : ''}
 
@@ -1047,7 +1054,7 @@ async function renderProfil(j, isOwner) {
         <div class="section">
           <div class="section-title">Vidéo${links.length > 1 ? 's' : ''} de match</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
-            ${links.map((l,i) => `<a href="${l}" target="_blank" style="color:var(--blue-l);font-size:0.85rem;">🎥 ${links.length > 1 ? `Vidéo ${i+1}` : 'Voir la vidéo'} →</a>`).join('')}
+            ${links.map((l,i) => `<a href="${normalizeVideoUrl(l)}" target="_blank" style="color:var(--blue-l);font-size:0.85rem;">🎥 ${links.length > 1 ? `Vidéo ${i+1}` : 'Voir la vidéo'} →</a>`).join('')}
           </div>
         </div>`;
       }
