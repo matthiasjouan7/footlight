@@ -58,3 +58,18 @@ if (scoreIdx >= 0) {
 } else {
   console.log('Aucune occurrence de "score" dans le HTML.');
 }
+
+// L'app est en Vue/Nuxt (attributs data-v-xxxxx repérés) : on cible
+// directement les composants CalendarResults/TeamScore vus dans le CSS pour
+// extraire les vraies valeurs rendues côté serveur (équipes, scores).
+console.log('\n--- Éléments [class*="CalendarResults"] (max 5, HTML complet) ---');
+$('[class*="CalendarResults"]').slice(0, 5).each(function (i) {
+  console.log(`[${i}] <${this.tagName}> class="${$(this).attr('class')}"`);
+  console.log($.html(this).slice(0, 1500));
+  console.log('---');
+});
+
+console.log('\n--- Éléments [class*="TeamScore"] (max 10, texte seul) ---');
+$('[class*="TeamScore"]').slice(0, 10).each(function (i) {
+  console.log(`[${i}] <${this.tagName}> class="${$(this).attr('class')}" texte="${$(this).text().trim()}"`);
+});
