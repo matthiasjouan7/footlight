@@ -80,11 +80,17 @@ console.log('--- Fin ---');
 const scoreTextNodes = $('*').contents().filter(function () {
   return this.type === 'text' && /\d{1,2}\s*-\s*\d{1,2}/.test($(this).text());
 });
-console.log(`--- HTML du parent de chaque nœud texte contenant un score (max 5) ---`);
-scoreTextNodes.slice(0, 5).each(function (i) {
-  const parent = $(this).parent();
-  console.log(`[parent ${i}] <${parent.prop('tagName')}> class="${parent.attr('class') || ''}"`);
-  console.log($.html(parent));
+// Le score lui-même est dans un <b>, trop étroit pour voir les noms
+// d'équipe/horaire à côté — on remonte jusqu'à l'ancêtre "ligne" (tr, li,
+// ou à défaut le 4ᵉ parent) pour voir toute la structure d'un résultat.
+console.log(`--- HTML de la ligne de résultat autour de chaque score (max 3) ---`);
+scoreTextNodes.slice(0, 3).each(function (i) {
+  let row = $(this).closest('tr, li');
+  if (row.length === 0) {
+    row = $(this).parent().parent().parent().parent();
+  }
+  console.log(`[ligne ${i}] <${row.prop('tagName')}> class="${row.attr('class') || ''}"`);
+  console.log($.html(row));
   console.log('---');
 });
 
