@@ -1,0 +1,29 @@
+name: Scrape foot-national.com (test)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL foot-national.com à récupérer (page de résultats/calendrier)"
+        required: true
+        type: string
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Récupérer la page cible
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+        run: node scrape-foot-national.js
