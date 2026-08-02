@@ -55,6 +55,15 @@ function mapDivision(competitionLabel) {
   return null;
 }
 
+function extraireGroupe(competitionLabel) {
+  // "National 2 groupe a" -> "A" — calendrier_officiel a une colonne
+  // "groupe" obligatoire (découvert via une erreur d'insertion réelle,
+  // absente des lectures faites ailleurs dans l'app).
+  if (!competitionLabel) return null;
+  const m = competitionLabel.match(/groupe\s+([a-z0-9]+)/i);
+  return m ? m[1].toUpperCase() : null;
+}
+
 const res = await fetch(targetUrl, {
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -83,13 +92,14 @@ const saisonMatch = pageTitle.match(/(\d{4})-(\d{4})/);
 const saison = saisonMatch ? `${saisonMatch[1]}-${saisonMatch[2]}` : null;
 
 const division = mapDivision(competitionLabel);
+const groupe = extraireGroupe(competitionLabel);
 const dateMatch = calculerDateMatch(dateCaption, saison);
 
-console.log(`Compétition : ${competitionLabel} → division : ${division}`);
+console.log(`Compétition : ${competitionLabel} → division : ${division}, groupe : ${groupe}`);
 console.log(`Date : "${dateCaption}" (saison ${saison}) → ${dateMatch}`);
 
-if (!division || !dateMatch || !saison) {
-  console.error('Impossible de déterminer division/date/saison — abandon.');
+if (!division || !groupe || !dateMatch || !saison) {
+  console.error('Impossible de déterminer division/groupe/date/saison — abandon.');
   process.exit(1);
 }
 
@@ -101,7 +111,7 @@ $('.TeamScore').each((i, el) => {
     .filter((j, teamEl) => !$(teamEl).hasClass('TeamScore__team--home'))
     .first().text().trim() || null;
   if (home && away) {
-    matchs.push({ equipe_domicile: home, equipe_exterieur: away, date_match: dateMatch, division, saison });
+    matchs.push({ equipe_domicile: home, equipe_exterieur: away, date_match: dateMatch, division, groupe, saison });
   }
 });
 
