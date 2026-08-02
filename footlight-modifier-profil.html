@@ -525,6 +525,13 @@ function normalizeName(s) {
     .toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+function normalizeVideoUrl(url) {
+  if (!url) return url;
+  const trimmed = String(url).trim();
+  if (!trimmed) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+}
+
 // Rapprochement avec le calendrier officiel FFF (National 1 / National 2) :
 // on tol\u00e8re les variations de ponctuation et le num\u00e9ro d'\u00e9quipe (r\u00e9serve)
 // qui ne sont pas toujours saisis pareil par le joueur ("US Cr\u00e9teil" vs
@@ -1146,7 +1153,7 @@ function addPointFortField(label, video) {
 function getPointsForts() {
   return Array.from(document.querySelectorAll('#points-forts-list > div')).map(row => ({
     label: row.querySelector('.point-fort-label').value.trim(),
-    video_url: row.querySelector('.point-fort-video').value.trim() || null,
+    video_url: normalizeVideoUrl(row.querySelector('.point-fort-video').value.trim()) || null,
   })).filter(p => p.label);
 }
 
@@ -1163,7 +1170,7 @@ function addVideoLinkField(value) {
 
 function getVideoLinks() {
   return Array.from(document.querySelectorAll('.video-link-input'))
-    .map(i => i.value.trim())
+    .map(i => normalizeVideoUrl(i.value.trim()))
     .filter(Boolean);
 }
 

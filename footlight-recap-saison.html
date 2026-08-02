@@ -248,6 +248,13 @@ function normalizeName(s) {
     .toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+function normalizeVideoUrl(url) {
+  if (!url) return url;
+  const trimmed = String(url).trim();
+  if (!trimmed) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+}
+
 async function findOwnJoueur(user) {
   const { data: exact } = await db.from('joueurs').select('*').eq('email', user.email).single();
   if (exact) return exact;
@@ -562,7 +569,7 @@ function renderRecap(saison) {
       ${joueur.points_forts.map(p => `
       <div class="info-row">
         <span class="info-key">${p.label}</span>
-        ${p.video_url ? `<a href="${p.video_url}" target="_blank" style="color:var(--blue-l);font-size:0.82rem;">🎥 Voir la vidéo →</a>` : `<span class="info-val">—</span>`}
+        ${p.video_url ? `<a href="${normalizeVideoUrl(p.video_url)}" target="_blank" style="color:var(--blue-l);font-size:0.82rem;">🎥 Voir la vidéo →</a>` : `<span class="info-val">—</span>`}
       </div>`).join('')}
     </div>` : ''}
 
