@@ -44,6 +44,22 @@ for (const url of urls) {
     const title = $('title').text().trim();
     const nbResultRows = $('div.col-sm-7.col-xs-12').length;
     console.log(`[${res.status}] ${url}\n    titre: "${title}"\n    lignes de résultat détectées: ${nbResultRows}`);
+
+    // Cherche des indices de feuille de match (compositions, remplacements,
+    // temps de jeu) sur une page de détail de match, pour savoir si cette
+    // donnée existe avant d'investir dans un parseur dédié.
+    const bodyText = $('body').text().replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
+    const keywords = ['compositio', 'titulaire', 'remplaçant', 'remplacant', 'entrée en jeu', 'sorti', "carton", 'minute', "\\d+'"];
+    keywords.forEach((kw) => {
+      const re = new RegExp(kw, 'gi');
+      const matches = bodyText.match(re) || [];
+      if (matches.length) {
+        const idx = bodyText.search(re);
+        const start = Math.max(0, idx - 40);
+        const end = Math.min(bodyText.length, idx + 80);
+        console.log(`    mot-clé "${kw}" : ${matches.length} occurrence(s) — ex: "...${bodyText.slice(start, end).replace(/\s+/g, ' ').trim()}..."`);
+      }
+    });
   } catch (e) {
     console.log(`[ERREUR] ${url}\n    ${e.message}`);
   }
