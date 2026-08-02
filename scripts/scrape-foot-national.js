@@ -57,8 +57,16 @@ const bodyText = $('body').text().replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '
 // Repère les motifs de score (ex: "2 - 1") et affiche le texte autour de
 // chacun, pour voir à quoi ressemble une ligne de résultat sans avoir à
 // parcourir tout le menu de navigation qui précède le contenu utile.
-const scoreRegex = /.{60}\d{1,2}\s*-\s*\d{1,2}.{60}/g;
-const contexts = bodyText.match(scoreRegex) || [];
+// (Découpage par index plutôt que par regex à largeur fixe : bodyText
+// contient de vrais retours à la ligne, que "." ne traverse pas.)
+const scoreRegex = /\d{1,2}\s*-\s*\d{1,2}/g;
+const contexts = [];
+let match;
+while ((match = scoreRegex.exec(bodyText)) !== null) {
+  const start = Math.max(0, match.index - 60);
+  const end = Math.min(bodyText.length, match.index + match[0].length + 60);
+  contexts.push(bodyText.slice(start, end));
+}
 console.log(`Motifs ressemblant à un score détectés : ${contexts.length}`);
 console.log('--- Contexte autour de chaque motif de score ---');
 contexts.forEach((c, i) => console.log(`[${i}] ...${c.replace(/\s+/g, ' ').trim()}...`));
