@@ -72,6 +72,22 @@ console.log('--- Contexte autour de chaque motif de score ---');
 contexts.forEach((c, i) => console.log(`[${i}] ...${c.replace(/\s+/g, ' ').trim()}...`));
 console.log('--- Fin ---');
 
+// Le téléchargement de l'artefact n'est pas possible depuis cette session
+// de dev (réseau restreint) — on imprime donc directement dans les logs le
+// HTML de l'élément parent de chaque score trouvé, pour voir la vraie
+// structure (balises, classes CSS) sans avoir besoin de télécharger quoi
+// que ce soit.
+const scoreTextNodes = $('*').contents().filter(function () {
+  return this.type === 'text' && /\d{1,2}\s*-\s*\d{1,2}/.test($(this).text());
+});
+console.log(`--- HTML du parent de chaque nœud texte contenant un score (max 5) ---`);
+scoreTextNodes.slice(0, 5).each(function (i) {
+  const parent = $(this).parent();
+  console.log(`[parent ${i}] <${parent.prop('tagName')}> class="${parent.attr('class') || ''}"`);
+  console.log($.html(parent));
+  console.log('---');
+});
+
 // Sauvegarde le HTML brut (décodé) comme artefact pour inspection manuelle
 // de la structure réelle (tableaux, classes CSS) avant d'écrire le parseur.
 await mkdir('output', { recursive: true });
