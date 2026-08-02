@@ -1,0 +1,36 @@
+name: Sync lequipe.fr -> calendrier_officiel
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL lequipe.fr d'une page calendrier-resultats"
+        required: true
+        type: string
+      write:
+        description: "Écrire réellement en base (sinon dry-run : affiche seulement ce qui serait fait)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Synchroniser
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node sync-lequipe-to-calendrier.js
