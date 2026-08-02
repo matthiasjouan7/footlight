@@ -148,6 +148,7 @@ body {
   padding-left: 4px; display: none;
 }
 .field-error.visible { display: block; }
+.field-input.invalid { border-color: var(--red); }
 
 /* ── CHIPS SELECTOR ── */
 .chips-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -811,6 +812,7 @@ body {
       <div id="video-links-list"></div>
       <span onclick="addVideoLinkField()" style="font-size:0.78rem;color:var(--accent);cursor:pointer;text-decoration:underline;display:inline-block;margin-top:4px;">+ Ajouter un lien</span>
       <div class="field-hint">Optionnel — débloque le badge 🎥 Vérifié vidéo</div>
+      <div class="field-error" id="err-video-links">Lien invalide — colle l'URL complète de la vidéo (ex: https://youtube.com/watch?v=... ou https://instagram.com/tonpseudo), pas juste un pseudo.</div>
     </div>
 
     <div class="field" style="margin-top:20px">
@@ -818,6 +820,7 @@ body {
       <div id="points-forts-list"></div>
       <span onclick="addPointFortField()" style="font-size:0.78rem;color:var(--accent);cursor:pointer;text-decoration:underline;display:inline-block;margin-top:4px;">+ Ajouter un point fort</span>
       <div class="field-hint">Ex: "Devant le but" avec un lien vers une vidéo de tes buts (optionnel)</div>
+      <div class="field-error" id="err-points-forts">Lien invalide — colle l'URL complète de la vidéo, pas juste un pseudo.</div>
     </div>
 
     <div class="field" style="margin-top:16px">
@@ -963,6 +966,18 @@ function normalizeVideoUrl(url) {
   const trimmed = String(url).trim();
   if (!trimmed) return null;
   return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+}
+
+function isValidVideoUrl(url) {
+  const trimmed = String(url || '').trim();
+  if (!trimmed) return true; // champ optionnel
+  try {
+    const u = new URL(normalizeVideoUrl(trimmed));
+    const parts = u.hostname.split('.');
+    return parts.length >= 2 && parts.every(p => p.length > 0) && /^[a-z]{2,}$/i.test(parts[parts.length - 1]);
+  } catch (e) {
+    return false;
+  }
 }
 
 function getVideoLinks() {
@@ -1121,8 +1136,7 @@ async function claimProfile(id, btn) {
       email,
       date_naissance: naiss || null,
       nationalite: nationalite || null,
-      telephone: telephone || null,
-      profil_public: true
+      telephone: telephone || null
     })
     .eq('id', id);
 
@@ -1189,6 +1203,9 @@ function validateStep(step) {
       document.getElementById('err-niveau').classList.remove('visible');
     }
   }
+  if (step === 4) {
+    ok = checkVideoLinks() & ok;
+  }
   if (step === 5) {
     if (!rgpdChecked) {
       document.getElementById('err-rgpd').classList.add('visible');
@@ -1197,6 +1214,32 @@ function validateStep(step) {
       document.getElementById('err-rgpd').classList.remove('visible');
     }
   }
+  return ok;
+}
+
+function checkVideoLinks() {
+  let ok = true;
+
+  const videoInputs = Array.from(document.querySelectorAll('.video-link-input'));
+  let videoLinksOk = true;
+  videoInputs.forEach(i => {
+    const valid = isValidVideoUrl(i.value);
+    i.classList.toggle('invalid', !valid);
+    if (!valid) videoLinksOk = false;
+  });
+  document.getElementById('err-video-links').classList.toggle('visible', !videoLinksOk);
+  ok = videoLinksOk & ok;
+
+  const pointFortInputs = Array.from(document.querySelectorAll('.point-fort-video'));
+  let pointsFortsOk = true;
+  pointFortInputs.forEach(i => {
+    const valid = isValidVideoUrl(i.value);
+    i.classList.toggle('invalid', !valid);
+    if (!valid) pointsFortsOk = false;
+  });
+  document.getElementById('err-points-forts').classList.toggle('visible', !pointsFortsOk);
+  ok = pointsFortsOk & ok;
+
   return ok;
 }
 
