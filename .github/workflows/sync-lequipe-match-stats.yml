@@ -1,0 +1,37 @@
+name: Sync stats de match lequipe.fr -> matchs_joueur (test, DRY_RUN par défaut)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL lequipe.fr d'une page calendrier-resultats"
+        required: true
+        type: string
+        default: "https://www.lequipe.fr/Football/national-2-groupe-a/page-calendrier-resultats"
+      write:
+        description: "Écrire réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Rapprocher et synchroniser les stats
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node sync-lequipe-match-stats.js
