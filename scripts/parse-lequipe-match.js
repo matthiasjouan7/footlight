@@ -70,10 +70,13 @@ try {
 }
 
 const $ = cheerio.load(html);
-const equipeDomicile = $('.TeamScore__team--home').first().text().trim() || null;
-const equipeExterieur = $('.TeamScore__team')
-  .filter((i, el) => !$(el).hasClass('TeamScore__team--home'))
-  .first().text().trim() || null;
+// Sur les pages match-direct (contrairement aux pages calendrier-resultats),
+// .TeamScore__team--home ne fonctionne pas de façon fiable : on part plutôt
+// du <title>, qui a un format stable "Domicile score-score Extérieur, ...".
+const pageTitle = $('title').text().trim();
+const titreMatch = pageTitle.match(/^(.+?)\s+\d+-\d+\s+(.+?),/);
+const equipeDomicile = titreMatch ? titreMatch[1].trim() : null;
+const equipeExterieur = titreMatch ? titreMatch[2].trim() : null;
 
 function extraireEvenements(side, label) {
   const buts = (side?.buts || []).map((b) => ({
