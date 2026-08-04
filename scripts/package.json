@@ -5,6 +5,7 @@
   "description": "Scripts de récupération automatique de résultats/calendriers officiels pour FootLight (exécutés via GitHub Actions, pas côté client).",
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
-    "cheerio": "^1.0.0"
+    "cheerio": "^1.0.0",
+    "playwright": "^1.47.0"
   }
 }
