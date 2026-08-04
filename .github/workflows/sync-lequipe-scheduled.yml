@@ -22,6 +22,7 @@ jobs:
           - "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats"
     steps:
       - uses: actions/checkout@v4
 

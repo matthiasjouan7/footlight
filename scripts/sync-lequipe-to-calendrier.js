@@ -51,17 +51,24 @@ function mapDivision(competitionLabel) {
   const s = competitionLabel.toLowerCase();
   if (s.includes('national 1')) return 'N1';
   if (s.includes('national 2')) return 'N2';
-  if (s.includes('national')) return 'Ligue 3'; // "National" seul = 3e tier, appelé "Ligue 3" côté FootLight
+  // lequipe.fr a sa propre page "Ligue 3" (/Football/ligue-3/...), à jour
+  // pour la saison en cours — l'ancienne page bare "National" (/Football/
+  // national/...) qu'on utilisait comme repli n'est elle plus mise à jour.
+  if (s.includes('ligue 3')) return 'Ligue 3';
+  if (s.includes('national')) return 'Ligue 3';
   return null;
 }
 
 function extraireGroupe(competitionLabel) {
   // "National 2 groupe a" -> "A" — calendrier_officiel a une colonne
   // "groupe" obligatoire (découvert via une erreur d'insertion réelle,
-  // absente des lectures faites ailleurs dans l'app).
+  // absente des lectures faites ailleurs dans l'app). Ligue 3 n'a qu'un
+  // seul groupe national (pas de "groupe X" dans son libellé) : on retombe
+  // sur "A" par défaut plutôt que d'échouer.
   if (!competitionLabel) return null;
   const m = competitionLabel.match(/groupe\s+([a-z0-9]+)/i);
-  return m ? m[1].toUpperCase() : null;
+  if (m) return m[1].toUpperCase();
+  return competitionLabel.toLowerCase().includes('ligue 3') ? 'A' : null;
 }
 
 const res = await fetch(targetUrl, {
