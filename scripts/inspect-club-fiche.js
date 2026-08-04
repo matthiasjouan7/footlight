@@ -28,6 +28,13 @@ $('a[href*="FootballFicheJoueur"]').each((i, el) => joueurLinks.add($(el).attr('
 console.log(`\n${joueurLinks.size} lien(s) vers des fiches joueurs trouvés.`);
 [...joueurLinks].slice(0, 30).forEach((l) => console.log(' -', l));
 
+// Cherche spécifiquement les liens DEPUIS la table d'effectif (chaque ligne
+// pointe normalement vers la fiche du joueur correspondant).
+console.log('\n=== Liens joueurs dans .effectifclub ===');
+$('.effectifclub a, [class*="effectifclub"] a').each((i, el) => {
+  console.log(` - "${$(el).text().trim()}" -> ${$(el).attr('href')}`);
+});
+
 // Cherche des mots-clés liés aux absences/blessures/suspensions et aux stats.
 const decoded = html.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
 const keywords = ['absent', 'blessé', 'blessure', 'suspendu', 'suspension', 'indisponible', 'effectif', 'compositio'];
