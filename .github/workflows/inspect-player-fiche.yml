@@ -1,0 +1,30 @@
+name: Inspect lequipe.fr fiche joueur (test, lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL lequipe.fr d'une fiche joueur à inspecter"
+        required: true
+        type: string
+        default: "https://www.lequipe.fr/fiche/ivann-botella/193919"
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Inspecter la fiche joueur
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+        run: node inspect-player-fiche.js
