@@ -24,6 +24,9 @@ const rapport = await page.evaluate(() => {
   const bannieres = ['#onetrust-banner-sdk', '.fc-consent-root', '.cmpbox', '.cookie', '[id*=consent]', '[class*=consent]', '[class*=cookie]']
     .map((sel) => ({ sel, present: !!document.querySelector(sel), visible: (() => { const el = document.querySelector(sel); return el ? el.offsetParent !== null : false; })() }))
     .filter((b) => b.present);
+  const onglets = [...document.querySelectorAll('a[href*="/equipe/"]')]
+    .map((a) => ({ text: a.textContent.trim(), href: a.getAttribute('href') }))
+    .filter((l) => l.text && /^[A-ZÀ-Ü]/.test(l.text) && l.text.length < 30);
   return {
     title: document.title,
     url: location.href,
@@ -34,6 +37,7 @@ const rapport = await page.evaluate(() => {
     bannieresCookies: bannieres,
     iframeCount: compte('iframe'),
     iframeSrcs: [...document.querySelectorAll('iframe')].map((f) => f.getAttribute('src')).filter(Boolean).slice(0, 10),
+    onglets,
   };
 });
 
@@ -44,6 +48,8 @@ console.log(`[class*=lineupTable] : ${rapport.lineupTableAny} élément(s)`);
 console.log(`Classes candidates (lineup/squad/roster/player/effectif/team) trouvées : ${rapport.classesCandidates.join(', ') || '(aucune)'}`);
 console.log(`Bannières cookies/consent détectées : ${JSON.stringify(rapport.bannieresCookies)}`);
 console.log(`Iframes : ${rapport.iframeCount} (${rapport.iframeSrcs.join(', ')})`);
+console.log(`\nOnglets/liens détectés vers /equipe/ (${rapport.onglets.length}) :`);
+rapport.onglets.forEach((o) => console.log(` - "${o.text}" -> ${o.href}`));
 console.log(`\n--- Texte visible du body (2000 premiers caractères) ---\n${rapport.bodyTextStart}`);
 
 await browser.close();
