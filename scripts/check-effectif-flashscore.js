@@ -20,7 +20,13 @@ for (const { club, url } of clubs) {
   page.setDefaultTimeout(20000);
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-    const rendu = await page.waitForSelector('.lineupTable--soccer', { timeout: 15000 }).then(() => true).catch(() => false);
+    // waitForSelector() attend par défaut que l'élément soit "visible" (taille
+    // rendue non nulle) — flashscore semble garder le tableau d'effectif
+    // attaché au DOM mais avec un rendu différé/conditionnel (constaté : même
+    // Caen, dont les données sont confirmées présentes, échoue avec ce
+    // critère). On vérifie donc la présence dans le DOM (state: 'attached'),
+    // ce qui correspond à ce que page.evaluate() peut de toute façon lire.
+    const rendu = await page.waitForSelector('.lineupTable--soccer', { timeout: 15000, state: 'attached' }).then(() => true).catch(() => false);
     const nbJoueurs = rendu
       ? await page.evaluate(() => document.querySelectorAll('.lineupTable--soccer .lineupTable__row').length)
       : 0;
