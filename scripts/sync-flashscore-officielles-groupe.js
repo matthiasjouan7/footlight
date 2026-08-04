@@ -93,6 +93,13 @@ for (const club of clubsAVisiter) {
   const titreMatch = pageTitle.match(/^Football:\s*(.+?)\s*-\s*effectif/i);
   const clubFlashscore = titreMatch ? titreMatch[1].trim() : club.text;
 
+  // "networkidle" ne garantit pas que le widget d'effectif (chargé par un
+  // appel JS séparé) a fini de s'hydrater — en pratique, ça se voit surtout
+  // en navigations répétées dans la même page (boucle sur plusieurs clubs) :
+  // sans cette attente explicite, l'extraction retombe à 0 joueur.
+  const rendu = await page.waitForSelector('.lineupTable--soccer', { timeout: 15000 }).then(() => true).catch(() => false);
+  if (!rendu) console.log('  Tableau d\'effectif non détecté après attente, tentative d\'extraction quand même.');
+
   const effectif = await page.evaluate(() => {
     const num = (el) => { if (!el) return null; const t = el.textContent.trim(); return t === '' ? null : parseInt(t, 10); };
     const groupes = [...document.querySelectorAll('.lineupTable--soccer')];
