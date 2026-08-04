@@ -55,3 +55,23 @@ if (idxEffectif !== -1) {
   console.log('\n=== Contexte autour de "effectif"/"joueurs" ===');
   console.log(decoded.slice(Math.max(0, idxEffectif - 100), idxEffectif + 1200));
 }
+
+// La classe CSS "effectifclub" indique une vraie table d'effectif sur la
+// page : on cible directement cet élément (pas juste sa définition CSS).
+console.log('\n=== Table(s) .effectifclub ===');
+const $eff = $('.effectifclub, [class*="effectifclub"]');
+console.log(`${$eff.length} élément(s) trouvé(s) avec cette classe.`);
+$eff.each((i, el) => {
+  const text = $(el).text().replace(/\s+/g, ' ').trim();
+  console.log(`\n--- élément #${i} (${text.length} caractères de texte) ---`);
+  console.log(text.slice(0, 1500));
+});
+
+// Au cas où la table serait ailleurs (ex: <table> générique avec des noms
+// de joueurs), on liste toutes les <table> de la page.
+console.log(`\n=== Toutes les <table> de la page (${$('table').length}) ===`);
+$('table').each((i, el) => {
+  const text = $(el).text().replace(/\s+/g, ' ').trim();
+  console.log(`\n--- table #${i} (classe: "${$(el).attr('class') || ''}", ${text.length} car.) ---`);
+  console.log(text.slice(0, 400));
+});
