@@ -1,0 +1,33 @@
+name: Vérifie quels clubs ont un effectif flashscore.fr (diagnostic, lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      clubs_json:
+        description: "JSON [{club,url}, ...] des clubs à vérifier"
+        required: true
+        type: string
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Vérifier les effectifs
+        working-directory: scripts
+        env:
+          CLUBS_JSON: ${{ inputs.clubs_json }}
+        run: node check-effectif-flashscore.js
