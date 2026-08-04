@@ -82,25 +82,28 @@ let totalMaj = 0, totalAmbigus = 0;
 for (const club of clubsAVisiter) {
   const effectifUrl = new URL(club.href.replace(/\/?$/, '/') + 'effectif/', classementUrl).toString();
   console.log(`\n--- ${club.text} (${effectifUrl}) ---`);
+
+  // Une page réutilisée pour plusieurs navigations successives ne rend plus
+  // le widget d'effectif à partir de la 2e (constaté : "0 joueur" à chaque
+  // fois, même en attendant explicitement le sélecteur). Une page fraîche
+  // par club, sur le même navigateur, contourne le problème de façon fiable.
+  const clubPage = await browser.newPage();
   try {
-    await page.goto(effectifUrl, { waitUntil: 'networkidle', timeout: 60000 });
+    await clubPage.goto(effectifUrl, { waitUntil: 'networkidle', timeout: 60000 });
   } catch (e) {
     console.log(`  Échec chargement : ${e.message}`);
+    await clubPage.close();
     continue;
   }
 
-  const pageTitle = await page.title();
+  const pageTitle = await clubPage.title();
   const titreMatch = pageTitle.match(/^Football:\s*(.+?)\s*-\s*effectif/i);
   const clubFlashscore = titreMatch ? titreMatch[1].trim() : club.text;
 
-  // "networkidle" ne garantit pas que le widget d'effectif (chargé par un
-  // appel JS séparé) a fini de s'hydrater — en pratique, ça se voit surtout
-  // en navigations répétées dans la même page (boucle sur plusieurs clubs) :
-  // sans cette attente explicite, l'extraction retombe à 0 joueur.
-  const rendu = await page.waitForSelector('.lineupTable--soccer', { timeout: 15000 }).then(() => true).catch(() => false);
+  const rendu = await clubPage.waitForSelector('.lineupTable--soccer', { timeout: 15000 }).then(() => true).catch(() => false);
   if (!rendu) console.log('  Tableau d\'effectif non détecté après attente, tentative d\'extraction quand même.');
 
-  const effectif = await page.evaluate(() => {
+  const effectif = await clubPage.evaluate(() => {
     const num = (el) => { if (!el) return null; const t = el.textContent.trim(); return t === '' ? null : parseInt(t, 10); };
     const groupes = [...document.querySelectorAll('.lineupTable--soccer')];
     return groupes.flatMap((groupe) => {
@@ -152,6 +155,7 @@ for (const club of clubsAVisiter) {
       if (upErr) console.log(`    Erreur écriture : ${upErr.message}`);
     }
   }
+  await clubPage.close();
 }
 
 await browser.close();
