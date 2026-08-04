@@ -82,7 +82,13 @@ const effectif = await page.evaluate(() => {
   }).filter((j) => j.nom_complet);
 });
 await browser.close();
-console.log(`${effectif.length} joueur(s) extrait(s) de flashscore.`);
+
+// flashscore rend parfois la même ligne deux fois dans le DOM (une visible,
+// une cachée — probablement une variante responsive) : on déduplique par
+// lien de fiche joueur (identifiant stable), pas par nom, pour ne pas
+// transformer un artefact de rendu en fausse ambiguïté entre deux joueurs.
+const effectifDedup = [...new Map(effectif.map((j) => [j.lien_fiche || j.nom_complet, j])).values()];
+console.log(`${effectif.length} ligne(s) brutes extraites de flashscore, ${effectifDedup.length} joueur(s) unique(s) après déduplication.`);
 
 // ---- 2. Joueurs FootLight du club correspondant ----
 const { data: joueursFootlight, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club');
@@ -100,7 +106,7 @@ if (!candidats.length) {
 let totalMaj = 0, totalAmbigus = 0, totalSansDonnees = 0;
 for (const joueur of candidats) {
   const motsJoueur = motsNom(`${joueur.prenom} ${joueur.nom}`);
-  const correspondances = effectif.filter((j) => memeNom(motsNom(j.nom_complet), motsJoueur));
+  const correspondances = effectifDedup.filter((j) => memeNom(motsNom(j.nom_complet), motsJoueur));
 
   if (correspondances.length === 0) {
     console.log(`${joueur.prenom} ${joueur.nom} : aucune correspondance dans l'effectif flashscore, ignoré.`);
