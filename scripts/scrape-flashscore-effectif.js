@@ -57,7 +57,10 @@ const effectif = await page.evaluate(() => {
         absence,
       };
     });
-    return { poste, joueurs };
+    // flashscore rend parfois la même ligne deux fois dans le DOM (une
+    // visible, une cachée) : on déduplique par lien de fiche joueur.
+    const joueursUniques = [...new Map(joueurs.map((j) => [j.lien_fiche || j.nom, j])).values()];
+    return { poste, joueurs: joueursUniques };
   });
 });
 
