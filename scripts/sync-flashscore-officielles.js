@@ -61,6 +61,19 @@ const clubFlashscore = titreMatch ? titreMatch[1].trim() : null;
 if (!clubFlashscore) { console.error(`Impossible d'extraire le nom du club depuis le titre : "${pageTitle}"`); process.exit(1); }
 console.log(`Club flashscore : "${clubFlashscore}"`);
 
+// "networkidle" ne garantit pas que le widget d'effectif (hydraté par un
+// appel JS séparé) a fini de charger — constaté de façon intermittente,
+// y compris sur une page fraîche isolée (pas seulement en boucle
+// multi-clubs) : sans cette attente, l'extraction retombe à 0 joueur. Un
+// rechargement de la page en repli si la première attente échoue.
+let rendu = await page.waitForSelector('.lineupTable--soccer', { timeout: 20000 }).then(() => true).catch(() => false);
+if (!rendu) {
+  console.log('Tableau d\'effectif non détecté, rechargement de la page...');
+  await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
+  rendu = await page.waitForSelector('.lineupTable--soccer', { timeout: 20000 }).then(() => true).catch(() => false);
+  if (!rendu) console.log('Toujours non détecté après rechargement, tentative d\'extraction quand même.');
+}
+
 const effectif = await page.evaluate(() => {
   const num = (el) => { if (!el) return null; const t = el.textContent.trim(); return t === '' ? null : parseInt(t, 10); };
   const groupes = [...document.querySelectorAll('.lineupTable--soccer')];
