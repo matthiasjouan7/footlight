@@ -14,6 +14,28 @@ if (!targetUrl) {
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
+
+// window.__fetch__ (et probablement __stores__) sont réassignés plusieurs
+// fois pendant le chargement/l'hydratation (un widget de menu générique
+// écrase la valeur d'origine) : on intercepte TOUTES les assignations dès
+// le tout début du chargement, avant que le JS de la page ne s'exécute.
+await page.addInitScript(() => {
+  const specs = [
+    { prop: '__fetch__', historyKey: '__fetchHistory__' },
+    { prop: '__stores__', historyKey: '__storesHistory__' },
+  ];
+  for (const { prop, historyKey } of specs) {
+    let current;
+    const history = [];
+    window[historyKey] = history;
+    Object.defineProperty(window, prop, {
+      configurable: true,
+      get() { return current; },
+      set(v) { current = v; history.push(v); },
+    });
+  }
+});
+
 await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 60000 });
 
 const result = await page.evaluate(() => {
@@ -39,18 +61,22 @@ const result = await page.evaluate(() => {
   const typeSamples = {};
   const keyHits = {};
   const seen = new Set();
-  const roots = { fetch: window.__fetch__, stores: window.__stores__ };
-  for (const key of Object.keys(roots)) {
-    walk(roots[key], seen, typeSamples, keyHits, 0);
+  const fetchHistory = window.__fetchHistory__ || [];
+  const storesHistory = window.__storesHistory__ || [];
+  for (const v of [...fetchHistory, ...storesHistory]) {
+    walk(v, seen, typeSamples, keyHits, 0);
   }
   return {
     availableGlobals: Object.keys(window).filter((k) => k.startsWith('__')),
+    fetchAssignments: fetchHistory.length,
+    storesAssignments: storesHistory.length,
     typeSamples,
     keyHits,
   };
 });
 
 console.log('Globals __* trouvés sur window :', result.availableGlobals.join(', '));
+console.log(`Assignations capturées : __fetch__ x${result.fetchAssignments}, __stores__ x${result.storesAssignments}`);
 console.log('\n=== Types (__type) rencontrés dans les données ===');
 for (const [type, sample] of Object.entries(result.typeSamples)) {
   console.log(`\n--- __type: ${type} ---`);
