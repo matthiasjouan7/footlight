@@ -589,6 +589,12 @@ async function renderProfil(j, isOwner) {
     blessures = blessuresRaw || [];
   }
 
+  // Stats "officielles" (source externe, ex: flashscore.fr) : résumé de
+  // saison affiché à part, jamais fusionné avec les stats saisies par le
+  // joueur (matchs_joueur / stats_saisons / joueurs).
+  const { data: statsOfficiellesRaw } = await db.from('stats_officielles').select('*').eq('joueur_id', j.id);
+  const statsOfficielles = statsOfficiellesRaw || [];
+
   const poste_raw = j.poste || 'autre';
   const couleur = COULEURS[poste_raw] || '#6e7681';
   const initiales = ((j.prenom||'?')[0] + (j.nom||'?')[0]).toUpperCase();
@@ -764,6 +770,24 @@ async function renderProfil(j, isOwner) {
         <div class="info-row"><span class="info-key">Absent</span><span class="info-val">${Math.max(0, s.matchs_equipe - (s.matchs_joues||0))} match${Math.max(0, s.matchs_equipe - (s.matchs_joues||0))>1?'s':''}</span></div>
         <div class="info-row" style="margin-top:6px;"><span class="info-key">Total matchs de l'équipe (saison)</span><span class="info-val">${s.matchs_equipe}</span></div>
       </div>` : ''}
+
+      ${(() => {
+        const off = statsOfficielles.find(o => o.saison === s.saison);
+        if (!off) return '';
+        return `
+      <div class="section">
+        <div class="section-title">Stats officielles (source : ${off.source === 'flashscore' ? 'flashscore.fr' : off.source})</div>
+        <div class="stats-grid">
+          ${off.matchs_joues!=null?`<div class="stat-card"><div class="stat-val">${off.matchs_joues}</div><div class="stat-lbl">Matchs joués</div></div>`:''}
+          ${off.minutes!=null?`<div class="stat-card"><div class="stat-val">${off.minutes}</div><div class="stat-lbl">Minutes</div></div>`:''}
+          ${off.buts!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--green-l)">${off.buts}</div><div class="stat-lbl">Buts</div></div>`:''}
+          ${off.passes_decisives!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--blue-l)">${off.passes_decisives}</div><div class="stat-lbl">Passes déc.</div></div>`:''}
+          ${off.cartons_jaunes!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${off.cartons_jaunes}</div><div class="stat-lbl">Cartons jaunes</div></div>`:''}
+          ${off.cartons_rouges!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--red)">${off.cartons_rouges}</div><div class="stat-lbl">Cartons rouges</div></div>`:''}
+        </div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Résumé automatique issu de ${off.source === 'flashscore' ? 'flashscore.fr' : off.source}${off.club ? ` (${off.club})` : ''}, indépendant des stats saisies ci-dessus. Mis à jour le ${new Date(off.updated_at).toLocaleDateString('fr-FR')}.</div>
+      </div>`;
+      })()}
 
       ${canHistory ? `
       <div class="section">
