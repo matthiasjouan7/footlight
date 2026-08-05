@@ -1,0 +1,47 @@
+name: Republie un artefact de run sur une branche (livraison)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "ID du run source contenant l'artefact"
+        required: true
+        type: string
+      artifact_name:
+        description: "Nom de l'artefact à récupérer"
+        required: true
+        type: string
+      branch:
+        description: "Branche de livraison à créer/mettre à jour"
+        required: false
+        type: string
+        default: "artifact-delivery"
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Télécharger l'artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifact-delivery-out
+
+      - name: Publier sur la branche de livraison
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git checkout --orphan ${{ inputs.branch }}
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -maxdepth 1 ! -name '.' ! -name '.git' ! -name 'artifact-delivery-out' -exec rm -rf {} +
+          mv artifact-delivery-out/* .
+          rmdir artifact-delivery-out || true
+          git add -A
+          git commit -m "Livraison artefact ${{ inputs.artifact_name }} (run ${{ inputs.run_id }})"
+          git push origin ${{ inputs.branch }} --force
