@@ -20,24 +20,12 @@ console.log(`Taille HTML : ${htmlCal.length} caractères`);
 console.log(`Titre : ${(htmlCal.match(/<title>(.*?)<\/title>/) || [])[1] || '(non trouvé)'}`);
 console.log(`Occurrences de "TeamScore" dans le HTML brut : ${(htmlCal.match(/TeamScore/g) || []).length}`);
 console.log(`Occurrences de "match-direct" dans le HTML brut : ${(htmlCal.match(/match-direct/g) || []).length}`);
-const $cal = cheerio.load(htmlCal);
-
-const rencontres = [];
-$cal('.TeamScore').each((i, el) => {
-  const $el = $cal(el);
-  const home = $el.find('.TeamScore__team--home').first().text().trim() || null;
-  const away = $el.find('.TeamScore__team').filter((j, t) => !$cal(t).hasClass('TeamScore__team--home')).first().text().trim() || null;
-  if (!home || !away) return;
-  let $ancestor = $el;
-  let href = null;
-  for (let depth = 0; depth < 6 && !href; depth++) {
-    $ancestor = $ancestor.parent();
-    if (!$ancestor.length) break;
-    const $link = $ancestor.is('a[href*="match-direct"]') ? $ancestor : $ancestor.find('a[href*="match-direct"]').first();
-    if ($link.length) href = $link.attr('href');
-  }
-  if (href) rencontres.push({ home, away, matchUrl: new URL(href, calendrierUrl).toString() });
-});
+// Le sélecteur cheerio ".TeamScore" ne matche rien sur cette page malgré
+// 201 occurrences dans le HTML brut (probablement du contenu hydraté
+// différemment de la page match-direct) : on extrait donc les liens
+// match-direct directement par regex, en repli.
+const hrefs = [...new Set([...htmlCal.matchAll(/href="([^"]*match-direct[^"]*)"/g)].map((m) => m[1]))];
+const rencontres = hrefs.map((href) => ({ matchUrl: new URL(href, calendrierUrl).toString() }));
 console.log(`${rencontres.length} match(s) trouvé(s) sur la page.`);
 if (!rencontres.length) process.exit(0);
 
@@ -78,9 +66,9 @@ for (const r of rencontres) {
   let specifics;
   try { specifics = JSON.parse(specificsRaw); } catch { continue; }
   const estTermine = decoded.includes('"type":"termine"') || decoded.includes('"vainqueur"');
-  if (!estTermine) { console.log(`${r.home} vs ${r.away} : pas encore joué, ignoré.`); continue; }
+  if (!estTermine) { console.log(`${r.matchUrl} : pas encore joué, ignoré.`); continue; }
 
-  console.log(`\n=== Match terminé retenu : ${r.home} vs ${r.away} (${r.matchUrl}) ===`);
+  console.log(`\n=== Match terminé retenu : ${r.matchUrl} ===`);
   for (const cote of ['domicile', 'exterieur']) {
     if (specifics[cote]) {
       console.log(`Clés specifics.${cote} : ${Object.keys(specifics[cote]).join(', ')}`);
