@@ -1,0 +1,47 @@
+name: Enregistre une vidéo de démo (lecture seule, aucune écriture)
+
+on:
+  workflow_dispatch:
+    inputs:
+      joueur_id:
+        description: "ID du joueur (UUID) à montrer sur la page profil"
+        required: true
+        type: string
+      saison:
+        description: "Saison à sélectionner (ex: 2025-2026)"
+        required: false
+        type: string
+        default: "2025-2026"
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Enregistrer la vidéo
+        working-directory: scripts
+        env:
+          JOUEUR_ID: ${{ inputs.joueur_id }}
+          SAISON_CIBLE: ${{ inputs.saison }}
+          OUT_DIR: ${{ github.workspace }}/demo-video-out
+        run: node record-demo-video.js
+
+      - name: Publier la vidéo en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-video
+          path: demo-video-out/*.webm
+          retention-days: 7
