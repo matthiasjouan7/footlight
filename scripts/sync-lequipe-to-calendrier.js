@@ -71,6 +71,29 @@ function extraireGroupe(competitionLabel) {
   return competitionLabel.toLowerCase().includes('ligue 3') ? 'A' : null;
 }
 
+// Rapprochement flou des noms de club — une égalité stricte manque les
+// lignes déjà présentes sous un autre format (ex: table alimentée à
+// l'origine avec des noms officiels longs "US CHANTILLY", alors que
+// lequipe.fr affiche des noms courts "Chantilly") : constaté en pratique,
+// ça provoquait une réinsertion en double à chaque exécution du cron.
+function normaliser(str) {
+  return (str || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa']);
+function motsClub(s) {
+  const mots = normaliser(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
+  return mots.length ? mots : normaliser(s).split(' ').filter(Boolean);
+}
+function clubsCorrespondent(a, b) {
+  const wa = new Set(motsClub(a)), wb = new Set(motsClub(b));
+  if (!wa.size || !wb.size) return false;
+  const [small, big] = wa.size <= wb.size ? [wa, wb] : [wb, wa];
+  for (const w of small) if (!big.has(w)) return false;
+  return true;
+}
+
 const res = await fetch(targetUrl, {
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -138,22 +161,27 @@ if (dryRun) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 let inserted = 0, skipped = 0, errors = 0;
 
+// Une seule lecture pour toute la journée (au lieu d'une requête par match) :
+// permet le rapprochement flou par club, moins fragile qu'une égalité
+// stricte sur des noms qui peuvent varier d'une source à l'autre.
+const { data: existants, error: existantsErr } = await supabase
+  .from('calendrier_officiel')
+  .select('id, equipe_domicile, equipe_exterieur')
+  .eq('division', division)
+  .eq('groupe', groupe)
+  .eq('saison', saison)
+  .eq('date_match', dateMatch);
+if (existantsErr) {
+  console.error(`Erreur lecture des matchs existants : ${existantsErr.message}`);
+  process.exit(1);
+}
+
 for (const m of matchs) {
-  const { data: existing, error: selectError } = await supabase
-    .from('calendrier_officiel')
-    .select('id')
-    .eq('equipe_domicile', m.equipe_domicile)
-    .eq('equipe_exterieur', m.equipe_exterieur)
-    .eq('date_match', m.date_match)
-    .limit(1);
+  const dejaPresent = (existants || []).some((e) =>
+    clubsCorrespondent(e.equipe_domicile, m.equipe_domicile) && clubsCorrespondent(e.equipe_exterieur, m.equipe_exterieur)
+  );
 
-  if (selectError) {
-    console.error(`Erreur lecture pour ${m.equipe_domicile} vs ${m.equipe_exterieur} : ${selectError.message}`);
-    errors++;
-    continue;
-  }
-
-  if (existing && existing.length > 0) {
+  if (dejaPresent) {
     console.log(`Déjà présent : ${m.equipe_domicile} vs ${m.equipe_exterieur} (${m.date_match})`);
     skipped++;
     continue;
