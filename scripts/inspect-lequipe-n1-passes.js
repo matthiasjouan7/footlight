@@ -16,6 +16,10 @@ const resCal = await fetch(calendrierUrl, {
 });
 console.log(`Statut calendrier : ${resCal.status}`);
 const htmlCal = await resCal.text();
+console.log(`Taille HTML : ${htmlCal.length} caractères`);
+console.log(`Titre : ${(htmlCal.match(/<title>(.*?)<\/title>/) || [])[1] || '(non trouvé)'}`);
+console.log(`Occurrences de "TeamScore" dans le HTML brut : ${(htmlCal.match(/TeamScore/g) || []).length}`);
+console.log(`Occurrences de "match-direct" dans le HTML brut : ${(htmlCal.match(/match-direct/g) || []).length}`);
 const $cal = cheerio.load(htmlCal);
 
 const rencontres = [];
