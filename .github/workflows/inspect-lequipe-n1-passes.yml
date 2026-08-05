@@ -1,0 +1,30 @@
+name: Inspect passes décisives National 1 (match terminé, diagnostic lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL page calendrier-résultats lequipe.fr (saison déjà jouée)"
+        required: true
+        type: string
+        default: "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Inspecter les passes décisives
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+        run: node inspect-lequipe-n1-passes.js
