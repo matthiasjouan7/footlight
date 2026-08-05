@@ -1,0 +1,43 @@
+name: Vérifie le format des noms d'équipe dans calendrier_officiel (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      division:
+        description: "Division (ex: N1)"
+        required: false
+        type: string
+        default: "N1"
+      groupe:
+        description: "Groupe (ex: A)"
+        required: false
+        type: string
+        default: "A"
+      saison:
+        description: "Saison (ex: 2026-2027)"
+        required: false
+        type: string
+        default: "2026-2027"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Vérifier les noms
+        working-directory: scripts
+        env:
+          DIVISION: ${{ inputs.division }}
+          GROUPE: ${{ inputs.groupe }}
+          SAISON: ${{ inputs.saison }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node check-calendrier-noms.js
