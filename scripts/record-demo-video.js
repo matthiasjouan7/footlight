@@ -61,8 +61,8 @@ console.log(`Serveur local démarré sur http://127.0.0.1:${port}`);
 await mkdir(outDir, { recursive: true });
 const browser = await chromium.launch();
 const context = await browser.newContext({
-  viewport: { width: 1366, height: 900 },
-  recordVideo: { dir: outDir, size: { width: 1366, height: 900 } },
+  viewport: { width: 1350, height: 1080 },
+  recordVideo: { dir: outDir, size: { width: 1350, height: 1080 } },
 });
 const page = await context.newPage();
 
