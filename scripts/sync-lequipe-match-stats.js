@@ -1,8 +1,11 @@
-// Rapproche les buts/cartons d'un match (lequipe.fr) avec les joueurs
-// FootLight qui ont déjà généré ce match dans leur historique (via
-// "Générer mon calendrier"), et propose de compléter buts/cartons_jaunes/
-// cartons_rouges — UNIQUEMENT les champs encore vides (on n'écrase jamais
-// une stat que le joueur a saisie lui-même).
+// Rapproche les buts/cartons/minutes jouées d'un match (lequipe.fr) avec
+// les joueurs FootLight qui ont déjà généré ce match dans leur historique
+// (via "Générer mon calendrier"), et propose de compléter buts/
+// cartons_jaunes/cartons_rouges/minutes_jouees — UNIQUEMENT les champs
+// encore vides (on n'écrase jamais une stat que le joueur a saisie
+// lui-même). Les minutes jouées ne sont pas un champ direct de lequipe.fr :
+// elles sont calculées à partir des titulaires/remplaçants et des
+// remplacements (sortant/entrant/minute), vérifié sur un vrai match.
 //
 // Sécurité : DRY_RUN=true par défaut — logue ce qui serait fait sans rien
 // écrire. Il faut positionner explicitement DRY_RUN=false pour écrire.
@@ -142,7 +145,7 @@ for (const r of rencontres) {
   // ---- 3. Joueurs FootLight ayant lié ce match ----
   const { data: mj, error: mjErr } = await supabase
     .from('matchs_joueur')
-    .select('id, joueur_id, domicile, buts, cartons_jaunes, cartons_rouges')
+    .select('id, joueur_id, domicile, buts, cartons_jaunes, cartons_rouges, minutes_jouees')
     .eq('calendrier_officiel_id', calendrierOfficielId);
   if (mjErr || !mj || !mj.length) continue;
 
@@ -193,14 +196,38 @@ for (const r of rencontres) {
   try { specifics = JSON.parse(specificsRaw); }
   catch (e) { console.log(`  Échec JSON.parse : ${e.message}, ignoré.`); continue; }
 
+  const finMatch = specifics.prolongation ? 120 : 90;
+
   function evenementsCote(side) {
     const buts = (side?.buts || []).map((b) => ({ abrege: normaliser(b.joueur?.nom_abrege), nomComplet: b.joueur?.nom_complet }));
     const jaunes = (side?.cartons || []).filter((c) => c.type === 'jaune').map((c) => normaliser(c.joueur?.nom_abrege));
     const rouges = (side?.cartons || []).filter((c) => c.type === 'rouge').map((c) => normaliser(c.joueur?.nom_abrege));
-    return { buts, jaunes, rouges };
+    const sportifsParAbrege = new Map();
+    (side?.sportifs || []).forEach((s) => {
+      const a = normaliser(s.nom_abrege);
+      sportifsParAbrege.set(a, [...(sportifsParAbrege.get(a) || []), s.id]);
+    });
+    const titulaires = new Set(side?.ids_titulaires || []);
+    const remplacants = new Set(side?.ids_remplacants || []);
+    const remplacements = side?.remplacements || [];
+    return { buts, jaunes, rouges, sportifsParAbrege, titulaires, remplacants, remplacements };
   }
   const evtDomicile = evenementsCote(specifics.domicile);
   const evtExterieur = evenementsCote(specifics.exterieur);
+
+  // Minutes jouées : pas de champ direct sur lequipe.fr — calculées à
+  // partir des titulaires/remplaçants et des instants d'entrée/sortie.
+  function minutesJouees(cote, sportifId) {
+    if (cote.titulaires.has(sportifId)) {
+      const sortie = cote.remplacements.find((r) => r.sortant?.id === sportifId);
+      return sortie ? parseInt(sortie.instant?.date, 10) : finMatch;
+    }
+    if (cote.remplacants.has(sportifId)) {
+      const entree = cote.remplacements.find((r) => r.entrant?.id === sportifId);
+      return entree ? finMatch - parseInt(entree.instant?.date, 10) : 0;
+    }
+    return null;
+  }
 
   // ---- 5. Rapprochement par joueur ----
   for (const row of mj) {
@@ -241,6 +268,18 @@ for (const r of rencontres) {
     if (nbRouges > 0) {
       if (row.cartons_rouges == null) { maj.cartons_rouges = nbRouges; details.push(`cartons_rouges: ${nbRouges}`); }
       else { details.push(`cartons_rouges déjà renseigné (${row.cartons_rouges}), non modifié`); totalDejaRenseignes++; }
+    }
+
+    const sportifIds = cote.sportifsParAbrege.get(attendu) || [];
+    if (sportifIds.length === 1) {
+      const minutes = minutesJouees(cote, sportifIds[0]);
+      if (minutes != null) {
+        if (row.minutes_jouees == null) { maj.minutes_jouees = minutes; details.push(`minutes_jouees: ${minutes}`); }
+        else { details.push(`minutes_jouees déjà renseigné (${row.minutes_jouees}), non modifié malgré ${minutes} calculé`); totalDejaRenseignes++; }
+      }
+    } else if (sportifIds.length > 1) {
+      details.push(`minutes_jouees : ${sportifIds.length} joueurs lequipe.fr partagent l'abrégé "${attendu}", ignoré`);
+      totalAmbigus++;
     }
 
     if (!details.length) continue;
