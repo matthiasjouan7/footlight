@@ -1,0 +1,26 @@
+name: Inspect format remplacements/titulaires lequipe.fr (diagnostic, lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL match-direct lequipe.fr (match terminé) à inspecter"
+        required: true
+        type: string
+        default: "https://www.lequipe.fr/Football/match-direct/national-2-groupe-a/2025-2026/locmine-la-roche-sur-yon-live/680838"
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Inspecter le format des remplacements
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+        run: node inspect-lequipe-remplacements.js
