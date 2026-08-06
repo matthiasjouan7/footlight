@@ -524,9 +524,9 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const CREATE_SUBSCRIPTION_URL = SUPABASE_URL + '/functions/v1/create-subscription';
 
 const ENGAGEMENT_TIERS = [
-  { key: '3mois', label: '1 mois' },
-  { key: '6mois', label: '6 mois' },
-  { key: 'plus',  label: '1 an' },
+  { key: '3mois', label: '1 à 3 mois' },
+  { key: '6mois', label: '4 à 6 mois' },
+  { key: 'plus',  label: '6 mois et +' },
 ];
 const TIER_PRICING = {
   pro:     { '3mois': 14, '6mois': 11, 'plus': 9 },
