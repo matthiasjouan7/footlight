@@ -159,6 +159,49 @@ for (const y of [400, 900, 1500, 2100, 2700]) {
 }
 await page.waitForTimeout(1500);
 
+// --- Scène 4bis : bascule sur la saison précédente (historique, réservé Pro/Premium) ---
+const seasonY = await page.evaluate(() => {
+  const el = document.getElementById('season-select');
+  return el ? el.getBoundingClientRect().top + window.scrollY - 40 : null;
+});
+if (seasonY != null) {
+  console.log('Retour au sélecteur de saison...');
+  await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'smooth' }), seasonY);
+  await page.waitForTimeout(1600);
+
+  const saisonPrecedente = await page.evaluate(() => {
+    const el = document.getElementById('season-select');
+    if (!el) return null;
+    const current = el.value;
+    const opt = Array.from(el.options).find((o) => o.value !== current && o.value !== 'global');
+    return opt ? opt.value : null;
+  });
+
+  if (saisonPrecedente) {
+    console.log(`Sélection de la saison précédente (${saisonPrecedente})...`);
+    await page.selectOption('#season-select', saisonPrecedente).catch(() => console.log('Impossible de sélectionner la saison précédente.'));
+    await page.waitForTimeout(2200);
+    for (const y of [seasonY + 300, seasonY + 900]) {
+      await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'smooth' }), y);
+      await page.waitForTimeout(1700);
+    }
+  } else {
+    console.log('Pas de saison précédente disponible pour ce joueur — étape ignorée.');
+  }
+}
+
+// --- Scène 4ter : export PDF (bouton "Télécharger la fiche", réservé Premium) ---
+console.log('Mise en avant de l\'export PDF...');
+const exportBtn = page.locator('button:has-text("Télécharger la fiche")').first();
+if (await exportBtn.count()) {
+  await exportBtn.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1400);
+  await exportBtn.hover();
+  await page.waitForTimeout(1800);
+} else {
+  console.log('Bouton export PDF introuvable — étape ignorée.');
+}
+
 await context.close();
 await browser.close();
 server.close();
