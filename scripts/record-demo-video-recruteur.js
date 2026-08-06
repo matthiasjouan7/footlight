@@ -71,22 +71,10 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
-// --- Scène 1 : page d'accueil, on descend directement sur la section tarifs ---
+// --- Scène 1 : page d'accueil, juste le hero (pas de scroll) ---
 console.log('Ouverture de la page d\'accueil (couverture)...');
 await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle', timeout: 60000 });
-await page.waitForTimeout(2200);
-for (const y of [500, 1000] ) {
-  await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'smooth' }), y);
-  await page.waitForTimeout(1400);
-}
-const tarifsY = await page.evaluate(() => {
-  const el = document.getElementById('tarifs');
-  return el ? el.getBoundingClientRect().top + window.scrollY - 20 : null;
-});
-if (tarifsY != null) {
-  await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'smooth' }), tarifsY);
-  await page.waitForTimeout(3200);
-}
+await page.waitForTimeout(3000);
 
 // --- Scène 2 : inscription recruteur ---
 console.log('Ouverture de l\'inscription recruteur...');
