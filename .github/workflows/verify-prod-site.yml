@@ -1,0 +1,26 @@
+name: Vérifie que le site en prod est fonctionnel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium pour Playwright
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Vérifier le site
+        working-directory: scripts
+        run: node verify-prod-site.js
