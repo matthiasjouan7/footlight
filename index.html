@@ -856,6 +856,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     <span class="section-tag">Tarifs recruteurs</span>
     <div class="section-title">Pour clubs, agents et scouts</div>
     <p class="section-sub" style="margin:0 auto">Les joueurs s'inscrivent toujours gratuitement. Seuls les recruteurs paient.</p>
+    <div id="essai-banner" style="display:none; margin:20px auto 0; max-width:520px; background:rgba(34,197,94,0.12); border:1px solid var(--green); color:var(--green-light); border-radius:10px; padding:10px 18px; font-weight:600; font-size:0.95rem;">
+      🎁 Offre de lancement : 15 jours gratuits sur Pro & Premium pour toute souscription avant le 31 octobre 2026 — sans engagement ni prélèvement automatique après l'essai.
+    </div>
   </div>
   <div class="pricing-grid">
 
@@ -883,7 +886,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       <div class="plan-popular">Le plus populaire</div>
       <div class="plan-name pro">Pro</div>
       <div class="plan-price">14€ <span>/mois</span></div>
-      <div class="plan-annual">Dès 9€/mois selon engagement</div>
+      <div class="plan-annual" id="pro-annual">Dès 9€/mois selon engagement</div>
       <div class="plan-tiers">
         <div class="tier-row"><span>1 à 3 mois</span><span class="tv">14€/mois</span></div>
         <div class="tier-row"><span>4 à 6 mois</span><span class="tv">11€/mois</span></div>
@@ -900,14 +903,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         <li><span class="cross">✗</span>Vidéos & données GPS</li>
         <li><span class="cross">✗</span>Contact direct & export PDF/Excel</li>
       </ul>
-      <button class="plan-btn primary" onclick="window.location.href='footlight-inscription-recruteur.html'">Commencer — Engagement 3 mois minimum</button>
+      <button class="plan-btn primary" id="pro-cta-btn" onclick="window.location.href='footlight-inscription-recruteur.html'">Commencer — Engagement 3 mois minimum</button>
     </div>
 
     <!-- PREMIUM -->
     <div class="plan">
       <div class="plan-name premium">Premium</div>
       <div class="plan-price">29€ <span>/mois</span></div>
-      <div class="plan-annual">Dès 19€/mois selon engagement</div>
+      <div class="plan-annual" id="premium-annual">Dès 19€/mois selon engagement</div>
       <div class="plan-tiers">
         <div class="tier-row"><span>1 à 3 mois</span><span class="tv">29€/mois</span></div>
         <div class="tier-row"><span>4 à 6 mois</span><span class="tv">23€/mois</span></div>
@@ -924,7 +927,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         <li><span class="check">✓</span><span class="main">Alertes automatiques sur critères</span></li>
         <li><span class="info">★</span><span class="main">Support prioritaire</span></li>
       </ul>
-      <button class="plan-btn outline" onclick="window.location.href='footlight-inscription-recruteur.html'">S'abonner — Engagement 3 mois minimum</button>
+      <button class="plan-btn outline" id="premium-cta-btn" onclick="window.location.href='footlight-inscription-recruteur.html'">S'abonner — Engagement 3 mois minimum</button>
     </div>
 
   </div>
@@ -969,12 +972,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 <div id="inscription" class="cta-section">
   <div class="cta-box">
     <h2>Prêt à rejoindre FootLight ?</h2>
-    <p>Inscription gratuite pour les joueurs. Engagement 3 mois minimum sur Pro & Premium.</p>
+    <p id="cta-sub">Inscription gratuite pour les joueurs. Engagement 3 mois minimum sur Pro & Premium.</p>
     <div class="cta-inputs">
       <input class="cta-input" type="email" id="cta-email" placeholder="Votre adresse email" onkeydown="if(event.key==='Enter')this.nextElementSibling.click()" />
       <button class="btn-primary" onclick="window.location.href='footlight-inscription-joueur.html' + (document.getElementById('cta-email').value.trim() ? '?email=' + encodeURIComponent(document.getElementById('cta-email').value.trim()) : '')">Créer mon compte</button>
     </div>
-    <p class="cta-note">Gratuit pour les joueurs · Engagement 3 mois minimum sur Pro &amp; Premium · RGPD conforme</p>
+    <p class="cta-note" id="cta-note">Gratuit pour les joueurs · Engagement 3 mois minimum sur Pro &amp; Premium · RGPD conforme</p>
   </div>
 </div>
 
@@ -988,6 +991,38 @@ document.addEventListener('DOMContentLoaded', async function() {
   </div>
   <div class="footer-copy">© 2025 FootLight — Football amateur, données pro</div>
 </footer>
+
+<script>
+(function(){
+  // Offre de lancement : 15 jours gratuits pour toute souscription Pro/Premium
+  // faite jusqu'au 31 octobre 2026 inclus, sans prélèvement automatique après
+  // l'essai (même règle que côté serveur, dans create-subscription, et côté
+  // footlight-paiement.html).
+  var OFFRE_ESSAI_LIMITE = new Date('2026-10-31T23:59:59Z');
+  if (new Date() > OFFRE_ESSAI_LIMITE) return;
+
+  var banner = document.getElementById('essai-banner');
+  if (banner) banner.style.display = 'block';
+
+  var proAnnual = document.getElementById('pro-annual');
+  if (proAnnual) proAnnual.textContent = '15 jours gratuits, puis dès 9€/mois selon engagement';
+
+  var premiumAnnual = document.getElementById('premium-annual');
+  if (premiumAnnual) premiumAnnual.textContent = '15 jours gratuits, puis dès 19€/mois selon engagement';
+
+  var proBtn = document.getElementById('pro-cta-btn');
+  if (proBtn) proBtn.textContent = 'Essayer 15 jours gratuits';
+
+  var premiumBtn = document.getElementById('premium-cta-btn');
+  if (premiumBtn) premiumBtn.textContent = 'Essayer 15 jours gratuits';
+
+  var ctaSub = document.getElementById('cta-sub');
+  if (ctaSub) ctaSub.textContent = 'Inscription gratuite pour les joueurs. 15 jours gratuits sur Pro & Premium (offre jusqu\'au 31 octobre 2026).';
+
+  var ctaNote = document.getElementById('cta-note');
+  if (ctaNote) ctaNote.textContent = 'Gratuit pour les joueurs · 15 jours gratuits sur Pro & Premium · RGPD conforme';
+})();
+</script>
 
 </body>
 </html>
