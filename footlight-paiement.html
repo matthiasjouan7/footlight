@@ -433,7 +433,7 @@ body {
     </div>
     <div class="order-row" id="trial-row" style="display:none;">
       <span class="order-key">Essai</span>
-      <span class="order-val" style="color:var(--green)"></span>
+      <span class="order-val" id="recap-essai" style="color:var(--green)"></span>
     </div>
     <div class="order-row">
       <span class="order-key">Puis</span>
@@ -534,6 +534,12 @@ const TIER_PRICING = {
 };
 let selectedTier = '3mois';
 let sessionUser = null;
+
+// Offre de lancement : 15 jours gratuits pour toute souscription faite
+// jusqu'au 31 octobre 2026 inclus (même règle que côté serveur, dans
+// create-subscription). Passé cette date, facturation immédiate normale.
+const OFFRE_ESSAI_LIMITE = new Date('2026-10-31T23:59:59Z');
+const essaiActif = new Date() <= OFFRE_ESSAI_LIMITE;
 
 // ════════════════════════════════════════════
 //  PLANS
@@ -716,9 +722,14 @@ function renderPlan(planKey) {
   const monthly = planKey === 'free' ? 0 : TIER_PRICING[planKey][selectedTier];
   document.getElementById('plan-price').innerHTML = `${monthly}€ <span>/mois</span>`;
 
+  const essaiDisponible = essaiActif && planKey !== 'free';
   const trialEl = document.getElementById('plan-trial');
-  trialEl.textContent = planKey === 'free' ? p.trialText : `Engagement ${tierLabel(selectedTier)} · débité aujourd'hui`;
-  trialEl.className = `plan-trial-info ${p.trial ? 'green' : 'muted'}`;
+  trialEl.textContent = planKey === 'free'
+    ? p.trialText
+    : essaiDisponible
+      ? `15 jours gratuits, puis engagement ${tierLabel(selectedTier)}`
+      : `Engagement ${tierLabel(selectedTier)} · débité aujourd'hui`;
+  trialEl.className = `plan-trial-info ${(p.trial || essaiDisponible) ? 'green' : 'muted'}`;
 
   document.getElementById('plan-features').innerHTML = p.features.map(f =>
     `<span class="feat-pill ${f.on ? 'on' : ''}">${f.txt}</span>`
@@ -726,9 +737,11 @@ function renderPlan(planKey) {
 
   // Récap
   document.getElementById('recap-plan').textContent = p.name;
-  document.getElementById('recap-today').textContent = planKey === 'free' ? '0,00€' : `${monthly}€`;
+  document.getElementById('recap-today').textContent = planKey === 'free' ? '0,00€' : (essaiDisponible ? '0,00€' : `${monthly}€`);
   document.getElementById('recap-puis').textContent = planKey === 'free' ? 'Gratuit' : `${monthly}€ / mois`;
-  document.getElementById('trial-row').style.display = 'none';
+  const trialRow = document.getElementById('trial-row');
+  trialRow.style.display = essaiDisponible ? 'flex' : 'none';
+  if (essaiDisponible) document.getElementById('recap-essai').textContent = '15 jours gratuits';
   document.querySelectorAll('.order-row .order-key').forEach(el => {
     if (el.textContent === 'Engagement') {
       el.nextElementSibling.textContent = planKey === 'free' ? '—' : `Engagement ${tierLabel(selectedTier)} minimum`;
