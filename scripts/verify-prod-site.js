@@ -30,6 +30,29 @@ const PAGES = [
 const browser = await chromium.launch();
 let hadIssue = false;
 
+// Vérif directe de la vidéo de présentation intégrée sur la page d'accueil :
+// un <video preload="metadata"> déclenche une requête préliminaire souvent
+// annulée (ERR_ABORTED) par le navigateur avant la vraie requête range — ce
+// n'est pas forcément un bug. On vérifie donc directement que le fichier
+// répond bien plutôt que de se fier au seul traçage réseau de la page.
+console.log('=== Vérification directe de videos/footlight-presentation.mp4 ===');
+try {
+  const videoResp = await fetch(`${BASE}/videos/footlight-presentation.mp4`, {
+    headers: { Range: 'bytes=0-1023' },
+  });
+  console.log(`Statut : ${videoResp.status}`);
+  console.log(`Content-Type : ${videoResp.headers.get('content-type')}`);
+  console.log(`Content-Length : ${videoResp.headers.get('content-length')}`);
+  console.log(`Accept-Ranges : ${videoResp.headers.get('accept-ranges')}`);
+  if (![200, 206].includes(videoResp.status)) {
+    hadIssue = true;
+    console.log('  PROBLÈME : la vidéo ne répond pas correctement.');
+  }
+} catch (e) {
+  hadIssue = true;
+  console.log(`  PROBLÈME : ${e.message}`);
+}
+
 for (const { path, mustContain, mustNotContain } of PAGES) {
   const url = BASE + path;
   const page = await browser.newPage();
@@ -52,6 +75,18 @@ for (const { path, mustContain, mustNotContain } of PAGES) {
 
     await page.waitForTimeout(1000);
     const content = await page.content();
+
+    if (path === '/') {
+      const videoState = await page.evaluate(() => {
+        const v = document.querySelector('video');
+        return v ? { readyState: v.readyState, error: v.error ? v.error.message : null, currentSrc: v.currentSrc } : null;
+      });
+      console.log(`État de la vidéo <video> : ${JSON.stringify(videoState)}`);
+      if (videoState && (videoState.error || videoState.readyState === 0)) {
+        hadIssue = true;
+        console.log('  PROBLÈME : la vidéo ne se charge pas dans le navigateur.');
+      }
+    }
 
     for (const needle of mustContain) {
       if (!content.includes(needle)) {
