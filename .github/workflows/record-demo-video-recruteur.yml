@@ -1,0 +1,41 @@
+name: Enregistre une vidéo de démo — parcours recruteur (lecture seule, aucune écriture)
+
+on:
+  workflow_dispatch:
+    inputs:
+      joueur_id:
+        description: "ID du joueur (UUID) à montrer sur la page profil"
+        required: false
+        type: string
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Enregistrer la vidéo
+        working-directory: scripts
+        env:
+          JOUEUR_ID: ${{ inputs.joueur_id }}
+          OUT_DIR: ${{ github.workspace }}/demo-video-recruteur-out
+        run: node record-demo-video-recruteur.js
+
+      - name: Publier la vidéo en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-video-recruteur
+          path: demo-video-recruteur-out/*.webm
+          retention-days: 7
