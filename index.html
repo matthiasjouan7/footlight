@@ -888,9 +888,9 @@ document.addEventListener('DOMContentLoaded', async function() {
       <div class="plan-price">14€ <span>/mois</span></div>
       <div class="plan-annual" id="pro-annual">Dès 9€/mois selon engagement</div>
       <div class="plan-tiers">
-        <div class="tier-row"><span>1 à 3 mois</span><span class="tv">14€/mois</span></div>
-        <div class="tier-row"><span>4 à 6 mois</span><span class="tv">11€/mois</span></div>
-        <div class="tier-row"><span>6 mois et +</span><span class="tv">9€/mois</span></div>
+        <div class="tier-row"><span>1 mois</span><span class="tv">14€/mois</span></div>
+        <div class="tier-row"><span>6 mois</span><span class="tv">11€/mois</span></div>
+        <div class="tier-row"><span>1 an</span><span class="tv">9€/mois</span></div>
       </div>
       <hr class="plan-divider">
       <ul class="plan-features">
@@ -903,7 +903,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         <li><span class="cross">✗</span>Vidéos & données GPS</li>
         <li><span class="cross">✗</span>Contact direct & export PDF/Excel</li>
       </ul>
-      <button class="plan-btn primary" id="pro-cta-btn" onclick="window.location.href='footlight-inscription-recruteur.html'">Commencer — Engagement 3 mois minimum</button>
+      <button class="plan-btn primary" id="pro-cta-btn" onclick="window.location.href='footlight-inscription-recruteur.html'">Commencer — Engagement 1 mois minimum</button>
     </div>
 
     <!-- PREMIUM -->
@@ -912,9 +912,9 @@ document.addEventListener('DOMContentLoaded', async function() {
       <div class="plan-price">29€ <span>/mois</span></div>
       <div class="plan-annual" id="premium-annual">Dès 19€/mois selon engagement</div>
       <div class="plan-tiers">
-        <div class="tier-row"><span>1 à 3 mois</span><span class="tv">29€/mois</span></div>
-        <div class="tier-row"><span>4 à 6 mois</span><span class="tv">23€/mois</span></div>
-        <div class="tier-row"><span>6 mois et +</span><span class="tv">19€/mois</span></div>
+        <div class="tier-row"><span>1 mois</span><span class="tv">29€/mois</span></div>
+        <div class="tier-row"><span>6 mois</span><span class="tv">23€/mois</span></div>
+        <div class="tier-row"><span>1 an</span><span class="tv">19€/mois</span></div>
       </div>
       <hr class="plan-divider">
       <ul class="plan-features">
@@ -927,7 +927,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         <li><span class="check">✓</span><span class="main">Alertes automatiques sur critères</span></li>
         <li><span class="info">★</span><span class="main">Support prioritaire</span></li>
       </ul>
-      <button class="plan-btn outline" id="premium-cta-btn" onclick="window.location.href='footlight-inscription-recruteur.html'">S'abonner — Engagement 3 mois minimum</button>
+      <button class="plan-btn outline" id="premium-cta-btn" onclick="window.location.href='footlight-inscription-recruteur.html'">S'abonner — Engagement 1 mois minimum</button>
     </div>
 
   </div>
@@ -950,7 +950,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           <li class="bad">✗ Impact collectif non calculé</li>
           <li class="bad">✗ Données saisies par les clubs, pas par les joueurs</li>
           <li class="bad">✗ Tarifs inaccessibles pour clubs amateurs</li>
-          <li class="bad">✗ Engagement 3 mois minimume couverture N1 / N2 / Régional</li>
+          <li class="bad">✗ Pas de couverture N1 / N2 / Régional</li>
         </ul>
       </div>
       <div class="vs-card us">
@@ -972,12 +972,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 <div id="inscription" class="cta-section">
   <div class="cta-box">
     <h2>Prêt à rejoindre FootLight ?</h2>
-    <p id="cta-sub">Inscription gratuite pour les joueurs. Engagement 3 mois minimum sur Pro & Premium.</p>
+    <p id="cta-sub">Inscription gratuite pour les joueurs. Engagement 1 mois minimum sur Pro & Premium.</p>
     <div class="cta-inputs">
       <input class="cta-input" type="email" id="cta-email" placeholder="Votre adresse email" onkeydown="if(event.key==='Enter')this.nextElementSibling.click()" />
       <button class="btn-primary" onclick="window.location.href='footlight-inscription-joueur.html' + (document.getElementById('cta-email').value.trim() ? '?email=' + encodeURIComponent(document.getElementById('cta-email').value.trim()) : '')">Créer mon compte</button>
     </div>
-    <p class="cta-note" id="cta-note">Gratuit pour les joueurs · Engagement 3 mois minimum sur Pro &amp; Premium · RGPD conforme</p>
+    <p class="cta-note" id="cta-note">Gratuit pour les joueurs · Engagement 1 mois minimum sur Pro &amp; Premium · RGPD conforme</p>
   </div>
 </div>
 
