@@ -191,7 +191,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     <div class="sh">
       <div class="snum">02 - Plan</div>
       <div class="stitle">Choisissez votre acces</div>
-      <div class="ssub">Engagement 3 mois minimum - Resiliez a tout moment</div>
+      <div class="ssub">Durée d'engagement (1, 6 ou 12 mois) à choisir au paiement</div>
     </div>
     <div class="popts">
       <div class="popt" id="pfree" onclick="selPlan('free')"><div><div class="pname" style="color:var(--muted)">Gratuit</div><div class="pprice">0 euro / mois</div><div class="ptrial" style="color:var(--muted)">Acces immediat</div></div><div class="pcheck" id="cpfree"></div></div>
@@ -269,7 +269,7 @@ function fillRecap(){
   var n=document.getElementById('r-nom').value.trim();
   var e=existingUser ? existingUser.email : document.getElementById('r-email').value.trim();
   var o=document.getElementById('r-orga').value.trim();
-  var plans={free:'Gratuit 0 euro/mois',pro:'Pro 19 euro/mois',premium:'Premium 39 euro/mois'};
+  var plans={free:'Gratuit 0 euro/mois',pro:'Pro dès 14 euro/mois',premium:'Premium dès 29 euro/mois'};
   var types={club:'Club amateur',agent:'Agent',scout:'Scout'};
   var h='';
   h+='<div class="rrow"><span class="rkey">Type</span><span class="rval">'+(types[sType]||sType)+'</span></div>';
@@ -277,7 +277,7 @@ function fillRecap(){
   h+='<div class="rrow"><span class="rkey">Email</span><span class="rval" style="color:#f0f2f7">'+e+'</span></div>';
   if(o)h+='<div class="rrow"><span class="rkey">Organisation</span><span class="rval" style="color:#f0f2f7">'+o+'</span></div>';
   h+='<div class="rrow"><span class="rkey">Plan</span><span class="rval">'+(plans[sPlan]||sPlan)+'</span></div>';
-  h+='<div class="rrow"><span class="rkey">Engagement</span><span class="rval" style="color:#2dd882">Engagement 3 mois minimum</span></div>';
+  if(sPlan!=='free')h+='<div class="rrow"><span class="rkey">Engagement</span><span class="rval" style="color:#2dd882">Durée à choisir au paiement (1, 6 ou 12 mois)</span></div>';
   document.getElementById('recap').innerHTML=h;
 }
 function updProg(){
@@ -337,34 +337,23 @@ async function createAcc(){
       }
     }
 
-    // Sauvegarder dans table recruteurs — toujours en Gratuit à l'inscription,
-    // sauf essai promo (voir ci-dessous). Le plan choisi (sPlan) ne sert qu'à
-    // rediriger vers la bonne offre sur la page de paiement ; seul un
-    // paiement réussi (via Stripe) doit passer le compte en Pro/Premium de
-    // façon durable, jamais l'inscription elle-même.
-    //
-    // Promo essai gratuit : toute inscription jusqu'au 31/10/2026 démarre
-    // avec 14 jours de Premium offerts (essai_fin), repassé en Gratuit
-    // automatiquement ensuite par une tâche planifiée côté base de données.
-    var PROMO_ESSAI_CUTOFF = new Date('2026-10-31T23:59:59');
-    var enPromoEssai = new Date() <= PROMO_ESSAI_CUTOFF;
-    var essaiFin = null;
-    var planInitial = 'free';
-    if (enPromoEssai) {
-      planInitial = 'premium';
-      var dFin = new Date();
-      dFin.setDate(dFin.getDate() + 14);
-      essaiFin = dFin.toISOString().slice(0, 10);
-    }
-
+    // Sauvegarder dans table recruteurs — toujours en Gratuit à l'inscription.
+    // Le plan choisi (sPlan) ne sert qu'à rediriger vers la bonne offre sur
+    // la page de paiement ; seul un paiement Stripe réussi (create-subscription)
+    // doit passer le compte en Pro/Premium de façon durable, jamais
+    // l'inscription elle-même. L'essai de 15 jours (Pro/Premium jusqu'au
+    // 31/10/2026) est géré côté Stripe via trial_period_days sur
+    // create-subscription, pas ici — un compte ne doit jamais recevoir un
+    // plan payant sans être passé par un vrai abonnement Stripe (même en
+    // période d'essai), sinon rien ne le repasse en Gratuit à l'échéance.
     var profileResult = await db.from('recruteurs').insert([{
       prenom: prenom, nom: nom, email: email,
       telephone: tel || null,
       organisation: orga || null,
       type_profil: sType || 'club',
-      plan: planInitial,
+      plan: 'free',
       abonnement_actif: true,
-      essai_fin: essaiFin
+      essai_fin: null
     }]);
 
     if (profileResult.error) {
