@@ -38,7 +38,12 @@ if (error) { console.error('Erreur :', error.message); process.exit(1); }
 
 const parCle = new Map();
 for (const r of data) {
-  const cle = `${r.date_match}|${r.division}|${r.groupe}|${r.saison}`;
+  // Ligue 3 n'a qu'un seul groupe national : ne pas inclure "groupe" dans
+  // la clé pour cette division, sinon deux valeurs différentes ("Unique"
+  // vs "A", observé en pratique le 04/08 sur SM Caen-Valenciennes) rendent
+  // un vrai doublon invisible ici alors qu'il regroupe le même match.
+  const groupeCle = r.division === 'Ligue 3' ? '' : r.groupe;
+  const cle = `${r.date_match}|${r.division}|${groupeCle}|${r.saison}`;
   parCle.set(cle, [...(parCle.get(cle) || []), r]);
 }
 
