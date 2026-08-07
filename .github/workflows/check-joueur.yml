@@ -4,8 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       nom:
-        description: "Prénom Nom du joueur à rechercher"
-        required: true
+        description: "Prénom Nom du joueur à rechercher (optionnel si club renseigné)"
+        required: false
+        type: string
+      club:
+        description: "Club à rechercher (optionnel, ex: pour trouver le gardien d'un club)"
+        required: false
+        type: string
+      poste:
+        description: "Poste à filtrer (optionnel, ex: gardien)"
+        required: false
         type: string
 
 jobs:
@@ -26,5 +34,7 @@ jobs:
         working-directory: scripts
         env:
           NOM_RECHERCHE: ${{ inputs.nom }}
+          CLUB_RECHERCHE: ${{ inputs.club }}
+          POSTE_RECHERCHE: ${{ inputs.poste }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node check-joueur.js
