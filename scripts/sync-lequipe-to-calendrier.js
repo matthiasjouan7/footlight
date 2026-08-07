@@ -85,7 +85,12 @@ function normaliser(str) {
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase().replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
-const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa']);
+// Inclut aussi les connecteurs géographiques ("sur", "en"...) car le
+// calendrier officiel abrège parfois "sur" en "/" (ex: "LA ROCHE/YON" pour
+// "La Roche-sur-Yon") — sans ce mot dans la liste, le rapprochement échoue
+// selon la source qui a inséré la ligne existante, et ce script réinsère un
+// doublon à chaque exécution du cron (constaté en pratique sur ce club).
+const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
 function motsClub(s) {
   const mots = normaliser(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
   return mots.length ? mots : normaliser(s).split(' ').filter(Boolean);

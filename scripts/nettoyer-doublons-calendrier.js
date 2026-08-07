@@ -20,7 +20,13 @@ function normaliser(str) {
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase().replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
-const MOTS_GENERIQUES = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa']);
+// Inclut aussi les connecteurs géographiques ("sur", "en"...) car le
+// calendrier officiel abrège parfois "sur" en "/" (ex: "LA ROCHE/YON" pour
+// "La Roche-sur-Yon") — sans ce mot dans la liste, la comparaison échoue
+// selon la source qui a inséré la ligne (constaté en pratique : doublon
+// La Roche-sur-Yon / VENDEE FC LA ROCHE/YON non détecté par ce script alors
+// que footlight-modifier-profil.html gère déjà ce cas via CLUB_MOTS_GENERIQUES).
+const MOTS_GENERIQUES = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
 function motsClub(s) {
   const mots = normaliser(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES.has(w));
   return mots.length ? mots : normaliser(s).split(' ').filter(Boolean);
