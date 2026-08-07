@@ -2,6 +2,11 @@ name: Diagnostic joueur La Roche-sur-Yon (lecture seule)
 
 on:
   workflow_dispatch:
+    inputs:
+      joueur_id:
+        description: "joueur_id à inspecter (défaut : Matthieu Villette)"
+        required: false
+        type: string
 
 jobs:
   diagnostic:
@@ -21,4 +26,5 @@ jobs:
         working-directory: scripts
         env:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOUEUR_ID: ${{ inputs.joueur_id }}
         run: node diagnostic-joueur-la-roche.js
