@@ -1,29 +1,35 @@
-// Diagnostic (lecture seule) : vérifie l'existence d'un joueur par nom et
-// affiche ses données de profil + stats de saison, pour préparer une
-// démonstration (vidéo) sans deviner l'état actuel de la base.
+// Diagnostic (lecture seule) : vérifie l'existence d'un joueur par nom (ou
+// par club + poste, ex: le gardien d'un club donné) et affiche ses données
+// de profil + stats de saison, pour préparer une démonstration (vidéo) sans
+// deviner l'état actuel de la base.
 import { createClient } from '@supabase/supabase-js';
 
 const nomRecherche = process.env.NOM_RECHERCHE;
+const clubRecherche = process.env.CLUB_RECHERCHE;
+const posteRecherche = process.env.POSTE_RECHERCHE;
 const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!nomRecherche) { console.error('NOM_RECHERCHE manquant.'); process.exit(1); }
+if (!nomRecherche && !clubRecherche) { console.error('NOM_RECHERCHE ou CLUB_RECHERCHE requis.'); process.exit(1); }
 if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); process.exit(1); }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const [prenom, ...reste] = nomRecherche.trim().split(' ');
-const nom = reste.join(' ');
+let query = supabase.from('joueurs').select('*');
+if (nomRecherche) {
+  const [prenom, ...reste] = nomRecherche.trim().split(' ');
+  const nom = reste.join(' ');
+  query = query.ilike('prenom', `%${prenom}%`).ilike('nom', `%${nom}%`);
+}
+if (clubRecherche) query = query.ilike('club', `%${clubRecherche}%`);
+if (posteRecherche) query = query.ilike('poste', `%${posteRecherche}%`);
 
-const { data: joueurs, error: jErr } = await supabase
-  .from('joueurs')
-  .select('*')
-  .ilike('prenom', `%${prenom}%`)
-  .ilike('nom', `%${nom}%`);
+const { data: joueurs, error: jErr } = await query;
 
 if (jErr) { console.error('Erreur lecture joueurs :', jErr.message); process.exit(1); }
 
-console.log(`${joueurs.length} joueur(s) trouvé(s) pour "${nomRecherche}" :\n`);
+const critere = [nomRecherche, clubRecherche, posteRecherche].filter(Boolean).join(' / ');
+console.log(`${joueurs.length} joueur(s) trouvé(s) pour "${critere}" :\n`);
 
 for (const j of joueurs) {
   console.log(`--- ${j.prenom} ${j.nom} (id: ${j.id}) ---`);
