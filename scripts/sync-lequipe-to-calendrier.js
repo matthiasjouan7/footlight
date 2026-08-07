@@ -64,11 +64,15 @@ function extraireGroupe(competitionLabel) {
   // "groupe" obligatoire (découvert via une erreur d'insertion réelle,
   // absente des lectures faites ailleurs dans l'app). Ligue 3 n'a qu'un
   // seul groupe national (pas de "groupe X" dans son libellé) : on retombe
-  // sur "A" par défaut plutôt que d'échouer.
+  // sur "Unique" par défaut plutôt que d'échouer — doit rester identique à
+  // la valeur déjà utilisée par le calendrier Ligue 3 chargé en base
+  // (sinon même match inséré deux fois avec un groupe différent, invisible
+  // pour nettoyer-doublons-calendrier.js qui groupe par date+division+
+  // groupe+saison — constaté en pratique le 07/08 sur SM Caen-Valenciennes).
   if (!competitionLabel) return null;
   const m = competitionLabel.match(/groupe\s+([a-z0-9]+)/i);
   if (m) return m[1].toUpperCase();
-  return competitionLabel.toLowerCase().includes('ligue 3') ? 'A' : null;
+  return competitionLabel.toLowerCase().includes('ligue 3') ? 'Unique' : null;
 }
 
 // Rapprochement flou des noms de club — une égalité stricte manque les
