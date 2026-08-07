@@ -11,7 +11,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); process.exit(1); }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-const JOUEUR_ID = 'e58e3d5b-4fa9-48b9-8918-37d92e270f22';
+const JOUEUR_ID = process.env.JOUEUR_ID || 'e58e3d5b-4fa9-48b9-8918-37d92e270f22';
 
 const { data: j, error: jErr } = await supabase.from('joueurs').select('*').eq('id', JOUEUR_ID).single();
 if (jErr) { console.error('Erreur lecture joueur :', jErr.message); process.exit(1); }
