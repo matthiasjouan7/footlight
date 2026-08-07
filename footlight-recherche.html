@@ -357,7 +357,9 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
           <option value="Autre">Autre</option>
         </select>
       </div>
-      <div class="form-group" style="grid-column:1/-1"><label class="form-label">Club</label><input class="form-input" id="a-club" placeholder="FC Exemple"/></div>
+      <div class="form-group" style="grid-column:1/-1;position:relative;"><label class="form-label">Club</label><input class="form-input" id="a-club" placeholder="FC Exemple" autocomplete="off" style="width:100%;"/>
+        <div id="a-club-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:220px;overflow-y:auto;"></div>
+      </div>
       <div class="form-group" style="grid-column:1/-1"><label class="form-label">Date de naissance</label><input class="form-input" type="date" id="a-naissance"/></div>
     </div>
     <div class="modal-actions">
@@ -407,6 +409,119 @@ function normalizeName(s) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().trim().replace(/\s+/g, ' ');
 }
+
+function normalizeClub(s) {
+  return normalizeName(s)
+    .replace(/[.'/-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\s\d+$/, '');
+}
+const CLUB_MOTS_GENERIQUES = new Set([
+  'fc','ofc','afc','asc','ac','sc','csc','cs','us','uso','as','ol','om','rc',
+  'fco','osc','sco','ent','entente','athletic','olympique','football','club',
+  'sporting','racing','stade',
+  'sur','sous','en','la','le','les','de','du','des',
+]);
+const CLUB_MOTS_REMPLACEMENT = {
+  st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert',
+  virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc',
+};
+const CLUB_SYNONYMES_COMPLETS = {
+  qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
+  astdv: { mots: ['touques', 'deauville'], elargi: true },
+  'sables vf': { mots: ['sable', 'vendee'], elargi: false },
+  'sable vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'sables vendee': { mots: ['sable', 'vendee'], elargi: false },
+};
+function clubWords(s) {
+  const mots = normalizeClub(s).split(' ').filter(Boolean);
+  const remplaces = mots.map(w => CLUB_MOTS_REMPLACEMENT[w] || w);
+  const sansGeneriques = remplaces.filter(w => !CLUB_MOTS_GENERIQUES.has(w));
+  return sansGeneriques.length ? sansGeneriques : remplaces;
+}
+function clubWordsPourSuggestion(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? [...mots, ...synonyme.mots] : mots;
+}
+async function fetchToutesLesLignes(construireRequete) {
+  const TAILLE_PAGE = 1000;
+  let toutes = [];
+  let page = 0;
+  while (true) {
+    const { data, error } = await construireRequete().range(page * TAILLE_PAGE, (page + 1) * TAILLE_PAGE - 1);
+    if (error) return { data: null, error };
+    toutes = toutes.concat(data || []);
+    if (!data || data.length < TAILLE_PAGE) break;
+    page++;
+  }
+  return { data: toutes, error: null };
+}
+let clubsCalendrierCache = null;
+async function loadClubsCalendrier() {
+  if (clubsCalendrierCache) return clubsCalendrierCache;
+  const { data } = await fetchToutesLesLignes(() =>
+    db.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur')
+  );
+  const set = new Set();
+  (data || []).forEach(r => {
+    if (r.equipe_domicile) set.add(r.equipe_domicile);
+    if (r.equipe_exterieur) set.add(r.equipe_exterieur);
+  });
+  clubsCalendrierCache = [...set].sort();
+  return clubsCalendrierCache;
+}
+function suggestClubs(inputValue, clubs) {
+  const iw = clubWords(inputValue);
+  if (!iw.length) return [];
+  return clubs.filter(nomOfficiel => {
+    const mots = clubWordsPourSuggestion(nomOfficiel);
+    const small = iw.length <= mots.length ? iw : mots;
+    const big = iw.length <= mots.length ? mots : iw;
+    return small.every(w => big.some(m => m.startsWith(w) || (m.length >= 3 && w.startsWith(m))));
+  }).slice(0, 8);
+}
+function renderClubSuggestions(inputEl, boxEl, suggestions) {
+  if (!suggestions.length) { boxEl.style.display = 'none'; boxEl.innerHTML = ''; return; }
+  boxEl.innerHTML = suggestions.map(nom =>
+    `<div class="club-suggestion" style="padding:8px 12px;cursor:pointer;font-size:0.85rem;" data-club="${nom.replace(/"/g, '&quot;')}">${nom}</div>`
+  ).join('');
+  boxEl.style.display = 'block';
+}
+(function initClubSuggestions() {
+  const input = document.getElementById('a-club');
+  const box = document.getElementById('a-club-suggestions');
+  if (!input || !box) return;
+  input.addEventListener('input', async () => {
+    const clubs = await loadClubsCalendrier();
+    renderClubSuggestions(input, box, suggestClubs(input.value, clubs));
+  });
+  input.addEventListener('focus', async () => {
+    if (!input.value.trim()) return;
+    const clubs = await loadClubsCalendrier();
+    renderClubSuggestions(input, box, suggestClubs(input.value, clubs));
+  });
+  box.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.club-suggestion');
+    if (!item) return;
+    input.value = item.dataset.club;
+    box.style.display = 'none';
+    box.innerHTML = '';
+  });
+  input.addEventListener('blur', () => {
+    setTimeout(() => { box.style.display = 'none'; }, 150);
+  });
+  box.addEventListener('mouseover', (e) => {
+    const item = e.target.closest('.club-suggestion');
+    if (item) item.style.background = 'var(--bg4)';
+  });
+  box.addEventListener('mouseout', (e) => {
+    const item = e.target.closest('.club-suggestion');
+    if (item) item.style.background = '';
+  });
+})();
 
 // ── MAPPING ──
 const POSTE_DISPLAY = {
