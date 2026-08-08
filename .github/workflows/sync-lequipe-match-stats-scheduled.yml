@@ -1,0 +1,41 @@
+name: Sync stats de match lequipe.fr -> matchs_joueur (automatique)
+
+on:
+  schedule:
+    # Chaque lundi à 6h30 UTC — 30 min après la synchro du calendrier
+    # (sync-lequipe-scheduled.yml, 6h00), pour que les lignes calendrier_officiel
+    # du week-end soient déjà en base avant de rapprocher les stats de match.
+    - cron: "30 6 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        url:
+          # Mêmes compétitions que sync-lequipe-scheduled.yml (National 2
+          # volontairement exclu, voir ce fichier).
+          - "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Rapprocher et synchroniser les stats
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ matrix.url }}
+          DRY_RUN: "false"
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node sync-lequipe-match-stats.js
