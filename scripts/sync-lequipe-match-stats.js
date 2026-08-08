@@ -72,6 +72,59 @@ function abregeAttendu(prenom, nom) {
   return normaliser(`${prenom[0]}. ${nom}`);
 }
 
+// Même logique que contributionMatch() dans footlight-modifier-profil.html :
+// répercute la fiche d'un match sur le total de saison du joueur, en ne
+// comptant "matchs_joues"/titularisations/remplaçant/clean_sheet que si le
+// match a réellement été joué ("minutes_jouees" renseigné) — une fiche
+// générée à l'avance depuis le calendrier officiel existe déjà, bien avant
+// le coup d'envoi, avec tout à null.
+function contributionMatch(m) {
+  const n = (v) => (v == null ? 0 : v);
+  if (!m) {
+    return { matchs_joues: 0, titularisations: 0, matchs_remplacant: 0, buts: 0, passes_decisives: 0, minutes_jouees: 0, cartons_jaunes: 0, cartons_rouges: 0, buts_encaisses_avec: 0, clean_sheets: 0 };
+  }
+  const joue = m.minutes_jouees != null;
+  return {
+    matchs_joues: joue ? 1 : 0,
+    titularisations: joue && m.titulaire === true ? 1 : 0,
+    matchs_remplacant: joue && m.titulaire === false ? 1 : 0,
+    buts: n(m.buts),
+    passes_decisives: n(m.passes_decisives),
+    minutes_jouees: n(m.minutes_jouees),
+    cartons_jaunes: n(m.cartons_jaunes),
+    cartons_rouges: n(m.cartons_rouges),
+    buts_encaisses_avec: n(m.buts_encaisses_avec),
+    clean_sheets: joue && !!m.clean_sheet ? 1 : 0,
+  };
+}
+function deltaContributionMatch(ancien, nouveau) {
+  const a = contributionMatch(ancien), n = contributionMatch(nouveau);
+  const delta = {};
+  Object.keys(n).forEach((c) => { delta[c] = n[c] - a[c]; });
+  return delta;
+}
+// joueurSaison : saison en cours du joueur (joueurs.saison), pour choisir
+// entre joueurs (saison en cours) et stats_saisons (saison passée), comme
+// côté client.
+async function appliquerDeltaSaison(joueurId, joueurSaison, saisonFiche, delta) {
+  const champs = Object.keys(delta).filter((c) => delta[c] !== 0);
+  if (!champs.length) return;
+  const isCurrentSeason = saisonFiche === (joueurSaison || '2026-2027');
+  let current;
+  if (isCurrentSeason) {
+    ({ data: current } = await supabase.from('joueurs').select(champs.join(',')).eq('id', joueurId).single());
+  } else {
+    ({ data: current } = await supabase.from('stats_saisons').select(champs.join(',')).eq('joueur_id', joueurId).eq('saison', saisonFiche).single());
+  }
+  const maj = {};
+  champs.forEach((c) => { maj[c] = (current && current[c] != null ? current[c] : 0) + delta[c]; });
+  if (isCurrentSeason) {
+    await supabase.from('joueurs').update(maj).eq('id', joueurId);
+  } else {
+    await supabase.from('stats_saisons').upsert({ joueur_id: joueurId, saison: saisonFiche, ...maj }, { onConflict: 'joueur_id,saison' });
+  }
+}
+
 // ---- 1. Page calendrier : liste des rencontres + lien vers chaque match ----
 const resCal = await fetch(targetUrl, {
   headers: {
@@ -145,7 +198,7 @@ for (const r of rencontres) {
   // ---- 3. Joueurs FootLight ayant lié ce match ----
   const { data: mj, error: mjErr } = await supabase
     .from('matchs_joueur')
-    .select('id, joueur_id, domicile, buts, cartons_jaunes, cartons_rouges, minutes_jouees')
+    .select('id, joueur_id, saison, domicile, titulaire, buts, cartons_jaunes, cartons_rouges, minutes_jouees, clean_sheet')
     .eq('calendrier_officiel_id', calendrierOfficielId);
   if (mjErr || !mj || !mj.length) continue;
 
@@ -154,7 +207,7 @@ for (const r of rencontres) {
 
   const { data: joueursData } = await supabase
     .from('joueurs')
-    .select('id, prenom, nom')
+    .select('id, prenom, nom, saison')
     .in('id', [...new Set(mj.map((m) => m.joueur_id))]);
   const joueursById = new Map((joueursData || []).map((j) => [j.id, j]));
 
@@ -277,8 +330,12 @@ for (const r of rencontres) {
         if (row.minutes_jouees == null) { maj.minutes_jouees = minutes; details.push(`minutes_jouees: ${minutes}`); }
         else { details.push(`minutes_jouees déjà renseigné (${row.minutes_jouees}), non modifié malgré ${minutes} calculé`); totalDejaRenseignes++; }
       }
+      if (row.titulaire == null) {
+        if (cote.titulaires.has(sportifIds[0])) { maj.titulaire = true; details.push('titulaire: true'); }
+        else if (cote.remplacants.has(sportifIds[0])) { maj.titulaire = false; details.push('titulaire: false'); }
+      }
     } else if (sportifIds.length > 1) {
-      details.push(`minutes_jouees : ${sportifIds.length} joueurs lequipe.fr partagent l'abrégé "${attendu}", ignoré`);
+      details.push(`minutes_jouees/titulaire : ${sportifIds.length} joueurs lequipe.fr partagent l'abrégé "${attendu}", ignoré`);
       totalAmbigus++;
     }
 
@@ -287,9 +344,13 @@ for (const r of rencontres) {
 
     if (Object.keys(maj).length) {
       totalMaj++;
+      const delta = deltaContributionMatch(row, { ...row, ...maj });
       if (!dryRun) {
         const { error: updErr } = await supabase.from('matchs_joueur').update(maj).eq('id', row.id);
-        if (updErr) console.log(`    Erreur écriture : ${updErr.message}`);
+        if (updErr) { console.log(`    Erreur écriture : ${updErr.message}`); continue; }
+        await appliquerDeltaSaison(row.joueur_id, joueur.saison, row.saison, delta);
+      } else {
+        console.log(`    Total de saison (proposé) : ${JSON.stringify(delta)}`);
       }
     }
   }

@@ -1622,17 +1622,26 @@ function contributionMatch(m) {
   if (!m) {
     return { matchs_joues: 0, titularisations: 0, matchs_remplacant: 0, buts: 0, passes_decisives: 0, minutes_jouees: 0, cartons_jaunes: 0, cartons_rouges: 0, buts_encaisses_avec: 0, clean_sheets: 0 };
   }
+  // Une fiche générée à l'avance depuis le calendrier officiel existe (et a
+  // un id) bien avant le coup d'envoi, avec toutes les stats à null : sans
+  // ce garde-fou, "matchs_joues" compterait +1 dès la génération du
+  // calendrier, puis 0 à chaque fois qu'on modifie la fiche pour y ajouter
+  // le score après coup (ancien et nouveau existent tous les deux → delta
+  // nul), et le total de saison ne bougerait jamais. "minutes_jouees" est le
+  // signal le plus fiable qu'un match a réellement été joué (y compris 0
+  // pour un remplaçant non entré).
+  const joue = m.minutes_jouees != null;
   return {
-    matchs_joues: 1,
-    titularisations: m.titulaire ? 1 : 0,
-    matchs_remplacant: m.titulaire ? 0 : 1,
+    matchs_joues: joue ? 1 : 0,
+    titularisations: joue && m.titulaire === true ? 1 : 0,
+    matchs_remplacant: joue && m.titulaire === false ? 1 : 0,
     buts: n(m.buts),
     passes_decisives: n(m.passes_decisives),
     minutes_jouees: n(m.minutes_jouees),
     cartons_jaunes: n(m.cartons_jaunes),
     cartons_rouges: n(m.cartons_rouges),
     buts_encaisses_avec: n(m.buts_encaisses_avec),
-    clean_sheets: m.clean_sheet ? 1 : 0,
+    clean_sheets: joue && !!m.clean_sheet ? 1 : 0,
   };
 }
 function deltaContributionMatch(ancien, nouveau) {
