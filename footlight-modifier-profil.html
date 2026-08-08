@@ -1517,7 +1517,7 @@ async function loadMatchsForSeason(saison) {
   if (!saison) { currentMatchsList = []; renderMatchsList(); return; }
   const { data } = await db.from('matchs_joueur').select('*')
     .eq('joueur_id', joueur.id).eq('saison', saison)
-    .order('date_match', { ascending: false });
+    .order('date_match', { ascending: true });
   currentMatchsList = data || [];
   renderMatchsList();
 }
