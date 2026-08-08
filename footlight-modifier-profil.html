@@ -1594,7 +1594,9 @@ function showMatchForm(match) {
   document.getElementById('match-form-msg').className = 'msg';
   document.getElementById('match-form-msg').textContent = '';
   toggleDefenseFields();
-  document.getElementById('match-form-panel').style.display = 'block';
+  const panel = document.getElementById('match-form-panel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function editMatch(id) {
