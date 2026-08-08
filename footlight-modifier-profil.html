@@ -1608,6 +1608,71 @@ function hideMatchForm() {
   document.getElementById('match-form-panel').style.display = 'none';
 }
 
+// ── RÉPERCUSSION AUTOMATIQUE D'UNE FICHE DE MATCH SUR LE TOTAL DE SAISON ──
+// Sans ça, remplir une fiche de match (ex: 2 buts, 90 minutes) n'avait aucun
+// effet sur le total de saison affiché sur le profil — ce sont deux champs
+// séparés en base, ce qui rendait la saisie fiche par fiche sans intérêt
+// (il fallait remplir le total à la main en plus, en double). On calcule ici
+// la contribution d'une fiche, puis on applique la différence (delta) entre
+// l'ancienne et la nouvelle version au total de saison, plutôt que de tout
+// recalculer depuis zéro — pour ne jamais écraser un total déjà saisi à la
+// main pour des matchs sans fiche détaillée (ex: saisons importées).
+function contributionMatch(m) {
+  const n = (v) => (v == null ? 0 : v);
+  if (!m) {
+    return { matchs_joues: 0, titularisations: 0, matchs_remplacant: 0, buts: 0, passes_decisives: 0, minutes_jouees: 0, cartons_jaunes: 0, cartons_rouges: 0, buts_encaisses_avec: 0, clean_sheets: 0 };
+  }
+  return {
+    matchs_joues: 1,
+    titularisations: m.titulaire ? 1 : 0,
+    matchs_remplacant: m.titulaire ? 0 : 1,
+    buts: n(m.buts),
+    passes_decisives: n(m.passes_decisives),
+    minutes_jouees: n(m.minutes_jouees),
+    cartons_jaunes: n(m.cartons_jaunes),
+    cartons_rouges: n(m.cartons_rouges),
+    buts_encaisses_avec: n(m.buts_encaisses_avec),
+    clean_sheets: m.clean_sheet ? 1 : 0,
+  };
+}
+function deltaContributionMatch(ancien, nouveau) {
+  const a = contributionMatch(ancien), n = contributionMatch(nouveau);
+  const delta = {};
+  Object.keys(n).forEach((c) => { delta[c] = n[c] - a[c]; });
+  return delta;
+}
+async function appliquerDeltaSaison(saison, delta) {
+  const champs = Object.keys(delta).filter((c) => delta[c] !== 0);
+  if (!champs.length) return;
+  const isCurrentSeason = saison === (joueur.saison || '2026-2027');
+  let current;
+  if (isCurrentSeason) {
+    ({ data: current } = await db.from('joueurs').select(champs.join(',')).eq('id', joueur.id).single());
+  } else {
+    ({ data: current } = await db.from('stats_saisons').select(champs.join(',')).eq('joueur_id', joueur.id).eq('saison', saison).single());
+  }
+  const maj = {};
+  champs.forEach((c) => { maj[c] = (current && current[c] != null ? current[c] : 0) + delta[c]; });
+
+  let rowAJour = null;
+  if (isCurrentSeason) {
+    const { error } = await db.from('joueurs').update(maj).eq('id', joueur.id);
+    if (!error) { Object.assign(joueur, maj); rowAJour = joueur; }
+  } else {
+    const { data } = await db.from('stats_saisons')
+      .upsert({ joueur_id: joueur.id, saison, ...maj }, { onConflict: 'joueur_id,saison' })
+      .select().single();
+    rowAJour = data;
+  }
+
+  // Si la saison de ce match est celle actuellement affichée à l'écran, on
+  // rafraîchit tout de suite les champs "total de saison" plutôt que
+  // d'attendre un rechargement de page.
+  if (rowAJour && saison === getSelectedSaisonText()) {
+    fillSeasonFields({ ...rowAJour, isCurrent: isCurrentSeason });
+  }
+}
+
 async function saveMatchForm() {
   const saison = getSelectedSaisonText();
   if (!saison) {
@@ -1642,6 +1707,10 @@ async function saveMatchForm() {
   };
 
   const editId = document.getElementById('m-edit-id').value;
+  let ancien = null;
+  if (editId) {
+    ({ data: ancien } = await db.from('matchs_joueur').select('*').eq('id', editId).single());
+  }
   let error;
   if (editId) {
     ({ error } = await db.from('matchs_joueur').update(payload).eq('id', editId));
@@ -1658,12 +1727,16 @@ async function saveMatchForm() {
     return;
   }
 
+  await appliquerDeltaSaison(saison, deltaContributionMatch(ancien, payload));
   await loadMatchsForSeason(saison);
 }
 
 async function deleteMatch(id) {
   if (!confirm('Supprimer cette fiche de match ?')) return;
-  await db.from('matchs_joueur').delete().eq('id', id);
+  const m = currentMatchsList.find((x) => x.id === id);
+  const { error } = await db.from('matchs_joueur').delete().eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  if (m) await appliquerDeltaSaison(m.saison, deltaContributionMatch(m, null));
   await loadMatchsForSeason(getSelectedSaisonText());
 }
 
