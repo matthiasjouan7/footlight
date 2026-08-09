@@ -34,11 +34,9 @@ const NOUVEAUX = [
   ['Maxence', 'Blé', 'defenseur_central', '2002-04-24'],
   ['Jason', 'Nginamau', 'defenseur_central', '1995-04-27'],
   ['Yoan', 'Pinson', 'lateral_gauche', '1999-01-13'],
-  ['Sacha', 'Lemarié', 'lateral_droit', '1997-10-30'],
   ['Léo', 'Berlin', 'lateral_droit', '1998-01-13'],
   ['Victor', 'Philibert', 'lateral_droit', '2004-07-01'],
   ['Bryan', 'Ngwabije', 'milieu_defensif', '1998-05-30'],
-  ['Brendan', 'Lebas', 'milieu_central', '2001-01-12'],
   ['Edouardo', 'Bathily', 'milieu_central', '1993-02-23'],
   ['Théo', 'Boucard', 'milieu_central', '2000-11-11'],
   ['Naël', 'Bensoula', 'milieu_offensif', '2003-09-12'],
@@ -53,6 +51,15 @@ const NOUVEAUX = [
   ['Davel', 'Mayela', 'attaquant', '1996-01-29'],
   ['Lenny', 'Leonil', 'attaquant', '1998-03-30'],
   ['Julien', 'Trichet', 'attaquant', '2007-01-04'],
+];
+
+// Brendan Lebas est déjà en base sous le nom de club raccourci "LE
+// POIRE/VIE VF" (même club, sans poste renseigné) : correction du nom de
+// club et ajout du poste. Sacha Lemarié (ex-US Granville) est un transfert
+// confirmé vers Vendée Poiré Football.
+const TRANSFERTS = [
+  { id: 'e25d0193-73ac-4599-8aef-815d65767b37', prenom: 'Brendan', nom: 'Lebas', poste: 'milieu_central' },
+  { id: '34ed34e2-2fa0-4b86-8d89-91da19de2a36', prenom: 'Sacha', nom: 'Lemarié', poste: 'lateral_droit' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -78,9 +85,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
