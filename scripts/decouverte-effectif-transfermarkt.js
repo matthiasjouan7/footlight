@@ -42,9 +42,35 @@ const lignes = await page.evaluate(() => {
 console.log(`\n${lignes.length} ligne(s) joueur détectée(s) :`);
 lignes.forEach((l) => console.log(JSON.stringify(l)));
 
-if (!lignes.length) {
-  const bodyText = await page.evaluate(() => document.body.innerText.slice(0, 1500));
-  console.log('\nAucune ligne détectée — début du texte visible de la page :');
+// Diagnostic complémentaire : la page ne semble lister que 7 joueurs sur un
+// effectif qui devrait en compter beaucoup plus. On inspecte la structure
+// réelle (tables présentes, nombre de lignes brutes, en-têtes de catégorie)
+// pour comprendre où sont les autres joueurs.
+const diag = await page.evaluate(() => {
+  const tables = [...document.querySelectorAll('table')].map((t) => ({
+    classe: t.className,
+    nbTbody: t.querySelectorAll('tbody').length,
+    nbTr: t.querySelectorAll('tr').length,
+  }));
+  const responsiveTables = document.querySelectorAll('.responsive-table').length;
+  const totalTr = document.querySelectorAll('tr').length;
+  const headers = [...document.querySelectorAll('.table-header, h2, .content-box-headline')]
+    .map((h) => h.textContent.trim())
+    .filter(Boolean)
+    .slice(0, 20);
+  return { tables, responsiveTables, totalTr, headers };
+});
+console.log('\n--- Diagnostic structure de page ---');
+console.log(`Nombre de <div class="responsive-table">: ${diag.responsiveTables}`);
+console.log(`Nombre total de <tr> sur la page: ${diag.totalTr}`);
+console.log('Tables trouvées :');
+diag.tables.forEach((t) => console.log(`  classe="${t.classe}" nbTbody=${t.nbTbody} nbTr=${t.nbTr}`));
+console.log('En-têtes détectés :');
+diag.headers.forEach((h) => console.log(`  ${h}`));
+
+if (!lignes.length || lignes.length < 15) {
+  const bodyText = await page.evaluate(() => document.body.innerText.slice(0, 3000));
+  console.log('\nEffectif incomplet ou vide — début du texte visible de la page :');
   console.log(bodyText);
 }
 
