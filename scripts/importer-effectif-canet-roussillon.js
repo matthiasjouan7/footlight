@@ -34,7 +34,6 @@ const NOUVEAUX = [
   ['Tony', 'Algrin', 'defenseur_central', '2002-02-09'],
   ['Alexandre', 'Charrat', 'defenseur_central', '2000-11-06'],
   ['Pablo', 'Bonneil', 'lateral_gauche', '2003-09-23'],
-  ['Quentin', 'Hitte', 'lateral_droit', '1998-04-12'],
   ['Abdessalam', 'Zerkoune', 'lateral_droit', '1994-06-09'],
   ['Kévin', 'Malpon', 'milieu_defensif', '1996-03-01'],
   ['Anthony', 'Decherf', 'milieu_defensif', '1996-05-26'],
@@ -48,9 +47,16 @@ const NOUVEAUX = [
   ['Ibrahima', 'Mboup', 'ailier_droit', '1994-11-01'],
   ['Zanga', 'Koné', 'attaquant', '2004-11-12'],
   ['Brahim', 'Mahamat', 'attaquant', '1995-11-13'],
-  ['Bilal', 'Traoré', 'attaquant', '2005-06-24'],
   ['Chris', 'Saint-Germain', 'attaquant', '2006-02-27'],
   ['Youssouf', 'Dembélé', 'attaquant', '1996-04-06'],
+];
+
+// Transferts/corrections confirmés : Quentin Hitte (ex-Aviron Bayonnais FC)
+// rejoint Canet Roussillon FC ; Bilal Traoré est la même personne déjà en
+// base sous le club raccourci "Canet" (nom de club et poste à corriger).
+const TRANSFERTS = [
+  { id: '2c5d86e1-eefe-4412-8d17-7eb59b75847b', prenom: 'Quentin', nom: 'Hitte', poste: 'lateral_droit' },
+  { id: 'cfcd1a95-b24f-48b6-9f0c-7fed734c52ee', prenom: 'Bilal', nom: 'Traoré', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -76,9 +82,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
