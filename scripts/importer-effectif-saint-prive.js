@@ -39,7 +39,6 @@ const NOUVEAUX = [
   ['Moussa', 'Kaba', 'lateral_gauche', '2005-07-01'],
   ['Yoann', 'Wachter', 'lateral_droit', '1992-04-07'],
   ['Thomas', 'Colléaux', 'milieu_defensif', '2005-04-18'],
-  ['Hugo', 'da Silva', 'milieu_central', '2008-10-05'],
   ['Thibault', 'Lemesle', 'milieu_defensif', '1999-06-06'],
   ['Joan', 'Siber', 'milieu_defensif', '1998-12-21'],
   ['Kenny', 'Mavuba', 'milieu_defensif', '1998-12-07'],
@@ -50,6 +49,13 @@ const NOUVEAUX = [
   ['Wisâm', 'Jedd', 'milieu_offensif', '2001-07-24'],
   ['Carnejy', 'Antoine', 'attaquant', '1991-07-27'],
   ['Mody', 'Doucouré', 'attaquant', '2002-04-14'],
+];
+
+// Transfert confirmé : Hugo da Silva (id connu, ex-Stade Poitevin FC) rejoint
+// Saint-Pryvé Saint-Hilaire. On met à jour son profil existant plutôt que
+// d'en créer un doublon.
+const TRANSFERTS = [
+  { id: 'facb849b-eeb9-4647-bd9b-897a46fe0d2d', prenom: 'Hugo', nom: 'da Silva', poste: 'milieu_central' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -75,9 +81,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
