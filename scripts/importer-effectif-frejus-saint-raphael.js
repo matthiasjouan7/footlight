@@ -32,7 +32,6 @@ const NOUVEAUX = [
   ['Mathis', 'Dijoux', 'gardien', '2005-10-24'],
   ['Yasser', 'Baldé', 'defenseur_central', '1993-01-12'],
   ['Simon', 'Chaveriat', 'defenseur_central', '2005-04-06'],
-  ['Tobias', 'Woum Woum', 'defenseur_central', '2001-07-24'],
   ['Belony', 'Dumas', 'defenseur_central', '1989-07-18'],
   ['Julien', 'Mouillon', 'defenseur_central', '1997-03-13'],
   ['Baptiste', 'Ferrand', 'defenseur_central', '2005-11-26'],
@@ -59,6 +58,13 @@ const NOUVEAUX = [
   ['Yanis', 'El Khemiri', 'attaquant', '2000-08-02'],
 ];
 
+// Transfert confirmé : Tobias Woum Woum (ex-Angoulême Charente FC) rejoint
+// ÉFC Fréjus Saint-Raphaël. On met à jour son profil existant plutôt que
+// d'en créer un doublon.
+const TRANSFERTS = [
+  { id: '9803ec99-43d8-4a31-8343-298bc884a0a7', prenom: 'Tobias', nom: 'Woum Woum', poste: 'defenseur_central' },
+];
+
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
 if (jErr) { console.error('Erreur lecture joueurs :', jErr.message); process.exit(1); }
 
@@ -82,9 +88,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
