@@ -27,23 +27,29 @@ function slugifyName(s) {
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Hugo', 'Barbet', 'gardien', '2001-11-22'],
-  ['Corentin', 'Guyon', 'gardien', '1995-05-28'],
-  ['Mathéo', 'Didot', 'defenseur_central', '2002-04-25'],
-  ['Christopher', 'Mendy', 'defenseur_central', '1998-03-27'],
   ['Léo', 'Rouillé', 'lateral_gauche', '2004-02-09'],
-  ['Abdoulkader', 'Thiam', 'lateral_gauche', '1998-10-03'],
-  ['Martin', 'Le Gendre', 'lateral_gauche', '2006-06-15'],
-  ['Hugo', 'Julien', 'lateral_gauche', '2003-04-26'],
-  ['Victor', 'Lefebvre', 'lateral_gauche', '1994-08-04'],
-  ['James', 'Le Marer', 'lateral_droit', '1991-01-01'],
-  ['Alexandre', 'Huot', 'lateral_droit', '1993-03-05'],
-  ['Lino', 'Dufouil', 'milieu_defensif', '1998-07-27'],
-  ['Hugo', 'Jacquemin', 'milieu_central', '1996-08-18'],
   ['Gabriel', 'Tutu', 'ailier_droit', '2004-01-29'],
-  ['Anthony', 'Vermet', 'milieu_offensif', '1993-09-09'],
-  ['Ulrick', 'Eneme-Ella', 'attaquant', '2001-05-22'],
   ['Benjamin', 'Guyomard', 'attaquant', '1995-06-30'],
-  ['Nathan', 'Le Gouellec', 'attaquant', '2001-09-27'],
+];
+
+// Corentin Guyon, Christopher Mendy, Abdoulkader Thiam, Hugo Julien, Victor
+// Lefebvre, James Le Marer, Alexandre Huot, Lino Dufouil, Anthony Vermet et
+// Ulrick Eneme-Ella sont déjà en base à Dinan Léhon FC avec des données
+// correctes : pas de doublon à insérer, pas d'action nécessaire.
+//
+// Corrections/transferts confirmés :
+// - Mathéo Didot est déjà en base sous le nom de club raccourci "DINAN LEHON
+//   FC" (même club) : correction du nom de club uniquement, le poste
+//   "milieu_central" est conservé tel quel.
+// - Hugo Jacquemin est déjà à Dinan Léhon FC avec un poste dans un ancien
+//   format ("milieu central", avec espace) : correction du poste uniquement.
+// - Martin Le Gendre (ex-US Avranches) et Nathan Le Gouellec (ex-Saint-
+//   Colomban Locminé) sont des transferts confirmés vers Dinan Léhon FC.
+const TRANSFERTS = [
+  { id: 'de9c0e3f-a148-4043-affe-d40ea12236ea', prenom: 'Mathéo', nom: 'Didot', poste: 'milieu_central' },
+  { id: '8b57df17-4dbd-4d7c-8fb1-3c57b57faa89', prenom: 'Hugo', nom: 'Jacquemin', poste: 'milieu_central' },
+  { id: '9084ee98-be08-49a1-932d-d1972e660b43', prenom: 'Martin', nom: 'Le Gendre', poste: 'lateral_gauche' },
+  { id: '5ee2b348-32e8-470f-8017-b40abd4a820d', prenom: 'Nathan', nom: 'Le Gouellec', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -69,9 +75,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
