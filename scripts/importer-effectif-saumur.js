@@ -26,30 +26,28 @@ function slugifyName(s) {
 
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Quentin', 'Galvez-Diarra', 'gardien', '2001-09-08'],
-  ['Aubrel', 'Koutsimouka', 'defenseur_central', '2001-08-30'],
   ['Killian', 'Le Ber', 'defenseur_central', '2000-05-24'],
   ['Jean-Paul', 'Montalbetti', 'defenseur_central', '2000-05-17'],
-  ['Benjamin', 'Pillier', 'defenseur_central', '1997-06-04'],
-  ['Mathis', 'Bochereau', 'defenseur_central', '2006-06-08'],
-  ['Bovid', 'Itoua Ngoua', 'defenseur_central', '1988-02-17'],
-  ['Maël', 'Landelle', 'lateral_gauche', '2003-04-10'],
-  ['Bradley', 'Mbuta', 'lateral_gauche', '2000-07-24'],
-  ['Mattéo', 'Pezard', 'lateral_gauche', '2003-09-24'],
-  ['Kryss', 'Chapelle', 'lateral_droit', '2000-03-28'],
-  ['Nathan', 'Benmoussa', 'lateral_droit', '2000-02-09'],
-  ['Artur', 'Viaud', 'milieu_defensif', '1999-07-21'],
-  ['Martin', 'Vidgrin', 'milieu_defensif', '2002-01-05'],
-  ['Walim', 'Lgharbi', 'milieu_central', '2003-01-25'],
-  ['Quentin', 'Biettmann', 'milieu_central', '1998-03-09'],
-  ['Yannis', 'Matingou', 'milieu_central', '1999-11-22'],
-  ['Emmanuel', 'Bourgaud', 'ailier_droit', '1987-10-25'],
-  ['Mathias', 'Blanchard', 'ailier_droit', '1999-10-13'],
-  ['Plamedi', 'Buni Jorge', 'milieu_offensif', '2000-09-07'],
-  ['Leny', 'Payraudeau', 'ailier_gauche', '2003-02-24'],
   ['Namory', 'Keita', 'ailier_droit', '2002-08-14'],
   ['Bridge', 'Ndilu', 'attaquant', '2000-07-21'],
   ['Junior', 'Abdourahamani', 'attaquant', '2003-06-24'],
+];
+
+// Kryss Chapelle est déjà en base sous le nom de club raccourci "Saumur"
+// (même club, poste déjà correct) : correction du nom de club uniquement.
+// Walim Lgharbi et Emmanuel Bourgaud sont déjà à Olympique Saumur mais sans
+// poste renseigné : ajout du poste. Quentin Biettmann et Yannis Matingou ont
+// un poste en base à l'ancien format ("milieu central") : correction de
+// format. Mathias Blanchard a un poste différent de la capture (confirmé).
+// Leny Payraudeau est un transfert confirmé depuis Les Herbiers VF.
+const TRANSFERTS = [
+  { id: '9d7adef3-916b-48e3-8a02-34d846b40e65', prenom: 'Kryss', nom: 'Chapelle', poste: 'lateral_droit' },
+  { id: 'ae138f6b-d633-4c55-a447-45cd720f8869', prenom: 'Walim', nom: 'Lgharbi', poste: 'milieu_central' },
+  { id: 'ce75be67-d66f-4575-b9eb-bac7672a17b6', prenom: 'Quentin', nom: 'Biettmann', poste: 'milieu_central' },
+  { id: '0c87f813-8849-4ac1-a9e0-b03521326757', prenom: 'Yannis', nom: 'Matingou', poste: 'milieu_central' },
+  { id: '15f90d5b-8527-4221-b85e-1355a1341829', prenom: 'Emmanuel', nom: 'Bourgaud', poste: 'ailier_droit' },
+  { id: '567c1735-f125-46c0-a4e8-5462432bcc88', prenom: 'Mathias', nom: 'Blanchard', poste: 'ailier_droit' },
+  { id: '2288b800-fbee-484e-9cba-98dcc613917d', prenom: 'Leny', nom: 'Payraudeau', poste: 'ailier_gauche' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -75,9 +73,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
