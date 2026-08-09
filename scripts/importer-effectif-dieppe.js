@@ -32,7 +32,6 @@ const NOUVEAUX = [
   ['Ianis', 'Polla Boy', 'defenseur_central', '2003-07-28'],
   ['Gaël', 'Gibert', 'defenseur_central', '2000-07-31'],
   ['Allan', 'Eser', 'defenseur_central', '2005-05-11'],
-  ['Théo', 'Lefebvre', 'defenseur_central', '2005-02-18'],
   ['Hamza', 'Chahid', 'defenseur_central', '2000-09-23'],
   ['Paul', 'Diomandé', 'defenseur_central', '2006-01-06'],
   ['Batissaninque', 'Mendes', 'defenseur_central', '1994-09-15'],
@@ -46,11 +45,17 @@ const NOUVEAUX = [
   ['Bastien', 'Magniez', 'milieu_central', '2007-06-03'],
   ['Enzo', 'Beuvain', 'milieu_central', '2003-03-02'],
   ['Hervé', 'Malebe', 'milieu_central', '2002-02-11'],
-  ['Kylian', 'Sila', 'attaquant', '2002-11-13'],
   ['Yakine', 'Saïd', 'attaquant', '2003-07-03'],
   ['Enzo', 'Pinochi', 'attaquant', '1998-07-08'],
   ['Orhan', 'Sertoglü', 'attaquant', '1996-06-02'],
   ['Nabil', 'Amrane', 'attaquant', '1994-06-28'],
+];
+
+// Transfert confirmé : Théo Lefebvre (id connu, ex-Olympique Saumur) rejoint
+// Dieppe. Kylian Sila est déjà présent en base au même club/poste, retiré des
+// NOUVEAUX sans autre action nécessaire.
+const TRANSFERTS = [
+  { id: '689b3e80-25ce-4b83-aa13-79c97c96467b', prenom: 'Théo', nom: 'Lefebvre', poste: 'defenseur_central' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -76,9 +81,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
