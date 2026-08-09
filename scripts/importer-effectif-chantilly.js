@@ -24,6 +24,8 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Ilan Ernoux existe déjà en base à US Chantilly (N1, ailier_gauche) : donnée
+// déjà correcte, pas de doublon à insérer ni de transfert à appliquer.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Erwan', 'Drais', 'gardien', '1997-08-08'],
@@ -38,7 +40,6 @@ const NOUVEAUX = [
   ['Özkan', 'Cetiner', 'milieu_central', '2000-11-25'],
   ['Alan', 'Issifou', 'milieu_central', '2003-06-09'],
   ['Mouhamed', 'Sadjo', 'milieu_offensif', '2003-02-16'],
-  ['Ilan', 'Ernoux', 'ailier_gauche', '2004-04-12'],
   ['Dylan', 'Duquesnes', 'ailier_gauche', '2003-07-18'],
   ['Christopher', 'Boussemart', 'ailier_droit', '1999-01-18'],
   ['Corentin', 'Lemaire', 'attaquant', '1999-05-11'],
