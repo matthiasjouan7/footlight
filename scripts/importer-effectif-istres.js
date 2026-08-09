@@ -46,8 +46,14 @@ const NOUVEAUX = [
   ['Samir', 'Yara', 'milieu_offensif', '1999-03-17'],
   ['Ilian', 'Boudache', 'ailier_droit', '2002-12-14'],
   ['Bastian', 'Badu', 'attaquant', '2000-02-02'],
-  ['Alexis', 'Ebrard', 'attaquant', '1996-08-24'],
   ['Ibrahim', 'Madi', 'attaquant', '1998-05-19'],
+];
+
+// Transfert confirmé : Alexis Ebrard (ex-US Saint-Malo) rejoint Istres
+// Football Club. On met à jour son profil existant plutôt que d'en créer un
+// doublon.
+const TRANSFERTS = [
+  { id: 'ac4a70e9-6c18-4d25-8f6c-452e60302360', prenom: 'Alexis', nom: 'Ebrard', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -73,9 +79,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
