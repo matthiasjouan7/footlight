@@ -33,7 +33,6 @@ const NOUVEAUX = [
   ['Lassana', 'Sylla', 'defenseur_central', '2002-07-02'],
   ['Darnel', 'Koré', 'defenseur_central', '2004-01-04'],
   ['Isaac', 'Luneko', 'defenseur_central', '2004-02-03'],
-  ['Gwilhem', 'Tayot', 'lateral_gauche', '2003-12-14'],
   ['Yacouba', 'Coulibaly', 'lateral_gauche', '1994-10-02'],
   ['Jessy', 'Rotsen', 'lateral_droit', '1999-05-20'],
   ['Omaré', 'Gassama', 'milieu_defensif', '1995-09-01'],
@@ -41,7 +40,6 @@ const NOUVEAUX = [
   ['Kévin Junior', 'Nguechoung', 'milieu_defensif', '2000-08-13'],
   ['Dalvin', 'Fellice', 'milieu_defensif', '1998-11-16'],
   ['Denis', 'Amedovski', 'milieu_central', '2004-07-08'],
-  ['Makan', 'Sidibé', 'milieu_gauche', '1999-07-19'],
   ['Kévin', 'Colin', 'milieu_gauche', '1992-11-15'],
   ['Azzeddine', 'Toufiqui', 'milieu_offensif', '1999-04-25'],
   ['Riyan', 'Majdi', 'milieu_offensif', '2004-02-07'],
@@ -53,6 +51,14 @@ const NOUVEAUX = [
   ['Metehan', 'Güclü', 'attaquant', '1999-04-02'],
   ['Sponky', 'Mbiagnin', 'attaquant', '2002-10-02'],
   ['Alassane', 'Dosso', 'attaquant', '1991-09-21'],
+];
+
+// Transferts confirmés : Gwilhem Tayot (ex-Vendée Les Herbiers) et Makan
+// Sidibé (ex-US Granville) rejoignent US Le Pays du Valois. On met à jour
+// leur profil existant plutôt que d'en créer un doublon.
+const TRANSFERTS = [
+  { id: '204afdff-46d5-4356-bbd5-0bf74c0bac85', prenom: 'Gwilhem', nom: 'Tayot', poste: 'lateral_gauche' },
+  { id: '391a1f56-48d7-475c-aa1d-89a356985f19', prenom: 'Makan', nom: 'Sidibé', poste: 'milieu_gauche' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -78,9 +84,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
