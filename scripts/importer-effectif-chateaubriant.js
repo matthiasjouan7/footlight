@@ -13,7 +13,7 @@ console.log(`Mode : ${dryRun ? 'DRY RUN (aucune écriture)' : 'ÉCRITURE RÉELLE
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const CLUB = 'Voltigeurs de Châteaubriant';
+const CLUB = 'Voltigeurs Chateaubriant';
 const NIVEAU = 'N1';
 const SAISON = '2026-2027';
 
@@ -26,9 +26,7 @@ function slugifyName(s) {
 
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Clément', 'Milon', 'gardien', '1995-01-20'],
   ['Balamine', 'Dramé', 'gardien', '1999-11-19'],
-  ['Magatte', 'Ndiaye', 'gardien', '1998-02-12'],
   ['Lassine', 'Soumaoro', 'defenseur_central', '2002-12-19'],
   ['Lemouya', 'Goudiaby', 'defenseur_central', '1997-01-09'],
   ['Cheick', 'Konaté', 'defenseur_central', '2007-08-12'],
@@ -41,16 +39,27 @@ const NOUVEAUX = [
   ['Bachir', 'Diop', 'milieu_defensif', '2002-08-21'],
   ['Léo', 'Tremblay', 'milieu_defensif', '2003-05-06'],
   ['Loris', 'Dupont', 'milieu_central', '2006-04-17'],
-  ['Arnaud', 'Guedj', 'milieu_central', '1997-07-19'],
   ['Tiago', 'Duarte', 'milieu_central', '2006-06-18'],
   ['Assadillahi', 'Ahamada', 'milieu_offensif', '1999-09-12'],
   ['Akhibou', 'Ly', 'milieu_offensif', '1998-12-28'],
-  ["N'Famara", 'Diaby', 'ailier_gauche', '2000-10-25'],
   ['Abdou Karim', 'Diallo', 'ailier_droit', '2003-05-15'],
   ['Hugo', 'Chambon', 'attaquant', '1996-08-10'],
   ['Godwin', 'Bentil', 'attaquant', '2001-01-30'],
   ['Clarence', 'Kegongo', 'attaquant', '2005-05-07'],
   ['Babacar', 'Gueye Sène', 'attaquant', '2000-07-28'],
+];
+
+// Magatte Ndiaye (déjà "Voltigeurs Chateaubriant") et Arnaud Guedj (déjà
+// "Chateaubriant") sont déjà en base au même club, sous une variante de nom
+// : correction du nom de club uniquement, poste déjà correct.
+//
+// Clément Milon (ex-US Saint-Malo) et N'Famara Diaby (ex-Les Herbiers VF)
+// sont des transferts confirmés vers Voltigeurs Chateaubriant.
+const TRANSFERTS = [
+  { id: 'cf2ed3d2-78a5-484b-80f3-d55a8b94c0ac', prenom: 'Magatte', nom: 'Ndiaye', poste: 'gardien' },
+  { id: '3b798b1e-4385-495e-82a0-bf4584436a79', prenom: 'Arnaud', nom: 'Guedj', poste: 'milieu_central' },
+  { id: '6bd4caf8-70fe-4ed3-b517-641d517be330', prenom: 'Clément', nom: 'Milon', poste: 'gardien' },
+  { id: '53d4372e-fc26-408c-8090-22bdddc1428c', prenom: "N'Famara", nom: 'Diaby', poste: 'ailier_gauche' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -76,9 +85,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
