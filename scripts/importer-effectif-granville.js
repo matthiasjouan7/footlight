@@ -27,28 +27,29 @@ function slugifyName(s) {
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Léopold', 'Maitre', 'gardien', '1998-05-07'],
-  ['Anthony', 'Herbin', 'gardien', '1999-05-19'],
   ['Romain', 'Herbinière', 'gardien', '2006-06-07'],
   ['Antonin', 'Levassort', 'gardien', '2007-06-14'],
   ['Lassana', 'Diakhaby', 'defenseur_central', '1996-01-01'],
-  ['Mathis', 'Lemeray', 'defenseur_central', '2001-09-25'],
   ['Evan', 'Flouzat', 'defenseur_central', '2006-11-22'],
-  ['Pierrick', 'Mouniama', 'defenseur_central', '2001-01-21'],
-  ['Joshua', 'Curtius', 'defenseur_central', '1996-04-21'],
-  ['Théo', 'Emmanuelli', 'lateral_gauche', '2000-01-31'],
-  ['Amay', 'Caprice', 'lateral_droit', '2004-08-21'],
   ['Maxence', 'Legentil', 'milieu_defensif', '1999-10-05'],
   ['Cheikh', 'Gueye', 'milieu_defensif', '2001-02-17'],
-  ['Allan', 'Ramos', 'milieu_defensif', '1997-12-15'],
   ['Erin', 'Airhiavbere', 'milieu_central', '2004-01-10'],
-  ['Tom', 'Lepenant', 'milieu_central', '2005-07-09'],
   ['Félix', 'Ley', 'milieu_offensif', '2001-01-10'],
   ['Noan', 'Geraux', 'milieu_offensif', '2006-03-29'],
-  ['Kylian', 'Silvestre', 'ailier_droit', '2002-08-16'],
   ['Nathan', 'Housset', 'attaquant', '2004-11-04'],
   ['Mouhamed', 'Diouf', 'attaquant', '2003-11-26'],
-  ['Enzo', 'Misse', 'attaquant', '2005-06-14'],
-  ['Mathis', 'Cherchour', 'attaquant', '1999-11-19'],
+];
+
+// Anthony Herbin, Mathis Lemeray, Pierrick Mouniama, Joshua Curtius, Théo
+// Emmanuelli, Amay Caprice, Allan Ramos, Enzo Misse et Mathis Cherchour sont
+// déjà en base à US Granville avec des données correctes : pas de doublon à
+// insérer, pas d'action nécessaire.
+//
+// Tom Lepenant et Kylian Silvestre sont déjà à US Granville avec un poste
+// dans un ancien format (avec espace) : correction du poste uniquement.
+const TRANSFERTS = [
+  { id: '05b3ce55-2596-4a4f-900c-31385f3ba2ea', prenom: 'Tom', nom: 'Lepenant', poste: 'milieu_central' },
+  { id: '23e0711a-df79-4b00-b434-4b477acab68a', prenom: 'Kylian', nom: 'Silvestre', poste: 'ailier_droit' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -74,9 +75,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
