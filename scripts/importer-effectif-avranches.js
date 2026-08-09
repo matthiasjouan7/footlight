@@ -31,23 +31,28 @@ const NOUVEAUX = [
   ['Bryan', 'Nokoue', 'defenseur_central', '2002-05-23'],
   ['Baye Ablaye', 'Mbaye', 'defenseur_central', '2004-01-12'],
   ['Paul', 'Terrien', 'defenseur_central', '2002-01-17'],
-  ['Sasha', 'Delestre', 'defenseur_central', '2006-07-29'],
-  ['Aly-Enzo', 'Hamon', 'lateral_gauche', '2003-03-30'],
   ['Zacharie', 'Iscaye', 'lateral_droit', '2000-10-02'],
-  ['Emeric', 'Dudouit', 'lateral_droit', '1991-09-07'],
   ['Ethan', 'Cloarec', 'lateral_droit', '2005-06-27'],
-  ['Noah', 'Françoise', 'milieu_defensif', '2003-07-05'],
-  ['Charles', 'Boateng', 'milieu_defensif', '1989-12-14'],
-  ['Jessy', 'Pi', 'milieu_defensif', '1993-09-24'],
-  ['Killian', 'Gesmier', 'milieu_central', '2004-04-17'],
   ['Loïs', 'Martins', 'milieu_central', '2004-02-09'],
   ['Ibrahima', 'Doucouré', 'ailier_gauche', '2004-12-25'],
-  ['Noah', 'Adekalom', 'ailier_gauche', '2004-01-07'],
-  ['Shahin', 'Cissé', 'ailier_gauche', '2004-10-13'],
-  ['Anas', 'Lamrabette', 'ailier_droit', '1997-10-06'],
   ['Mehdi', 'Moujetzky', 'attaquant', '2003-11-25'],
-  ['Kenny', 'Herbin', 'attaquant', '1996-10-26'],
-  ['Ali', 'Dicko', 'attaquant', '2003-08-20'],
+];
+
+// Sasha Delestre, Emeric Dudouit, Noah Françoise, Charles Boateng, Jessy Pi,
+// Kenny Herbin et Ali Dicko existent déjà à US Avranches avec des données
+// correctes : pas de doublon à insérer, pas d'action nécessaire.
+//
+// Transferts/corrections confirmés :
+// - Killian Gesmier, Shahin Cissé, Anas Lamrabette sont déjà à US Avranches
+//   mais leur poste est stocké dans un ancien format à corriger.
+// - Aly-Enzo Hamon (ex-Angoulême Charente FC) et Noah Adekalom (ex-Les
+//   Herbiers VF) rejoignent US Avranches.
+const TRANSFERTS = [
+  { id: '1665e104-1c22-47b9-8166-2af6032fb31c', prenom: 'Killian', nom: 'Gesmier', poste: 'milieu_central' },
+  { id: '08e9b8db-d8d9-419a-9472-c9e810d68427', prenom: 'Shahin', nom: 'Cissé', poste: 'ailier_gauche' },
+  { id: 'aefddf8f-457b-4f99-bfc3-7b32fa40e4e9', prenom: 'Anas', nom: 'Lamrabette', poste: 'ailier_droit' },
+  { id: '54beee7a-a013-4a53-9986-cfa29e0034cc', prenom: 'Aly-Enzo', nom: 'Hamon', poste: 'lateral_gauche' },
+  { id: '3a8cf382-e216-49d0-86d8-875adb70ae18', prenom: 'Noah', nom: 'Adekalom', poste: 'ailier_gauche' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -73,9 +78,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
