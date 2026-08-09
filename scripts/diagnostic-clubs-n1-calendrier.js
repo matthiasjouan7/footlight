@@ -29,11 +29,26 @@ function clubsCorrespondent(a, b) {
   return true;
 }
 
-const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('club, niveau').eq('niveau', 'N1');
-if (jErr) { console.error('Erreur lecture joueurs :', jErr.message); process.exit(1); }
+async function selectAll(table, columns, filterColumn, filterValue) {
+  const pageSize = 1000;
+  let toutes = [];
+  let page = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(columns)
+      .eq(filterColumn, filterValue)
+      .range(page * pageSize, page * pageSize + pageSize - 1);
+    if (error) { console.error(`Erreur lecture ${table} :`, error.message); process.exit(1); }
+    toutes = toutes.concat(data || []);
+    if (!data || data.length < pageSize) break;
+    page++;
+  }
+  return toutes;
+}
 
-const { data: matchs, error: mErr } = await supabase.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur').eq('division', 'N1');
-if (mErr) { console.error('Erreur lecture calendrier_officiel :', mErr.message); process.exit(1); }
+const joueurs = await selectAll('joueurs', 'club, niveau', 'niveau', 'N1');
+const matchs = await selectAll('calendrier_officiel', 'equipe_domicile, equipe_exterieur', 'division', 'N1');
 
 const clubsJoueurs = [...new Set((joueurs || []).map((j) => j.club).filter(Boolean))].sort();
 const clubsCalendrier = [...new Set((matchs || []).flatMap((m) => [m.equipe_domicile, m.equipe_exterieur]).filter(Boolean))].sort();
