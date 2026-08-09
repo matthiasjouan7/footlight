@@ -1,6 +1,10 @@
-// Importe l'effectif FR Haguenau (saison 26/27, capture Transfermarkt) dans
+// Importe l'effectif FCSR Haguenau (saison 26/27, capture Transfermarkt) dans
 // la table joueurs. Vérifie les doublons potentiels puis affiche un aperçu
 // avant toute écriture.
+//
+// Le nom officiel utilisé par calendrier_officiel est "FCSR HAGUENAU" (FC
+// Sportive et Réunie Haguenau) — garder ce nom ici pour que le rapprochement
+// flou de sync-lequipe-to-calendrier.js reconnaisse bien ce club.
 //
 // Sécurité : DRY_RUN=true par défaut.
 import { createClient } from '@supabase/supabase-js';
@@ -13,7 +17,7 @@ console.log(`Mode : ${dryRun ? 'DRY RUN (aucune écriture)' : 'ÉCRITURE RÉELLE
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const CLUB = 'FR Haguenau';
+const CLUB = 'FCSR Haguenau';
 const NIVEAU = 'N1';
 const SAISON = '2026-2027';
 
