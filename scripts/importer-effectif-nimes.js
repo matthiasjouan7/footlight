@@ -38,17 +38,23 @@ const NOUVEAUX = [
   ['Gino', 'Caoki', 'lateral_gauche', '2004-07-17'],
   ['Diaby', 'Doucouré', 'lateral_droit', '1996-05-28'],
   ['Moussa', 'Diallo', 'lateral_droit', '1997-01-27'],
-  ['Mouhamed', 'Coulibaly', 'milieu_defensif', '1997-12-25'],
   ['Charif', 'Benhamza', 'milieu_central', '1993-01-20'],
   ['Oualid', 'Orinel', 'milieu_central', '1990-06-03'],
   ['Marowane', 'Khalid', 'milieu_offensif', '1999-03-03'],
-  ['Bissourou', 'Touré', 'ailier_gauche', '1995-03-20'],
   ['Najib', 'Bennour', 'ailier_gauche', '2001-07-29'],
   ['Karim', 'Tlili', 'ailier_droit', '1990-02-03'],
   ['Ilyes', 'Dos Santos', 'ailier_droit', '2004-04-07'],
   ['Clément', 'Depres', 'attaquant', '1994-11-25'],
   ['Sory', 'Doumbouya', 'attaquant', '1999-01-31'],
   ['Diawoye', 'Diarra', 'attaquant', '1994-11-16'],
+];
+
+// Transferts confirmés : Mouhamed Coulibaly (ex-US Granville) et Bissourou
+// Touré (ex-US Saint-Malo) rejoignent Nîmes Olympique. On met à jour leur
+// profil existant plutôt que d'en créer un doublon.
+const TRANSFERTS = [
+  { id: '5b262a09-857b-47c9-b432-66237cd0026c', prenom: 'Mouhamed', nom: 'Coulibaly', poste: 'milieu_defensif' },
+  { id: 'f14a8ecf-fa5f-4cf2-8c28-21d513b3dafa', prenom: 'Bissourou', nom: 'Touré', poste: 'ailier_gauche' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -74,9 +80,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
