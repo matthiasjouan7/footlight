@@ -23,6 +23,10 @@ jobs:
         working-directory: scripts
         run: npm install
 
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
       - name: Découvrir
         working-directory: scripts
         env:
