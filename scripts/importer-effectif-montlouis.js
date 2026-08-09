@@ -26,31 +26,33 @@ function slugifyName(s) {
 
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Jules', 'Goda', 'gardien', '1989-05-30'],
   ['Léo', 'Tzotzis', 'gardien', '2001-06-22'],
-  ['Noah', 'Sourisce', 'gardien', '2006-01-06'],
-  ['Djegui', 'Koita', 'defenseur_central', '1999-08-05'],
-  ['Alexandre', 'Castro', 'defenseur_central', '1994-04-24'],
   ['Axel', 'Dudoit', 'defenseur_central', '2000-02-19'],
-  ['Yannis', 'Boutouil', 'defenseur_central', '1998-06-13'],
-  ['Noah', 'Mulumba', 'defenseur_central', '2002-03-05'],
   ['Banfa', 'Fofana', 'lateral_gauche', '2000-12-17'],
-  ['Mohammed', 'Berrabah', 'lateral_gauche', '2002-09-11'],
-  ['Benoît', 'Cachenaut', 'lateral_droit', '1998-06-03'],
   ['Hugo', 'Vicart', 'lateral_droit', '2002-10-15'],
   ['Baptiste', 'Canelhas-Reiffers', 'milieu_defensif', '2000-05-09'],
-  ['Youssouf', 'Diarra', 'milieu_defensif', '2000-10-19'],
-  ['Antoine', 'Rebelo', 'milieu_defensif', '2000-08-13'],
-  ['Mattys', 'Mallet', 'milieu_central', '2002-09-19'],
   ['Mohamed Yassin', 'Faiz', 'milieu_defensif', '2004-05-10'],
   ['Alexandre', 'Valbon', 'milieu_central', '1999-11-19'],
-  ['Ismaël', 'Houmadi', 'ailier_droit', '2003-07-19'],
   ['Caumes', 'Cimetière', 'ailier_droit', '2007-10-22'],
   ['Malcom', 'Nguea', 'attaquant', '2001-06-27'],
   ['Jean', 'Boyer', 'attaquant', '2001-03-11'],
-  ['Luigi', 'Rizaldos', 'attaquant', '2005-08-01'],
   ['Aboubacar', 'Diakhaby', 'attaquant', '1996-03-17'],
-  ['Morgan', 'Barbier', 'attaquant', '2000-10-11'],
+];
+
+// Doublons confirmés déjà à FC Montlouis avec des données correctes (Jules
+// Goda, Noah Sourisce, Alexandre Castro, Yannis Boutouil, Noah Mulumba,
+// Mohammed Berrabah, Antoine Rebelo, Morgan Barbier) : simplement absents de
+// NOUVEAUX, aucune action nécessaire.
+//
+// Corrections de données (même club, petite incohérence) + transferts
+// confirmés : mise à jour du profil existant plutôt qu'un doublon.
+const TRANSFERTS = [
+  { id: 'f7821bf3-38ca-4221-8305-41091904e277', prenom: 'Djegui', nom: 'Koita', poste: 'defenseur_central' },
+  { id: 'f25b3d41-5305-4954-8f99-7aa5fe941b78', prenom: 'Mattys', nom: 'Mallet', poste: 'milieu_central' },
+  { id: '5f32f095-0faf-4ad4-bfe1-117702bde626', prenom: 'Benoît', nom: 'Cachenaut', poste: 'lateral_droit' },
+  { id: 'fd351db1-6168-407c-8397-8f2df430804d', prenom: 'Youssouf', nom: 'Diarra', poste: 'milieu_defensif' },
+  { id: '25983116-e9a6-4790-8e6d-55f5acc88e06', prenom: 'Ismaël', nom: 'Houmadi', poste: 'ailier_droit' },
+  { id: 'dedf99b7-6720-4090-885e-720519d7f66e', prenom: 'Luigi', nom: 'Rizaldos', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -76,9 +78,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} mise(s) à jour à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
