@@ -33,7 +33,6 @@ const NOUVEAUX = [
   ['Datoumcaroul', 'Dole', 'defenseur_central', '2001-09-15'],
   ['Canarie', 'Unjanqui', 'defenseur_central', '1999-04-28'],
   ['Morgan', 'Moasary', 'defenseur_central', '2006-12-15'],
-  ['Angel', 'Marchegay', 'lateral_gauche', '2002-06-07'],
   ['Niels', 'Chirao', 'lateral_droit', '2006-01-18'],
   ['Ousmane', 'Stephanus', 'lateral_droit', '2002-04-12'],
   ['Ibrahim', 'Mohamed', 'milieu_defensif', '1998-11-07'],
@@ -48,6 +47,13 @@ const NOUVEAUX = [
   ['Désiré', 'Sègbè', 'attaquant', '1993-05-06'],
   ['Espérance', 'Mabekondiasson', 'attaquant', '2003-03-22'],
   ['Ryan', 'Owusu', 'attaquant', '2006-03-27'],
+];
+
+// Transfert confirmé : Angel Marchegay (id connu, ex-Stade Poitevin FC)
+// rejoint Colmar. On met à jour son profil existant plutôt que d'en créer
+// un doublon.
+const TRANSFERTS = [
+  { id: '661e3fa0-6987-4df5-8cf1-c18e45f71ddd', prenom: 'Angel', nom: 'Marchegay', poste: 'lateral_gauche' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -73,9 +79,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
