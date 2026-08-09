@@ -29,10 +29,8 @@ const NOUVEAUX = [
   ['Valentin', 'Rabouille', 'gardien', '2000-04-15'],
   ['Loïck', 'Massé', 'gardien', '2003-03-31'],
   ['Dava David', 'Agossa', 'gardien', '2003-05-13'],
-  ['Malick', 'Lopy', 'defenseur_central', '1997-05-21'],
   ['Paul', 'Lehoux', 'defenseur_central', '2001-08-21'],
   ['Sekou', 'Traoré', 'defenseur_central', '1997-01-31'],
-  ['Emmanuel', 'Latron', 'lateral_gauche', '2000-04-19'],
   ['Florian', 'Ricard', 'lateral_droit', '1998-09-25'],
   ['Nianankoro', 'Doumbia', 'milieu_defensif', '1996-05-23'],
   ['Alexis', 'Mané', 'milieu_defensif', '1997-04-30'],
@@ -43,15 +41,27 @@ const NOUVEAUX = [
   ['Mamadou Lamine', 'Massaly', 'milieu_central', '2006-12-31'],
   ['Alpha', 'Sawaneh Kubota', 'ailier_droit', '1996-07-19'],
   ['Maguette', 'Diop', 'ailier_gauche', '2005-06-22'],
-  ['Pierre-Bertrand', 'Arné', 'ailier_gauche', '2000-09-30'],
   ['Hamed', 'Belem', 'ailier_droit', '1999-09-24'],
   ['Ali', 'Sghiouari', 'ailier_droit', '2004-02-09'],
-  ['Lamine', 'Touré', 'attaquant', '2003-12-20'],
   ['El Hadj', 'Coly', 'attaquant', '2001-07-05'],
   ['Gaëtan', 'Missi Mezu', 'attaquant', '1996-05-04'],
   ['Noah', 'Marchesseau', 'attaquant', '2003-04-13'],
   ['Amadou Sadio', 'Diallo', 'attaquant', '2001-04-22'],
   ['Thomas', 'Gautier', 'attaquant', '2001-07-25'],
+];
+
+// Pierre-Bertrand Arné existe déjà en base à Bourges (N1, ailier_gauche) :
+// donnée déjà correcte (variante d'orthographe "Bourges"), pas de doublon à
+// insérer ni de transfert à appliquer.
+//
+// Transferts confirmés : Malick Lopy (ex-Les Herbiers VF), Emmanuel Latron
+// (ex-Aviron Bayonnais FC) et Lamine Touré (ex-FC Montlouis, changement de
+// poste vers attaquant) rejoignent Bourges FC. On met à jour leur profil
+// existant plutôt que d'en créer un doublon.
+const TRANSFERTS = [
+  { id: '6ad7d0a8-47e7-46a7-9c37-46e2b5d52cc7', prenom: 'Malick', nom: 'Lopy', poste: 'defenseur_central' },
+  { id: 'c7542306-717d-4e7c-84d8-7241b8da3bb3', prenom: 'Emmanuel', nom: 'Latron', poste: 'lateral_gauche' },
+  { id: '5b3f842c-4d8c-4414-b2c0-74f2bca48790', prenom: 'Lamine', nom: 'Touré', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -77,9 +87,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
