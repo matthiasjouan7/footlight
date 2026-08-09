@@ -26,7 +26,6 @@ function slugifyName(s) {
 
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Kévin', 'Le Corvaisier', 'gardien', '1999-09-14'],
   ['Malick', 'Sogue', 'gardien', '2006-09-03'],
   ['Calvin', 'Mangan', 'defenseur_central', '1992-09-23'],
   ['Yoann', 'Le Gal', 'defenseur_central', '1999-08-08'],
@@ -39,16 +38,27 @@ const NOUVEAUX = [
   ['Léo', 'Faure', 'lateral_droit', '2001-03-14'],
   ['Malo', 'Jestin', 'lateral_droit', '2005-01-15'],
   ['Franklin', 'Wadja', 'milieu_defensif', '1995-05-01'],
-  ['Malo', 'Jegat', 'milieu_defensif', '2003-01-06'],
-  ['Kilian', 'Liri', 'milieu_central', '2003-04-04'],
   ['Noah', 'Nabé', 'milieu_central', '2004-07-21'],
   ['Aimen', 'Laraba', 'milieu_offensif', '1997-10-13'],
   ["Jenny", "N'Kassa", 'ailier_droit', '2001-01-30'],
   ['Virgil', 'Gomis', 'attaquant', '1999-04-16'],
-  ['Ibrahim', 'Et Touguani', 'attaquant', '1998-02-01'],
   ['Hugo', 'Guimard', 'attaquant', '2002-12-11'],
   ['Ethan', 'Lohezic', 'attaquant', '2007-10-31'],
   ['Rayan', 'Saïdi', 'attaquant', '2004-10-06'],
+];
+
+// Kévin Le Corvaisier et Kilian Liri sont déjà en base sous une variante du
+// nom de club ("Pontivy" / "Pontivy GSI", même club) : correction du nom de
+// club uniquement, poste déjà correct.
+//
+// Malo Jegat et Ibrahim Et Touguani sont aussi déjà en base sous "Pontivy",
+// avec un poste différent de la capture (confirmé) : correction du nom de
+// club et du poste.
+const TRANSFERTS = [
+  { id: '17ade435-00c6-4ba1-9f9d-d13555d36f71', prenom: 'Kévin', nom: 'Le Corvaisier', poste: 'gardien' },
+  { id: '147ca2ac-2fa1-4b87-a74b-ccc2cd923800', prenom: 'Kilian', nom: 'Liri', poste: 'milieu_central' },
+  { id: 'a1a220d2-a4c6-4210-aec3-9e6c3ed463c3', prenom: 'Malo', nom: 'Jegat', poste: 'milieu_defensif' },
+  { id: '240f0b42-4c2d-4b36-90ba-58d9cb81d0db', prenom: 'Ibrahim', nom: 'Et Touguani', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -74,9 +84,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
