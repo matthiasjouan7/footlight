@@ -26,30 +26,38 @@ function slugifyName(s) {
 
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Saturnin', 'Allagbé', 'gardien', '1993-11-22'],
   ['Mattéo', 'Mayoulika', 'gardien', '2004-03-18'],
   ['Seydoux', 'Wassa', 'defenseur_central', '2004-02-04'],
-  ['Dan', 'Bokelo Isenge', 'defenseur_central', '2006-08-02'],
   ['Otchowan', 'Abese', 'defenseur_central', '2005-01-19'],
-  ['Balamine', 'Cissé', 'defenseur_central', '2001-08-14'],
   ['Gabin', 'Delguel', 'lateral_gauche', '2001-01-20'],
   ['Mathis', 'Jouve', 'lateral_gauche', '2004-09-04'],
   ['Sami', 'Boughanmi', 'lateral_gauche', '2005-06-23'],
-  ['Maël', 'Sedagondji', 'lateral_droit', '1999-08-23'],
   ['Haris', 'Alic', 'milieu_defensif', '1994-06-22'],
   ['Nail', 'Belaggoune', 'milieu_central', '2002-06-21'],
   ['Benjamin', 'Barcq', 'milieu_central', '1997-08-15'],
   ['Alexy', 'Do Rogeiro', 'milieu_central', '2001-03-17'],
-  ['Ludovic', 'Faucher', 'milieu_offensif', '1998-03-10'],
   ['Maxime', 'Bisleau', 'milieu_offensif', '2004-03-18'],
   ['Warren', 'Ngako', 'ailier_gauche', '2004-12-03'],
   ['Soufian', 'Awragh', 'ailier_gauche', '2005-02-23'],
   ['Mehdi', 'Mousseni', 'ailier_gauche', '2004-05-29'],
-  ['Jilvaro', 'Luyinga', 'ailier_gauche', '2001-11-03'],
   ['Ivane', 'Chegra', 'ailier_droit', '2004-03-03'],
   ['Daouda', 'Bassock', 'ailier_droit', '1995-03-13'],
   ['Doua', 'Dembélé', 'attaquant', '2001-08-27'],
   ['Jérôme', 'Lemoine', 'attaquant', '1998-07-22'],
+];
+
+// Saturnin Allagbé, Balamine Cissé et Jilvaro Luyinga sont déjà en base sous
+// le nom de club raccourci "Chauray" (même club) : nom de club et, pour
+// Luyinga, poste à corriger. Dan Bokelo Isenge (ex-Stade Poitevin FC), Maël
+// Sedagondji (ex-Angoulême Charente FC) et Ludovic Faucher (ex-Stade
+// Poitevin FC) sont des transferts confirmés vers FC Chauray.
+const TRANSFERTS = [
+  { id: '39b4c3ae-268b-421f-82f4-107824337618', prenom: 'Saturnin', nom: 'Allagbé', poste: 'gardien' },
+  { id: '8d41a623-f2d9-4b19-af9a-20288f504262', prenom: 'Balamine', nom: 'Cissé', poste: 'defenseur_central' },
+  { id: 'a12476e4-7dfd-4ba4-9462-0c55e29f78c9', prenom: 'Jilvaro', nom: 'Luyinga', poste: 'ailier_gauche' },
+  { id: '58681410-4da8-45bd-9616-08f298e3c5a4', prenom: 'Dan', nom: 'Bokelo Isenge', poste: 'defenseur_central' },
+  { id: '70ba46e5-19be-4866-938d-22353d7b9293', prenom: 'Maël', nom: 'Sedagondji', poste: 'lateral_droit' },
+  { id: '50e58725-f8d6-46ec-ae07-e1c16572b1f3', prenom: 'Ludovic', nom: 'Faucher', poste: 'milieu_offensif' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -75,9 +83,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
