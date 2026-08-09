@@ -31,7 +31,6 @@ const NOUVEAUX = [
   ['Baptiste', 'Guyot', 'defenseur_central', '1996-05-08'],
   ['Naïm', 'Ighbane', 'defenseur_central', '2001-08-17'],
   ['Andreas', 'Bertin', 'defenseur_central', '2004-09-23'],
-  ['Isaac', 'Diouf', 'defenseur_central', '2004-07-18'],
   ['Abdeldjalil', 'Bouameur', 'defenseur_central', '2003-10-20'],
   ['Gabriel', 'Mikina', 'defenseur_central', '2001-05-05'],
   ['Merhez', 'Belkhechine', 'defenseur_central', '2000-05-04'],
@@ -51,6 +50,13 @@ const NOUVEAUX = [
   ['Youba', 'Dramé', 'attaquant', '1998-01-16'],
   ['Anthony', 'Payet', 'attaquant', '1997-10-28'],
   ['Marius', 'Reymond', 'attaquant', '2004-03-04'],
+];
+
+// Transfert confirmé : Isaac Diouf (ex-Stade Poitevin FC) rejoint le
+// Sporting Club de Toulon. On met à jour son profil existant plutôt que
+// d'en créer un doublon.
+const TRANSFERTS = [
+  { id: '0464d136-6f2b-4495-962a-b9a189ff0ddf', prenom: 'Isaac', nom: 'Diouf', poste: 'defenseur_central' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -76,9 +82,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
