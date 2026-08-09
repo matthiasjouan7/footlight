@@ -1,0 +1,31 @@
+name: Importe l'effectif Grand Ouest Association Lyonnaise FC (DRY_RUN par défaut)
+
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "Appliquer réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Importer
+        working-directory: scripts
+        env:
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node importer-effectif-goal-lyonnaise.js
