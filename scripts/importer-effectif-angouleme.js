@@ -26,30 +26,31 @@ function slugifyName(s) {
 
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Ghjuvanni', 'Quilichini', 'gardien', '2002-09-01'],
   ['Jason', 'Perian', 'gardien', '2002-06-07'],
-  ['Alexis', 'Mignonneaud', 'gardien', '2003-07-31'],
   ['Nathan', 'Vitré', 'defenseur_central', '1998-03-03'],
-  ['Mohamed', 'Hamdi', 'defenseur_central', '1993-05-08'],
   ['Lorick', 'Cots', 'lateral_gauche', '2003-01-09'],
-  ['Théo', 'Chauvier', 'lateral_droit', '1999-06-26'],
-  ['Thomas', 'Dasquet', 'milieu_defensif', '1994-06-03'],
   ['Evan', 'Vonner', 'milieu_defensif', '2004-09-11'],
-  ['Théo', 'Montavit', 'milieu_defensif', '1996-06-30'],
-  ['Ibrahima', 'Diaby', 'milieu_defensif', '2004-04-23'],
   ['Issam', 'Ben Khemis', 'milieu_central', '1996-01-10'],
   ['Léo', 'Fichten', 'milieu_central', '1994-08-26'],
-  ['Paul', 'Meliande', 'milieu_central', '2001-12-20'],
-  ['Victor', 'Elissalt', 'milieu_central', '1991-11-23'],
-  ['Mahamadou', 'Diarra', 'milieu_central', '1994-03-11'],
-  ['Salim', 'Jabi', 'milieu_central', '1999-07-30'],
   ['Lilian', 'Fournier', 'ailier_droit', '1998-05-18'],
-  ['Mouhamadou', 'Sacko', 'milieu_offensif', '2004-01-20'],
   ['Kévin', 'Testud', 'ailier_droit', '1992-04-12'],
-  ['Lucas', 'Makan', 'attaquant', '2003-08-09'],
-  ['Romain', 'Escarpit', 'attaquant', '1998-07-20'],
-  ['Anthony', 'Castera', 'attaquant', '1995-08-10'],
-  ['Alexy', 'Sénac', 'attaquant', '2003-01-28'],
+];
+
+// Salim Jabi est actuellement libre ("Sans club" / niveau "Autre") : on ne
+// touche pas à sa fiche, il n'est pas rattaché à Angoulême Charente FC.
+//
+// Ghjuvanni Quilichini et Théo Montavit sont déjà en base sous "Aviron
+// Bayonnais FC" (transfert confirmé vers Angoulême Charente FC).
+// Victor Elissalt, Mahamadou Diarra, Paul Meliande et Lucas Makan sont déjà
+// en base à Angoulême Charente FC avec un poste à corriger (ancien format ou
+// valeur différente, confirmé).
+const TRANSFERTS = [
+  { id: 'e5846c08-c7d6-435d-ac7d-1b6dad34bbad', prenom: 'Ghjuvanni', nom: 'Quilichini', poste: 'gardien' },
+  { id: 'ac9d43c2-1d93-4499-94a0-12f3b318a844', prenom: 'Théo', nom: 'Montavit', poste: 'milieu_defensif' },
+  { id: '37253032-e047-4d74-ad41-6d62866a5236', prenom: 'Paul', nom: 'Meliande', poste: 'milieu_central' },
+  { id: '1c95714d-25e8-4ade-ba31-20a64143cfdc', prenom: 'Victor', nom: 'Elissalt', poste: 'milieu_central' },
+  { id: '13e0c885-7608-4f67-9e3a-ac638a5d29e2', prenom: 'Mahamadou', nom: 'Diarra', poste: 'milieu_central' },
+  { id: 'fb6e1ab5-fe87-4727-ab10-dfdfa9368877', prenom: 'Lucas', nom: 'Makan', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -75,9 +76,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
