@@ -24,6 +24,8 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Kaman Diarra existe déjà en base à LB Châteauroux (N1, milieu_defensif) :
+// donnée déjà correcte, pas de doublon à insérer.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Sébastien', 'Rénot', 'gardien', '1989-11-11'],
@@ -36,8 +38,6 @@ const NOUVEAUX = [
   ['Jad', 'Koembo', 'lateral_droit', '2004-01-21'],
   ['Amine', 'Badirou', 'lateral_droit', '2007-04-11'],
   ['Yanis', 'Chahid', 'milieu_defensif', '2004-09-18'],
-  ['Romain', 'Caumet', 'milieu_defensif', '1999-04-13'],
-  ['Kaman', 'Diarra', 'milieu_defensif', '2006-03-31'],
   ['Samba', 'Dembélé', 'milieu_central', '1996-06-09'],
   ['Aymeric', 'Ahmed', 'milieu_offensif', '2003-11-08'],
   ['Julien', 'Charpentier', 'milieu_offensif', '1996-07-17'],
@@ -45,7 +45,14 @@ const NOUVEAUX = [
   ['Jonathan', 'Lavri', 'ailier_gauche', '2002-04-10'],
   ['Anddrys', 'Solvet', 'ailier_gauche', '2007-06-23'],
   ['Berni', 'Kassy', 'ailier_droit', '2006-04-04'],
-  ['Noah', 'Bongo', 'attaquant', '1999-02-18'],
+];
+
+// Transferts confirmés : Romain Caumet (ex-Stade Poitevin FC) et Noah Bongo
+// (ex-Dinan Léhon FC) rejoignent LB Châteauroux. On met à jour leur profil
+// existant plutôt que d'en créer un doublon.
+const TRANSFERTS = [
+  { id: '34ba0c55-cdd6-4c24-aabc-5f279b175bfa', prenom: 'Romain', nom: 'Caumet', poste: 'milieu_defensif' },
+  { id: 'dd5c8799-a3f1-47ec-b430-227b4bec190c', prenom: 'Noah', nom: 'Bongo', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -71,9 +78,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
