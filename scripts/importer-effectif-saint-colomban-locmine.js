@@ -26,29 +26,37 @@ function slugifyName(s) {
 
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Ibrahima', 'Sy', 'gardien', '1995-08-13'],
-  ['Evan', 'Dréau', 'gardien', '1999-02-09'],
   ['Guillaume', 'Jannez', 'defenseur_central', '1989-02-19'],
   ['Baptiste', 'Kerviche', 'defenseur_central', '1999-06-07'],
-  ['Alexandre', 'Le Nédic', 'defenseur_central', '1998-03-05'],
-  ['Alexandre', 'Lavenant', 'defenseur_central', '1995-03-24'],
-  ['Diakari', 'Diarra', 'lateral_gauche', '1993-03-24'],
   ['Lucas', 'Salaun', 'lateral_gauche', '2006-06-30'],
-  ['Azaria', 'Obame', 'lateral_gauche', '2000-02-24'],
-  ['Benjamin', 'Rio', 'lateral_droit', '1997-02-04'],
   ['Hugo', 'Gerbore', 'milieu_central', '2002-04-29'],
-  ['Mathis', 'Belhaj', 'milieu_defensif', '2001-02-08'],
-  ['Mario-Jason', 'Kikonda', 'milieu_central', '1996-04-20'],
   ['Mathis', 'Raimbault', 'milieu_central', '2004-09-23'],
-  ['Mathys', 'Daubin', 'milieu_central', '2001-06-08'],
-  ['Achille', 'Degan', 'milieu_gauche', '1992-09-21'],
   ['Djibril', 'Konté', 'ailier_gauche', '2002-11-04'],
-  ['Georges', 'Gope-Fenepej', 'ailier_gauche', '1988-10-23'],
   ['Hamza', 'Bouraja', 'ailier_gauche', '2003-12-26'],
   ['Khaled', 'Mesbah', 'ailier_droit', '2000-09-11'],
-  ['Jeffrey', 'Quarshie', 'attaquant', '1991-07-11'],
   ['Steven', 'Le Mouellic', 'attaquant', '2003-12-27'],
   ['Antonin', 'Kermorgant', 'attaquant', '2006-08-03'],
+];
+
+// Ibrahima Sy, Evan Dréau, Alexandre Le Nédic, Alexandre Lavenant, Azaria
+// Obame, Benjamin Rio, Mathis Belhaj, Achille Degan et Jeffrey Quarshie sont
+// déjà en base à Saint-Colomban Locminé avec des données correctes : pas de
+// doublon à insérer, pas d'action nécessaire.
+//
+// Corrections/transfert confirmés :
+// - Mario-Jason Kikonda et Mathys Daubin sont déjà à Saint-Colomban Locminé
+//   avec un poste dans un ancien format ("milieu central", avec espace) :
+//   correction du poste uniquement.
+// - Georges Gope-Fenepej est déjà à Saint-Colomban Locminé avec un poste
+//   dans un ancien format ("ailier gauche", avec espace) : correction du
+//   poste uniquement.
+// - Diakari Diarra (ex-US Granville) est un transfert confirmé vers
+//   Saint-Colomban Locminé.
+const TRANSFERTS = [
+  { id: '31e4bf75-5507-43a1-acfc-c94fde6e56f9', prenom: 'Mario-Jason', nom: 'Kikonda', poste: 'milieu_central' },
+  { id: 'ff4b65d8-e0e6-46cb-9769-746d534b6ce3', prenom: 'Mathys', nom: 'Daubin', poste: 'milieu_central' },
+  { id: '6ed47125-ad46-403b-809a-161a5a719697', prenom: 'Georges', nom: 'Gope-Fenepej', poste: 'ailier_gauche' },
+  { id: '17c67b54-3a48-4684-b0ab-69f73574afe0', prenom: 'Diakari', nom: 'Diarra', poste: 'lateral_gauche' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -74,9 +82,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
