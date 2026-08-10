@@ -1362,16 +1362,28 @@ function sbLockAdvancedFilters() {
 }
 
 async function sbLoadJoueurs() {
-  const { data, error } = await db
-    .from('joueurs')
-    .select('id,prenom,nom,poste,club,niveau,buts,matchs_joues,minutes_jouees,titularisations,passes_decisives,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,badge,pied_fort,date_naissance')
-    .eq('profil_public', true)
-    .order('matchs_joues', { ascending: false });
-  if (error || !data) {
-    document.getElementById('sb-resultats-liste').innerHTML = '<div class="sb-empty">Erreur de chargement.</div>';
-    return;
+  // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà,
+  // il faut paginer avec .range() sous peine de perdre silencieusement les
+  // joueurs les plus loin dans le tri.
+  const PAGE_SIZE = 1000;
+  let all = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await db
+      .from('joueurs')
+      .select('id,prenom,nom,poste,club,niveau,buts,matchs_joues,minutes_jouees,titularisations,passes_decisives,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,badge,pied_fort,date_naissance')
+      .eq('profil_public', true)
+      .order('matchs_joues', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) {
+      document.getElementById('sb-resultats-liste').innerHTML = '<div class="sb-empty">Erreur de chargement.</div>';
+      return;
+    }
+    if (!data || !data.length) break;
+    all = all.concat(data);
+    if (data.length < PAGE_SIZE) break;
   }
-  sbAllPlayers = data;
+  sbAllPlayers = all;
   sbApplyFilters();
 }
 
