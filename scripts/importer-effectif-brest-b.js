@@ -41,12 +41,16 @@ const NOUVEAUX = [
   ['Noa', 'Mokhtari', 'milieu_offensif', '2007-10-09'],
   ['Yannis', 'Rabrun-Nellec', 'milieu_offensif', '2007-09-11'],
   ['Abdoul', 'Samaké', 'ailier_gauche', '2006-02-01'],
-  ['Samba', 'Diop', 'ailier_gauche', '2007-05-27'],
   ['Ibrahim', 'Yayiya Kanté', 'ailier_droit', '2007-03-18'],
   ['Yessine', 'Ben Mahmoud', 'ailier_droit', '2008-01-21'],
   ['Mathis', 'Lainé', 'attaquant', '2007-03-30'],
   ['Darri', 'Tifra', 'attaquant', '2007-01-18'],
   ['Enzo', 'Monchatre', 'attaquant', '2008-02-02'],
+];
+
+// Samba Diop est un transfert confirmé depuis Chateaubriant (N1).
+const TRANSFERTS = [
+  { id: 'a0994704-06be-4d60-a22b-462339952841', prenom: 'Samba', nom: 'Diop', poste: 'ailier_gauche' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -72,9 +76,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
