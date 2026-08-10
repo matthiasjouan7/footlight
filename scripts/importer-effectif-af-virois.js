@@ -28,7 +28,6 @@ function slugifyName(s) {
 const NOUVEAUX = [
   ['Louis', 'Deschateaux', 'gardien', '1997-04-16'],
   ['Maël', 'Obé', 'gardien', '2004-09-26'],
-  ['Pierre', 'Bourdin', 'defenseur_central', '1994-01-06'],
   ['Alban', 'Gibert', 'defenseur_central', '2000-04-23'],
   ['Hazel', 'Eyaye', 'lateral_gauche', '2006-06-20'],
   ['Benjamin', 'Beaufils', 'lateral_gauche', '2004-05-12'],
@@ -39,13 +38,20 @@ const NOUVEAUX = [
   ['Matthias', 'Mathevet', 'milieu_defensif', '2004-02-03'],
   ['Luca', 'Boudonnet', 'milieu_defensif', '2001-01-27'],
   ['Enzo', 'Kowalczyk', 'milieu_gauche', '2002-09-17'],
-  ['Dorian', 'Charlier', 'milieu_offensif', '1997-04-18'],
   ['Valentin', 'Aumond', 'milieu_offensif', '1999-06-26'],
   ['Dembo', 'Savane', 'ailier_gauche', '1999-11-09'],
   ['Jordan', 'Perrier', 'ailier_gauche', '1997-05-10'],
   ['Steevy', 'Nogbou', 'attaquant', '2001-04-27'],
   ['Simon', 'Delaunay', 'attaquant', '2001-07-25'],
   ['Lohann', 'Ledos', 'attaquant', '2001-08-09'],
+];
+
+// Pierre Bourdin est un transfert confirmé depuis US Avranches (N1).
+// Dorian Charlier est déjà en base sous le nom de club raccourci "Vire"
+// (même club) : correction du nom de club et du poste (confirmé).
+const TRANSFERTS = [
+  { id: '8106d4d0-cb07-4344-b9c6-44482235f8b1', prenom: 'Pierre', nom: 'Bourdin', poste: 'defenseur_central' },
+  { id: '5c9c033a-f6f1-4ff3-b305-5d3d1b66d07a', prenom: 'Dorian', nom: 'Charlier', poste: 'milieu_offensif' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -71,9 +77,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
