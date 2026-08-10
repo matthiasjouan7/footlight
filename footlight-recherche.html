@@ -546,22 +546,37 @@ const COULEURS = {
 // ── CHARGEMENT ──
 async function loadJoueurs() {
   try {
-    const { data, error } = await db
-      .from('joueurs')
-      .select('id,prenom,nom,poste,club,niveau,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,badge,pied_fort,date_naissance')
-      .eq('profil_public', true)
-      .order('matchs_joues', { ascending: false });
+    // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà,
+    // il faut paginer avec .range() sous peine de perdre silencieusement les
+    // joueurs les plus loin dans le tri (constaté en pratique une fois la
+    // base passée au-dessus de 1000 joueurs publics — les plus récents,
+    // triés en dernier faute de matchs_joues, disparaissaient de la
+    // recherche). Tri secondaire sur id pour un ordre stable entre les pages.
+    const PAGE_SIZE = 1000;
+    let all = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await db
+        .from('joueurs')
+        .select('id,prenom,nom,poste,club,niveau,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,badge,pied_fort,date_naissance')
+        .eq('profil_public', true)
+        .order('matchs_joues', { ascending: false })
+        .order('id', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) { console.error(error); break; }
+      if (!data || !data.length) break;
+      all = all.concat(data);
+      if (data.length < PAGE_SIZE) break;
+    }
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('cards-grid').style.display = 'grid';
 
-    if (error) { console.error(error); return; }
-    if (!data || data.length === 0) {
+    if (!all.length) {
       document.getElementById('no-results').style.display = 'block';
       return;
     }
 
-    allPlayers = data;
+    allPlayers = all;
     applyFilters();
   } catch(err) {
     console.error('Erreur chargement:', err);

@@ -270,11 +270,24 @@ const ROWS_GPS = [
 ];
 
 async function loadJoueurs() {
-  const { data } = await db.from('joueurs')
-    .select('id,prenom,nom,poste,club,niveau,saison,score,buts,passes_decisives,matchs_joues,matchs_equipe,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,pct_matchs_avec_but,points_equipe,points_avec_lui,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
-    .eq('profil_public', true)
-    .order('nom');
-  allPlayers = data || [];
+  // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà,
+  // il faut paginer avec .range() sous peine de perdre silencieusement les
+  // joueurs les plus loin dans le tri.
+  const PAGE_SIZE = 1000;
+  let all = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await db.from('joueurs')
+      .select('id,prenom,nom,poste,club,niveau,saison,score,buts,passes_decisives,matchs_joues,matchs_equipe,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,pct_matchs_avec_but,points_equipe,points_avec_lui,vitesse_max_kmh,vma_kmh,distance_moyenne_km,sprints_match,buts_encaisses_avec,clean_sheets')
+      .eq('profil_public', true)
+      .order('nom')
+      .order('id', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) { console.error(error); break; }
+    if (!data || !data.length) break;
+    all = all.concat(data);
+    if (data.length < PAGE_SIZE) break;
+  }
+  allPlayers = all;
   renderComparison();
 }
 
