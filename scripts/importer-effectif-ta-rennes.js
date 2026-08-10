@@ -24,6 +24,8 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Corentin Bekhit est déjà en base, déjà au club "TA Rennes" niveau N2,
+// poste déjà correct (defenseur_central) : exclu, rien à corriger.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Hugo', 'Minier', 'gardien', '1997-07-14'],
@@ -34,7 +36,6 @@ const NOUVEAUX = [
   ['Jules', 'Daniel', 'defenseur_central', '2002-08-11'],
   ['Lilian', 'Roudaut', 'defenseur_central', '1998-04-09'],
   ['Mathieu', 'Pothet', 'defenseur_central', '1997-09-14'],
-  ['Corentin', 'Bekhit', 'defenseur_central', '2003-05-05'],
   ['Nassoidillahi', 'Ahamada', 'defenseur_central', '2004-11-01'],
   ['Mathéo', 'Crocq', 'lateral_droit', '2002-01-26'],
   ['Camil', 'Youssoufa', 'lateral_droit', '2004-10-15'],
