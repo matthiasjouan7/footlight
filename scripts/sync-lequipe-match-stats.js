@@ -78,6 +78,31 @@ function abregeAttendu(prenom, nom) {
   return normaliser(`${prenom[0]}. ${nom}`);
 }
 
+// Rapprochement flou des noms de club (même logique que
+// sync-lequipe-to-calendrier.js) : la page calendrier-resultats de
+// lequipe.fr affiche des noms courts ("Caen") alors que calendrier_officiel
+// stocke souvent des noms officiels longs ("SM CAEN") — une égalité stricte
+// ne matche jamais, si bien qu'aucun joueur n'est jamais rapproché (constaté
+// en pratique : "SM CAEN vs VALENCIENNES FC" en base contre "Caen vs
+// Valenciennes" scrapé, match jamais retrouvé malgré un joueur FootLight lié).
+function normaliserClub(str) {
+  return (str || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
+function motsClub(s) {
+  const mots = normaliserClub(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
+  return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
+}
+function clubsCorrespondent(a, b) {
+  const wa = new Set(motsClub(a)), wb = new Set(motsClub(b));
+  if (!wa.size || !wb.size) return false;
+  const [small, big] = wa.size <= wb.size ? [wa, wb] : [wb, wa];
+  for (const w of small) if (!big.has(w)) return false;
+  return true;
+}
+
 // Même logique que contributionMatch() dans footlight-modifier-profil.html :
 // répercute la fiche d'un match sur le total de saison du joueur, en ne
 // comptant "matchs_joues"/titularisations/remplaçant/clean_sheet que si le
@@ -189,17 +214,27 @@ console.log(`${rencontres.length} rencontre(s) avec lien match-direct sur la pag
 
 let totalJoueursLies = 0, totalMaj = 0, totalDejaRenseignes = 0, totalAmbigus = 0;
 
+// Une seule lecture pour toute la journée (au lieu d'une requête par match) :
+// permet le rapprochement flou par club plutôt qu'une égalité stricte.
+const { data: calRowsJournee, error: calErrJournee } = await supabase
+  .from('calendrier_officiel')
+  .select('id, equipe_domicile, equipe_exterieur')
+  .eq('division', division)
+  .eq('groupe', groupe)
+  .eq('saison', saison)
+  .eq('date_match', dateMatchJournee);
+if (calErrJournee) {
+  console.error(`Erreur lecture calendrier_officiel : ${calErrJournee.message}`);
+  process.exit(1);
+}
+
 for (const r of rencontres) {
   // ---- 2. Retrouver la ligne calendrier_officiel correspondante ----
-  const { data: calRows, error: calErr } = await supabase
-    .from('calendrier_officiel')
-    .select('id')
-    .eq('equipe_domicile', r.equipe_domicile)
-    .eq('equipe_exterieur', r.equipe_exterieur)
-    .eq('date_match', dateMatchJournee)
-    .limit(1);
-  if (calErr || !calRows || !calRows.length) continue;
-  const calendrierOfficielId = calRows[0].id;
+  const calRow = (calRowsJournee || []).find((c) =>
+    clubsCorrespondent(c.equipe_domicile, r.equipe_domicile) && clubsCorrespondent(c.equipe_exterieur, r.equipe_exterieur)
+  );
+  if (!calRow) continue;
+  const calendrierOfficielId = calRow.id;
 
   // ---- 3. Joueurs FootLight ayant lié ce match ----
   const { data: mj, error: mjErr } = await supabase
