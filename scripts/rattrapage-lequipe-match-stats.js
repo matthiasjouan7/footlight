@@ -1,10 +1,8 @@
 // Rattrapage à la demande des stats de match (lequipe.fr -> matchs_joueur)
-// sur une ou plusieurs journées passées d'une compétition — utile quand un
-// joueur est ajouté (et génère son calendrier) après que plusieurs journées
-// ont déjà été jouées : le cron hebdomadaire (sync-lequipe-match-stats.js)
-// ne traite que la journée affichée par défaut sur la page
-// calendrier-resultats, il ne revient jamais en arrière sur les journées
-// précédentes.
+// sur une ou plusieurs journées passées d'une compétition précisées à la
+// main — utile pour un rattrapage ciblé immédiat (sans attendre le passage
+// quotidien de l'automatisation, voir sync-lequipe-match-stats-auto.js qui
+// couvre déjà automatiquement toutes les journées jouées chaque jour).
 //
 // Chaque journée a une URL stable sur lequipe.fr, ex:
 //   .../page-calendrier-resultats/1re-journee
@@ -15,7 +13,7 @@
 //
 // Sécurité : DRY_RUN=true par défaut.
 import { createClient } from '@supabase/supabase-js';
-import { syncMatchStats } from './lib-sync-lequipe-match-stats.js';
+import { syncMatchStats, ordinalJournee } from './lib-sync-lequipe-match-stats.js';
 
 const competitionUrl = (process.env.COMPETITION_URL || '').replace(/\/+$/, '');
 const journeesSpec = process.env.JOURNEES;
@@ -43,11 +41,6 @@ function parseJournees(spec) {
     }
   }
   return [...journees].sort((a, b) => a - b);
-}
-
-// "1re journée", "2e journée", ..., "34e journée" -> "1re-journee", "2e-journee", ...
-function ordinalJournee(n) {
-  return n === 1 ? '1re-journee' : `${n}e-journee`;
 }
 
 const journees = parseJournees(journeesSpec);

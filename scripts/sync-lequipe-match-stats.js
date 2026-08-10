@@ -4,9 +4,11 @@
 // cartons_jaunes/cartons_rouges/minutes_jouees — UNIQUEMENT les champs
 // encore vides (on n'écrase jamais une stat que le joueur a saisie
 // lui-même). Traite une seule journée (celle affichée par défaut sur la
-// page calendrier-resultats de la compétition) : utilisé par le cron
-// hebdomadaire. Pour rattraper une journée passée (joueur ajouté après
-// plusieurs journées déjà jouées), voir rattrapage-lequipe-match-stats.js.
+// page calendrier-resultats de la compétition) — utilitaire pour un test
+// ciblé. L'automatisation planifiée utilise désormais
+// sync-lequipe-match-stats-auto.js (toutes les journées déjà jouées,
+// quotidien) ; pour un rattrapage manuel sur une plage précise, voir
+// rattrapage-lequipe-match-stats.js.
 //
 // Sécurité : DRY_RUN=true par défaut — logue ce qui serait fait sans rien
 // écrire. Il faut positionner explicitement DRY_RUN=false pour écrire.
