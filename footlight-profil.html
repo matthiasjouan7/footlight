@@ -576,7 +576,7 @@ async function renderProfil(j, isOwner) {
     .from('matchs_joueur')
     .select('*')
     .eq('joueur_id', j.id)
-    .order('date_match', { ascending: false });
+    .order('date_match', { ascending: true });
   const matchsBySaison = {};
   (matchsRaw || []).forEach(m => {
     (matchsBySaison[m.saison] = matchsBySaison[m.saison] || []).push(m);
@@ -948,7 +948,7 @@ async function renderProfil(j, isOwner) {
 
       ${(function() {
         const matchs = s.isGlobal
-          ? Object.values(matchsBySaison).flat().sort((a,b) => (b.date_match||'').localeCompare(a.date_match||''))
+          ? Object.values(matchsBySaison).flat().sort((a,b) => (a.date_match||'').localeCompare(b.date_match||''))
           : (matchsBySaison[s.saison] || []);
         if (!matchs.length) return '';
         if (!canHistory) {
