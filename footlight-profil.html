@@ -377,6 +377,7 @@ const BADGES = {
 
 let viewerRole = 'anonyme'; // 'anonyme' | 'joueur' | 'recruteur' | 'nouveau'
 let viewerPlan = 'free';
+let viewerRecruteurId = null;
 
 const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','piston_droit','piston_gauche','milieu_defensif'];
 const POSTES_MILIEU = ['milieu_central','milieu_offensif','milieu_gauche'];
@@ -486,6 +487,27 @@ async function findOwnJoueur(user) {
   return relinked || null;
 }
 
+async function toggleShortlist(joueurId) {
+  if (viewerRole !== 'recruteur' || !viewerRecruteurId) return;
+  const btn = document.getElementById('shortlist-btn');
+  const currentlyIn = btn && btn.classList.contains('primary');
+  if (currentlyIn) {
+    const { error } = await db.from('shortlist').delete().eq('recruteur_id', viewerRecruteurId).eq('joueur_id', joueurId);
+    if (!error && btn) {
+      btn.classList.remove('primary'); btn.classList.add('outline');
+      btn.style.background = '';
+      btn.textContent = '☆ Ajouter à ma shortlist';
+    }
+  } else {
+    const { error } = await db.from('shortlist').insert({ recruteur_id: viewerRecruteurId, joueur_id: joueurId });
+    if (!error && btn) {
+      btn.classList.remove('outline'); btn.classList.add('primary');
+      btn.style.background = 'var(--gold)';
+      btn.textContent = '★ Dans ma shortlist';
+    }
+  }
+}
+
 async function loadProfil() {
   // Vérifier la session
   const { data: { user } } = await db.auth.getUser();
@@ -494,10 +516,11 @@ async function loadProfil() {
     document.getElementById('nav-auth').textContent = 'Mon profil';
     document.getElementById('nav-auth').href = '#';
 
-    const { data: recruteur } = await db.from('recruteurs').select('plan').eq('email', user.email).single();
+    const { data: recruteur } = await db.from('recruteurs').select('id, plan').eq('email', user.email).single();
     if (recruteur) {
       viewerRole = 'recruteur';
       viewerPlan = recruteur.plan || 'free';
+      viewerRecruteurId = recruteur.id;
     } else {
       ownJoueur = await findOwnJoueur(user);
       viewerRole = ownJoueur ? 'joueur' : 'nouveau';
@@ -604,6 +627,12 @@ async function renderProfil(j, isOwner) {
   const canExport = isOwner || (viewerRole === 'recruteur' && viewerPlan === 'premium');
   const canHistory = isOwner || (viewerRole === 'recruteur' && (viewerPlan === 'pro' || viewerPlan === 'premium'));
   const isDefensif = POSTES_DEFENSIFS.includes(poste_raw);
+
+  let isShortlisted = false;
+  if (!isOwner && viewerRole === 'recruteur' && viewerRecruteurId) {
+    const { data: shortlistRow } = await db.from('shortlist').select('joueur_id').eq('recruteur_id', viewerRecruteurId).eq('joueur_id', j.id).maybeSingle();
+    isShortlisted = !!shortlistRow;
+  }
 
   // ── Saisons : saison actuelle (joueurs) + historique (stats_saisons) ──
   const currentSeason = {
@@ -1007,7 +1036,7 @@ async function renderProfil(j, isOwner) {
         </div>
         ${j.bio ? `<div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${j.bio}</div>` : ''}
         ${isOwner ? `<div class="btn-row no-print"><button class="btn primary" onclick="window.location.href='footlight-modifier-profil.html'">Modifier mon profil</button><button class="btn outline" onclick="window.location.href='footlight-recap-saison.html'">📄 Récap de ma saison</button></div>` : ''}
-        ${(!isOwner && viewerRole === 'recruteur') ? `<div class="btn-row no-print"><button class="btn outline" onclick="window.location.href='footlight-modifier-profil.html?id=${j.id}'">✏️ Compléter ce profil</button></div>` : ''}
+        ${(!isOwner && viewerRole === 'recruteur') ? `<div class="btn-row no-print"><button class="btn outline" onclick="window.location.href='footlight-modifier-profil.html?id=${j.id}'">✏️ Compléter ce profil</button>${viewerRecruteurId ? `<button id="shortlist-btn" class="btn ${isShortlisted?'primary':'outline'}" onclick="toggleShortlist('${j.id}')" style="${isShortlisted?'background:var(--gold);':''}">${isShortlisted?'★ Dans ma shortlist':'☆ Ajouter à ma shortlist'}</button>` : ''}</div>` : ''}
         ${canExport ? `<div class="btn-row no-print"><button class="btn outline" onclick="window.print()">📄 Télécharger la fiche (PDF)</button></div>` : ''}
         ${(!isOwner && viewerRole === 'recruteur' && viewerPlan !== 'premium') ? `<div class="btn-row no-print"><a href="footlight-paiement.html?plan=premium" style="font-size:0.78rem;color:var(--blue-l);align-self:center;">🔒 Export PDF réservé au plan Premium</a></div>` : ''}
       </div>
