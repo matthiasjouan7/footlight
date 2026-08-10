@@ -1,0 +1,36 @@
+name: Valider un profil joueur (DRY_RUN par défaut)
+
+on:
+  workflow_dispatch:
+    inputs:
+      joueur_id:
+        description: "ID du joueur (UUID) à valider (profil_public -> true)"
+        required: true
+        type: string
+      write:
+        description: "Appliquer réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  valider:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Valider
+        working-directory: scripts
+        env:
+          JOUEUR_ID: ${{ inputs.joueur_id }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node valider-profil-joueur.js
