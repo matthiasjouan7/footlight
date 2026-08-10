@@ -47,8 +47,19 @@ const NOUVEAUX = [
   ['Kelvin', 'Dongopandji', 'attaquant', '2007-02-19'],
 ];
 
-const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
-if (jErr) { console.error('Erreur lecture joueurs :', jErr.message); process.exit(1); }
+// Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
+// faut paginer avec .range() sous peine de manquer des doublons situés après
+// la 1000e ligne (constaté en pratique : Amadou Diallo, déjà en base à ESTAC
+// Troyes B, non détecté par une lecture non paginée alors que la base compte
+// désormais plus de 1500 joueurs).
+let joueurs = [];
+for (let from = 0; ; from += 1000) {
+  const { data, error } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste').range(from, from + 999);
+  if (error) { console.error('Erreur lecture joueurs :', error.message); process.exit(1); }
+  if (!data || !data.length) break;
+  joueurs = joueurs.concat(data);
+  if (data.length < 1000) break;
+}
 
 let doublons = 0;
 for (const [prenom, nom] of NOUVEAUX) {
@@ -61,9 +72,15 @@ for (const [prenom, nom] of NOUVEAUX) {
 }
 console.log(`${doublons} doublon(s) potentiel(s) sur ${NOUVEAUX.length} joueurs de l'effectif.\n`);
 
+// Amadou Diallo est un homonyme confirmé d'un joueur déjà en base (ESTAC
+// Troyes B, N1) : même nom, personne différente. L'email généré par défaut
+// (prénom.nom) entrerait en collision avec le sien (contrainte unique
+// joueurs_email_key) — on désambiguïse avec le club.
 const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
   prenom, nom, poste, club: CLUB, niveau: NIVEAU, saison: SAISON, date_naissance,
-  email: `${slugifyName(prenom)}.${slugifyName(nom)}.manuel@scoute.footlight.fr`,
+  email: prenom === 'Amadou' && nom === 'Diallo'
+    ? `${slugifyName(prenom)}.${slugifyName(nom)}.${slugifyName(CLUB)}.manuel@scoute.footlight.fr`
+    : `${slugifyName(prenom)}.${slugifyName(nom)}.manuel@scoute.footlight.fr`,
   matchs_joues: 0, buts: 0, badge: 'declaratif', profil_public: false,
 }));
 
