@@ -2,10 +2,15 @@ name: Sync stats de match lequipe.fr -> matchs_joueur (automatique)
 
 on:
   schedule:
-    # Chaque lundi à 6h30 UTC — 30 min après la synchro du calendrier
-    # (sync-lequipe-scheduled.yml, 6h00), pour que les lignes calendrier_officiel
-    # du week-end soient déjà en base avant de rapprocher les stats de match.
-    - cron: "30 6 * * 1"
+    # Chaque jour à 6h30 UTC — 30 min après la synchro du calendrier
+    # (sync-lequipe-scheduled.yml, 6h00 le lundi), pour que les lignes
+    # calendrier_officiel soient à jour avant de rapprocher les stats de
+    # match. Quotidien (et non hebdomadaire) et sur TOUTES les journées déjà
+    # jouées (sync-lequipe-match-stats-auto.js), pas seulement la dernière :
+    # un joueur ajouté (et dont le calendrier est généré) après plusieurs
+    # journées déjà jouées est ainsi rattrapé automatiquement sous 24h, sans
+    # intervention manuelle.
+    - cron: "30 6 * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -32,10 +37,10 @@ jobs:
         working-directory: scripts
         run: npm install
 
-      - name: Rapprocher et synchroniser les stats
+      - name: Rapprocher et synchroniser les stats (toutes les journées jouées)
         working-directory: scripts
         env:
-          TARGET_URL: ${{ matrix.url }}
+          COMPETITION_URL: ${{ matrix.url }}
           DRY_RUN: "false"
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node sync-lequipe-match-stats.js
+        run: node sync-lequipe-match-stats-auto.js

@@ -43,6 +43,38 @@ function extraireGroupe(competitionLabel) {
   return competitionLabel.toLowerCase().includes('ligue 3') ? 'Unique' : null;
 }
 
+// Récupère division/groupe/saison d'une compétition à partir de sa page
+// calendrier-resultats de base (sans suffixe de journée), pour permettre à
+// sync-lequipe-match-stats-auto.js de déterminer quelles journées rattraper
+// sans avoir à les connaître à l'avance.
+// "1re journée", "2e journée", ..., "34e journée" -> "1re-journee", "2e-journee", ...
+export function ordinalJournee(n) {
+  return n === 1 ? '1re-journee' : `${n}e-journee`;
+}
+
+export async function detecterCompetition(baseUrl) {
+  const res = await fetch(baseUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept-Language': 'fr-FR,fr;q=0.9',
+    },
+  });
+  if (!res.ok) return null;
+  const html = await res.text();
+  const $ = cheerio.load(html);
+  const competitionLabel = $('script[type="application/ld+json"]')
+    .map((i, el) => { try { return JSON.parse($(el).html()); } catch (e) { return null; } })
+    .get()
+    .find((j) => j && j['@type'] === 'BreadcrumbList')
+    ?.itemListElement?.at(-1)?.item?.name || null;
+  const pageTitle = $('title').text().trim();
+  const saisonMatch = pageTitle.match(/(\d{4})-(\d{4})/);
+  const saison = saisonMatch ? `${saisonMatch[1]}-${saisonMatch[2]}` : null;
+  const division = mapDivision(competitionLabel);
+  const groupe = extraireGroupe(competitionLabel);
+  return { division, groupe, saison };
+}
+
 function normaliser(str) {
   return (str || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
