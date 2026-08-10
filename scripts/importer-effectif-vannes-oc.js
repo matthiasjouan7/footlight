@@ -24,6 +24,9 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Aurélien Soufaché et Exaucé Ngassaki sont des transferts confirmés depuis
+// Saint-Colomban Locminé (N1) vers Vannes OC : exclus de NOUVEAUX, traités
+// via TRANSFERTS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Mattéo', 'Petitgenet', 'gardien', '1997-05-21'],
@@ -39,14 +42,17 @@ const NOUVEAUX = [
   ['Alex Noah', 'Abogo', 'milieu_defensif', '1998-05-20'],
   ['Hugo', 'Le Bolloch', 'milieu_defensif', '2004-01-28'],
   ['Evan', 'Vallot', 'milieu_defensif', '2006-09-12'],
-  ['Aurélien', 'Soufaché', 'milieu_offensif', '2000-02-25'],
   ['Kévin', 'Blaecke', 'milieu_offensif', '1998-06-18'],
   ['Ilyes', 'Kallouche', 'milieu_offensif', '2005-02-08'],
   ['Vincent', 'Morhan', 'ailier_gauche', '1999-07-01'],
-  ['Exaucé', 'Ngassaki', 'attaquant', '1997-01-30'],
   ['Amaury', 'Le Nouen', 'attaquant', '1995-11-16'],
   ['Erwan', 'Maintenant', 'attaquant', '2002-07-24'],
   ['Mathis', 'Schindler', 'attaquant', '2005-05-25'],
+];
+
+const TRANSFERTS = [
+  { id: '3ce00ac4-7325-4e91-a040-e7df9199c4d4', prenom: 'Aurélien', nom: 'Soufaché', poste: 'milieu_offensif' },
+  { id: 'dc870ff7-79ff-4e43-abca-bbce4120d29f', prenom: 'Exaucé', nom: 'Ngassaki', poste: 'attaquant' },
 ];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
@@ -81,9 +87,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
