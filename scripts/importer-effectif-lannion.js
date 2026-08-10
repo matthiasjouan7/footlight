@@ -47,9 +47,16 @@ const NOUVEAUX = [
   ['Louka', 'Morin', 'milieu_offensif', '2002-05-21'],
   ['Steve', 'Devaux', 'ailier_gauche', '1995-02-17'],
   ['Théo', 'Boucaud', 'ailier_droit', '2003-01-03'],
-  ['Mewan', 'Le Bonniec', 'attaquant', '2003-07-11'],
-  ['Benoît', 'Alagapin', 'attaquant', '2004-01-19'],
   ['Aristide', 'Bureau', 'attaquant', '2001-06-30'],
+];
+
+// Paul Houlbert, Mewan Le Bonniec et Benoît Alagapin sont déjà en base sous
+// le nom de club raccourci "Lannion" (même club, postes déjà corrects) :
+// correction du nom de club et du niveau (N3 -> N2).
+const TRANSFERTS = [
+  { id: '61f23eac-fd46-4b7c-950b-1d3ce275c2c3', prenom: 'Paul', nom: 'Houlbert', poste: 'milieu_central' },
+  { id: '643c05b5-ce26-4bd2-b6eb-1b81a382a246', prenom: 'Mewan', nom: 'Le Bonniec', poste: 'attaquant' },
+  { id: '4d5b0c1e-3aa0-4cf9-81e3-2f82dd5a7ad2', prenom: 'Benoît', nom: 'Alagapin', poste: 'attaquant' },
 ];
 
 const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste');
@@ -75,9 +82,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${TRANSFERTS.length} transfert(s)/correction(s) à appliquer :`);
+for (const t of TRANSFERTS) console.log(`  ${t.prenom} ${t.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${t.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const t of TRANSFERTS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: t.poste }).eq('id', t.id);
+    if (updErr) { console.error(`Erreur mise à jour transfert ${t.prenom} ${t.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
