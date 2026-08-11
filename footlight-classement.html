@@ -185,6 +185,7 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
     <div class="filter-group">
       <span class="filter-label">Trier par</span>
       <select class="form-select" id="indicSelect" onchange="state.indic=this.value;render();"></select>
+      <div id="indicPlanHint" class="filter-hint" style="display:none;"></div>
     </div>
   </div>
 
@@ -271,59 +272,73 @@ const COULEURS = {
 const BADGE_LABEL = { declaratif: 'Déclaratif', video: 'Vidéo', gps: 'GPS', elite: 'Elite' };
 const NIVEAU_LABEL = { 'Ligue 3': 'Ligue 3', 'N1': 'National 1', 'N2': 'National 2', 'R1': 'R1', 'Autre': 'Autre' };
 
+// Chaque indicateur porte le palier d'abonnement à partir duquel il est
+// débloqué, aligné sur la grille tarifaire (#tarifs sur index.html) :
+// Gratuit = "stats basiques (matchs, buts, cartons)", Pro = "filtres avancés
+// par indicateurs", Premium = "données GPS complètes" (VMA, vitesse de
+// pointe, sprints proviennent des capteurs GPS).
+const PLAN_RANK = { free: 0, pro: 1, premium: 2 };
+const PLAN_LABEL = { free: 'Gratuit', pro: 'Pro', premium: 'Premium' };
+
 // Discipline : commun à tous les postes. Un carton rouge pèse 3x un jaune.
 // dir 'asc' : moins de cartons = mieux classé.
 const DISCIPLINE_INDIC = {
-  cartons_ratio:  { label: 'Cartons pondérés / match', unit: 'pts carton / match', fn: p => (n(p.cartons_jaunes) + n(p.cartons_rouges) * 3) / p.matchs_joues, decimals: 2, dir: 'asc' },
-  cartons_jaunes: { label: 'Cartons jaunes (total)', unit: 'jaunes', fn: p => n(p.cartons_jaunes), dir: 'asc' },
-  cartons_rouges: { label: 'Cartons rouges (total)', unit: 'rouges', fn: p => n(p.cartons_rouges), dir: 'asc' },
+  cartons_ratio:  { label: 'Cartons pondérés / match', unit: 'pts carton / match', fn: p => (n(p.cartons_jaunes) + n(p.cartons_rouges) * 3) / p.matchs_joues, decimals: 2, dir: 'asc', plan: 'pro' },
+  cartons_jaunes: { label: 'Cartons jaunes (total)', unit: 'jaunes', fn: p => n(p.cartons_jaunes), dir: 'asc', plan: 'free' },
+  cartons_rouges: { label: 'Cartons rouges (total)', unit: 'rouges', fn: p => n(p.cartons_rouges), dir: 'asc', plan: 'free' },
 };
 const DISCIPLINE_GROUP = { label: 'Discipline', keys: ['cartons_ratio', 'cartons_jaunes', 'cartons_rouges'] };
 
 const OUTFIELD_INDIC = {
-  impact_ratio: { label: 'Buts+passes / match', unit: 'pts / match', fn: p => (n(p.buts) + n(p.passes_decisives)) / p.matchs_joues, decimals: 2, dir: 'desc' },
-  buts_ratio:   { label: 'Buts / match', unit: 'buts / match', fn: p => n(p.buts) / p.matchs_joues, decimals: 2, dir: 'desc' },
-  passes_ratio: { label: 'Passes / match', unit: 'passes / match', fn: p => n(p.passes_decisives) / p.matchs_joues, decimals: 2, dir: 'desc' },
-  buts_90:      { label: 'Buts / 90 min', unit: 'buts / 90 min', fn: p => p.minutes_jouees ? n(p.buts) / (p.minutes_jouees / 90) : null, decimals: 2, dir: 'desc' },
-  impact: { label: 'Buts + passes (total)', unit: 'pts', fn: p => n(p.buts) + n(p.passes_decisives), dir: 'desc' },
-  buts:   { label: 'Buts (total)', unit: 'buts', fn: p => n(p.buts), dir: 'desc' },
-  passes: { label: 'Passes décisives (total)', unit: 'passes', fn: p => n(p.passes_decisives), dir: 'desc' },
-  matchs: { label: 'Matchs joués', unit: 'matchs', fn: p => p.matchs_joues, dir: 'desc' },
-  titu_pct: { label: 'Taux de titularisation', unit: '% de matchs', fn: p => p.titularisations != null ? (p.titularisations / p.matchs_joues) * 100 : null, decimals: 0, dir: 'desc' },
-  vma:      { label: 'VMA (km/h)', unit: 'km/h', fn: p => p.vma_kmh, decimals: 1, dir: 'desc' },
-  vpointe:  { label: 'Vitesse de pointe (km/h)', unit: 'km/h', fn: p => p.vitesse_max_kmh, decimals: 1, dir: 'desc' },
-  sprints:  { label: 'Sprints / match', unit: 'sprints / match', fn: p => p.sprints_match, decimals: 1, dir: 'desc' },
+  impact_ratio: { label: 'Buts+passes / match', unit: 'pts / match', fn: p => (n(p.buts) + n(p.passes_decisives)) / p.matchs_joues, decimals: 2, dir: 'desc', plan: 'pro' },
+  buts_ratio:   { label: 'Buts / match', unit: 'buts / match', fn: p => n(p.buts) / p.matchs_joues, decimals: 2, dir: 'desc', plan: 'pro' },
+  passes_ratio: { label: 'Passes / match', unit: 'passes / match', fn: p => n(p.passes_decisives) / p.matchs_joues, decimals: 2, dir: 'desc', plan: 'pro' },
+  buts_90:      { label: 'Buts / 90 min', unit: 'buts / 90 min', fn: p => p.minutes_jouees ? n(p.buts) / (p.minutes_jouees / 90) : null, decimals: 2, dir: 'desc', plan: 'pro' },
+  impact: { label: 'Buts + passes (total)', unit: 'pts', fn: p => n(p.buts) + n(p.passes_decisives), dir: 'desc', plan: 'pro' },
+  buts:   { label: 'Buts (total)', unit: 'buts', fn: p => n(p.buts), dir: 'desc', plan: 'free' },
+  passes: { label: 'Passes décisives (total)', unit: 'passes', fn: p => n(p.passes_decisives), dir: 'desc', plan: 'pro' },
+  matchs: { label: 'Matchs joués', unit: 'matchs', fn: p => p.matchs_joues, dir: 'desc', plan: 'free' },
+  titu_pct: { label: 'Taux de titularisation', unit: '% de matchs', fn: p => p.titularisations != null ? (p.titularisations / p.matchs_joues) * 100 : null, decimals: 0, dir: 'desc', plan: 'pro' },
+  vma:      { label: 'VMA (km/h)', unit: 'km/h', fn: p => p.vma_kmh, decimals: 1, dir: 'desc', plan: 'premium' },
+  vpointe:  { label: 'Vitesse de pointe (km/h)', unit: 'km/h', fn: p => p.vitesse_max_kmh, decimals: 1, dir: 'desc', plan: 'premium' },
+  sprints:  { label: 'Sprints / match', unit: 'sprints / match', fn: p => p.sprints_match, decimals: 1, dir: 'desc', plan: 'premium' },
   ...DISCIPLINE_INDIC,
 };
 const OUTFIELD_GROUPS = [
   { label: 'Ratio (par match) — recommandé', keys: ['impact_ratio', 'buts_ratio', 'passes_ratio', 'buts_90'] },
   { label: 'Totaux sur la saison', keys: ['impact', 'buts', 'passes', 'matchs'] },
   { label: 'Présence', keys: ['titu_pct'] },
-  { label: 'Physique', keys: ['vma', 'vpointe', 'sprints'] },
+  { label: 'Physique (GPS)', keys: ['vma', 'vpointe', 'sprints'] },
   DISCIPLINE_GROUP,
 ];
 
 // Gardiens : "Buts encaissés / match" est meilleur quand il est BAS (dir
 // 'asc') — sans quoi le classement des gardiens n'a pas de sens.
 const GK_INDIC = {
-  gk_encaisses_ratio: { label: 'Buts encaissés / match', unit: 'buts encaissés / match', fn: p => p.buts_encaisses_avec != null ? p.buts_encaisses_avec / p.matchs_joues : null, decimals: 2, dir: 'asc' },
-  gk_clean_pct:       { label: 'Clean sheets (%)', unit: '% de matchs', fn: p => p.clean_sheets != null ? (p.clean_sheets / p.matchs_joues) * 100 : null, decimals: 0, dir: 'desc' },
-  gk_clean_total:     { label: 'Clean sheets (total)', unit: 'clean sheets', fn: p => n(p.clean_sheets), dir: 'desc' },
-  matchs:             { label: 'Matchs joués', unit: 'matchs', fn: p => p.matchs_joues, dir: 'desc' },
+  gk_encaisses_ratio: { label: 'Buts encaissés / match', unit: 'buts encaissés / match', fn: p => p.buts_encaisses_avec != null ? p.buts_encaisses_avec / p.matchs_joues : null, decimals: 2, dir: 'asc', plan: 'pro' },
+  gk_clean_pct:       { label: 'Clean sheets (%)', unit: '% de matchs', fn: p => p.clean_sheets != null ? (p.clean_sheets / p.matchs_joues) * 100 : null, decimals: 0, dir: 'desc', plan: 'pro' },
+  gk_clean_total:     { label: 'Clean sheets (total)', unit: 'clean sheets', fn: p => n(p.clean_sheets), dir: 'desc', plan: 'free' },
+  gk_encaisses_total: { label: 'Buts encaissés (total)', unit: 'buts encaissés', fn: p => n(p.buts_encaisses_avec), dir: 'asc', plan: 'free' },
+  matchs:             { label: 'Matchs joués', unit: 'matchs', fn: p => p.matchs_joues, dir: 'desc', plan: 'free' },
   ...DISCIPLINE_INDIC,
 };
 const GK_GROUPS = [
   { label: 'Gardien — recommandé', keys: ['gk_encaisses_ratio', 'gk_clean_pct'] },
-  { label: 'Totaux sur la saison', keys: ['gk_clean_total', 'matchs'] },
+  { label: 'Totaux sur la saison', keys: ['gk_clean_total', 'gk_encaisses_total', 'matchs'] },
   DISCIPLINE_GROUP,
 ];
 
 const ALL_INDIC = { ...OUTFIELD_INDIC, ...GK_INDIC };
 function groupsFor(poste) { return poste === 'Gardien' ? GK_GROUPS : OUTFIELD_GROUPS; }
 function n(v) { return v || 0; }
+function isUnlocked(indic) { return PLAN_RANK[state.viewerPlan] >= PLAN_RANK[indic.plan]; }
+function firstUnlockedKey(groups) {
+  for (const g of groups) for (const k of g.keys) if (isUnlocked(ALL_INDIC[k])) return k;
+  return groups[0].keys[0];
+}
 
 let allPlayers = [];
-let state = { niveaux: ['N2'], poste: 'tous', indic: 'impact_ratio' };
+let state = { niveaux: ['N2'], poste: 'tous', indic: 'buts', viewerPlan: 'free' };
 
 function fmtScore(indic, value) { return indic.decimals ? value.toFixed(indic.decimals) : value; }
 function ratioOf(p) { return (n(p.buts) + n(p.passes_decisives)) / p.matchs_joues; }
@@ -333,12 +348,29 @@ function initials(prenom, nom) { return ((prenom||'?')[0] + (nom||'?')[0]).toUpp
 function rebuildIndicSelect() {
   const sel = document.getElementById('indicSelect');
   const groups = groupsFor(state.poste);
+  let anyLocked = false;
   sel.innerHTML = groups.map(g => `
     <optgroup label="${g.label}">
-      ${g.keys.map(k => `<option value="${k}">${ALL_INDIC[k].label}</option>`).join('')}
+      ${g.keys.map(k => {
+        const indic = ALL_INDIC[k];
+        const locked = !isUnlocked(indic);
+        if (locked) anyLocked = true;
+        const label = locked ? `🔒 ${indic.label} (${PLAN_LABEL[indic.plan]})` : indic.label;
+        return `<option value="${k}"${locked ? ' disabled' : ''}>${label}</option>`;
+      }).join('')}
     </optgroup>
   `).join('');
+  if (!isUnlocked(ALL_INDIC[state.indic])) state.indic = firstUnlockedKey(groups);
   sel.value = state.indic;
+
+  const hint = document.getElementById('indicPlanHint');
+  if (anyLocked) {
+    const nextPlan = state.viewerPlan === 'free' ? 'pro' : 'premium';
+    hint.innerHTML = `🔒 Indicateurs ${nextPlan === 'pro' ? 'avancés' : 'GPS'} réservés au plan <strong>${PLAN_LABEL[nextPlan]}</strong> · <a href="footlight-paiement.html?plan=${nextPlan}" style="color:var(--blue-l);">Débloquer</a>`;
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
 }
 
 function toggleNiveau(val, el) {
@@ -356,7 +388,7 @@ function setPoste(val, el) {
   document.querySelectorAll('#f-poste .chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   state.poste = val;
-  state.indic = groupsFor(state.poste)[0].keys[0];
+  state.indic = firstUnlockedKey(groupsFor(state.poste));
   rebuildIndicSelect();
   render();
 }
@@ -483,8 +515,10 @@ async function checkSession() {
     const { data: { user } } = await db.auth.getUser();
     isConnected = !!user;
     if (user) {
-      const { data: recruteur } = await db.from('recruteurs').select('id').eq('email', user.email).single();
+      const { data: recruteur } = await db.from('recruteurs').select('id, plan').eq('email', user.email).single();
       viewerRole = recruteur ? 'recruteur' : 'nouveau';
+      state.viewerPlan = (recruteur && recruteur.plan) || 'free';
+      state.indic = firstUnlockedKey(groupsFor(state.poste));
       document.querySelectorAll('.nav-links a').forEach(a => {
         if (a.href && a.href.includes('footlight-connexion')) {
           a.textContent = 'Mon espace';
