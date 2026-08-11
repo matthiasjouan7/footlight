@@ -24,6 +24,13 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Mathis Bochereau, Anthony Koko et Abdulakeem Agoro sont exclus de
+// NOUVEAUX (voir CORRECTIONS ci-dessous) :
+// - Mathis Bochereau a un homonyme à Olympique Saumur (N1), mais est déjà
+//   présent en base sous Les Sables Vendée Football lui-même (id
+//   6467a719-...) : seul son poste est à corriger.
+// - Anthony Koko (ex-Aviron Bayonnais FC) et Abdulakeem Agoro (ex-US
+//   Granville) sont des transferts confirmés vers Les Sables Vendée.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Raphaël', 'Adiceam', 'gardien', '1990-07-03'],
@@ -39,15 +46,18 @@ const NOUVEAUX = [
   ['Simon', 'Guerlus', 'milieu_central', '2000-06-03'],
   ['Baptiste', 'Moreau', 'milieu_central', '2006-01-15'],
   ['Maxence', 'Menuet', 'milieu_central', '2007-06-01'],
-  ['Mathis', 'Bochereau', 'milieu_offensif', '1997-01-03'],
   ['Younes', 'Dariminy', 'milieu_offensif', '2004-01-29'],
   ['Tahiry', 'Rakotoarisoa', 'milieu_offensif', '2001-05-15'],
   ['Kenzo', 'Tchatcho', 'ailier_gauche', '2004-11-30'],
-  ['Anthony', 'Koko', 'ailier_droit', '2004-05-23'],
   ['Norvin', 'Mukiele', 'attaquant', '2001-02-16'],
-  ['Abdulakeem', 'Agoro', 'attaquant', '2001-07-07'],
   ['Axel', 'Dabin', 'attaquant', '1995-11-03'],
   ['Kris', 'Folly', 'attaquant', '2004-07-14'],
+];
+
+const CORRECTIONS = [
+  { id: '6467a719-dbfc-4e60-ad3e-47b91a7cb7ed', prenom: 'Mathis', nom: 'Bochereau', poste: 'milieu_offensif' },
+  { id: 'f1302429-b9f9-4c01-b70d-ed28a7611b0e', prenom: 'Anthony', nom: 'Koko', poste: 'ailier_droit' },
+  { id: 'a94744f8-6188-453e-a3e4-2fca11a9ed40', prenom: 'Abdulakeem', nom: 'Agoro', poste: 'attaquant' },
 ];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
@@ -82,9 +92,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${CORRECTIONS.length} correction(s)/transfert(s) à appliquer :`);
+for (const c of CORRECTIONS) console.log(`  ${c.prenom} ${c.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${c.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const c of CORRECTIONS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: c.poste }).eq('id', c.id);
+    if (updErr) { console.error(`Erreur mise à jour correction ${c.prenom} ${c.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
