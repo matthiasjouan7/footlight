@@ -24,6 +24,8 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Ullrich Pereira Souza (transfert confirmé depuis US Saint-Malo N1) est
+// exclu de NOUVEAUX, traité via CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Arthur', 'Duval', 'gardien', '1998-11-07'],
@@ -38,7 +40,6 @@ const NOUVEAUX = [
   ['William', 'Dayoro', 'lateral_droit', '1998-11-17'],
   ['Lucas', 'Liger', 'milieu_defensif', '2003-01-08'],
   ['Maxence', 'Agnoly', 'milieu_central', '2005-03-01'],
-  ['Ullrich', 'Pereira Souza', 'milieu_central', '2003-07-11'],
   ['Shelley', 'Bindika Ndalla', 'milieu_central', '1999-11-05'],
   ['Steve', 'Delacour', 'milieu_offensif', '2001-12-01'],
   ['Thibaud', 'Legrou', 'milieu_offensif', '2006-01-18'],
@@ -49,7 +50,9 @@ const NOUVEAUX = [
   ['Ayoub', 'Stiouet', 'attaquant', '2007-04-23'],
 ];
 
-const CORRECTIONS = [];
+const CORRECTIONS = [
+  { id: 'a1f53908-9123-4970-a893-da0b19b2ac85', prenom: 'Ullrich', nom: 'Pereira Souza', poste: 'milieu_central' },
+];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
 // faut paginer avec .range() sous peine de manquer des doublons situés après
