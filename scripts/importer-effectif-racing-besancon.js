@@ -24,9 +24,10 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Théo Louis (transfert confirmé depuis Stade Poitevin FC N1) est exclu de
+// NOUVEAUX, traité via CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Théo', 'Louis', 'gardien', '1999-07-12'],
   ['Safwan', 'Mbaé', 'defenseur_central', '1997-04-20'],
   ['Maramadou', 'Kaba', 'defenseur_central', '2003-08-24'],
   ['Zaid', 'Herradi', 'defenseur_central', '2004-12-28'],
@@ -46,7 +47,9 @@ const NOUVEAUX = [
   ['Rolys', "N'Ganzi", 'attaquant', '2003-01-07'],
 ];
 
-const CORRECTIONS = [];
+const CORRECTIONS = [
+  { id: '1c823cab-e8c6-4c97-9ad5-f5c264ef06d6', prenom: 'Théo', nom: 'Louis', poste: 'gardien' },
+];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
 // faut paginer avec .range() sous peine de manquer des doublons situés après
