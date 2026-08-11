@@ -24,6 +24,9 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Ibrahim Doro est déjà en base sous le nom de club raccourci "Deauville"
+// (même club que "AS Trouville-Deauville-Villers") : exclu de NOUVEAUX,
+// traité via CORRECTIONS ci-dessous (nom de club + poste à corriger).
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Romain', 'Hanquinquant', 'gardien', '1998-11-28'],
@@ -34,7 +37,6 @@ const NOUVEAUX = [
   ['Mody', 'Fofana', 'defenseur_central', '1994-03-22'],
   ['Fernand', 'Gale', 'defenseur_central', '1994-02-25'],
   ['Djiby', 'Sarr', 'lateral_gauche', '1996-03-20'],
-  ['Ibrahim', 'Doro', 'lateral_gauche', '2001-07-05'],
   ['Marius', 'Michel', 'lateral_gauche', '1996-08-29'],
   ['Yannis', "N'Gakoutou", 'lateral_droit', '1998-09-30'],
   ['Jocelyn', 'Sancho', 'lateral_droit', '2000-05-10'],
@@ -50,6 +52,10 @@ const NOUVEAUX = [
   ['Pythocles', 'Bazolo', 'attaquant', '1995-04-05'],
   ['Abou', 'Amadou', 'attaquant', '2003-04-30'],
   ['Mathis', 'Moyen', 'attaquant', '2004-08-25'],
+];
+
+const CORRECTIONS = [
+  { id: 'ba7b3fed-5c15-4238-866e-7071d89c9a71', prenom: 'Ibrahim', nom: 'Doro', poste: 'lateral_gauche' },
 ];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
@@ -84,9 +90,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${CORRECTIONS.length} correction(s) à appliquer :`);
+for (const c of CORRECTIONS) console.log(`  ${c.prenom} ${c.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${c.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const c of CORRECTIONS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: c.poste }).eq('id', c.id);
+    if (updErr) { console.error(`Erreur mise à jour correction ${c.prenom} ${c.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
