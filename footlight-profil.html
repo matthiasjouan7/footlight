@@ -259,7 +259,6 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
         <option value="milieu_defensif">Milieu défensif</option>
         <option value="milieu_central">Milieu central</option>
         <option value="milieu_offensif">Milieu offensif</option>
-        <option value="milieu_gauche">Milieu gauche</option>
         <option value="ailier_droit">Ailier droit</option>
         <option value="ailier_gauche">Ailier gauche</option>
         <option value="attaquant">Attaquant</option>
@@ -364,7 +363,7 @@ const COULEURS = {
   'lateral_droit':'#8957e5','lateral_gauche':'#8957e5',
   'piston_droit':'#8957e5','piston_gauche':'#8957e5',
   'milieu_central':'#238636','milieu_offensif':'#238636',
-  'milieu_defensif':'#238636','milieu_gauche':'#238636',
+  'milieu_defensif':'#238636',
   'ailier_droit':'#d29922','ailier_gauche':'#d29922',
   'attaquant':'#d29922','autre':'#6e7681'
 };
@@ -381,7 +380,7 @@ let viewerPlan = 'free';
 let viewerRecruteurId = null;
 
 const POSTES_DEFENSIFS = ['gardien','defenseur_central','lateral_droit','lateral_gauche','piston_droit','piston_gauche','milieu_defensif'];
-const POSTES_MILIEU = ['milieu_central','milieu_offensif','milieu_gauche'];
+const POSTES_MILIEU = ['milieu_central','milieu_offensif'];
 
 // Colore un ratio/% selon son niveau réel plutôt qu'une couleur fixe :
 // un attaquant qui marque 50% des buts de son équipe doit sauter aux yeux.
