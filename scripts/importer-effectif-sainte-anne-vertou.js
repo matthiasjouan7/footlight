@@ -24,12 +24,14 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Eliot Pasture et Yannis Letard (transferts confirmés depuis Les Herbiers
+// VF N1) ainsi que Florian Héguiabéhéré (déjà en base sous le nom de club
+// raccourci "Vertou", même club qu'US Sainte-Anne de Vertou) sont exclus de
+// NOUVEAUX, traités via CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Eliot', 'Pasture', 'gardien', '2003-04-23'],
   ['Valentin', 'Prévost', 'gardien', '1994-12-28'],
   ['Gwendal', 'Soulard', 'gardien', '1997-11-14'],
-  ['Yannis', 'Letard', 'defenseur_central', '1998-08-18'],
   ['Lucas', 'Rouland', 'defenseur_central', '2000-10-12'],
   ['Thomas', 'Boucard', 'defenseur_central', '2003-07-04'],
   ['Nathan', 'Pereira De Carvalho', 'defenseur_central', '2003-10-17'],
@@ -45,7 +47,6 @@ const NOUVEAUX = [
   ['Thomas', 'Gaboreau', 'milieu_offensif', '2006-04-23'],
   ['Ilaye', 'Fall', 'ailier_gauche', '2006-04-03'],
   ['Alois', 'Kisaku', 'ailier_gauche', '2004-09-21'],
-  ['Florian', 'Héguiabéhéré', 'ailier_droit', '2001-01-16'],
   ['Giovanni', 'Sio', 'attaquant', '1989-03-31'],
   ['Amadou', 'Coulibaly', 'attaquant', '1997-05-05'],
   ['Mohamed', 'Diaby', 'attaquant', '2002-04-02'],
@@ -53,7 +54,11 @@ const NOUVEAUX = [
   ['Gérard', 'Waia', 'attaquant', '2004-12-22'],
 ];
 
-const CORRECTIONS = [];
+const CORRECTIONS = [
+  { id: 'fbc8253e-a4c7-40c6-af2b-fd4fca5b76a0', prenom: 'Eliot', nom: 'Pasture', poste: 'gardien' },
+  { id: '7be13808-5615-40ef-952c-91704cd423d8', prenom: 'Yannis', nom: 'Letard', poste: 'defenseur_central' },
+  { id: '1fca9c65-fbec-4bfc-ad24-493721232ca9', prenom: 'Florian', nom: 'Héguiabéhéré', poste: 'ailier_droit' },
+];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
 // faut paginer avec .range() sous peine de manquer des doublons situés après
