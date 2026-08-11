@@ -28,13 +28,15 @@ function slugifyName(s) {
 // droit" sur Transfermarkt, un poste hors enum (pas de milieu_droit dans
 // l'application) : reclassés en ailier_droit, symétrique à la correction
 // milieu_gauche -> ailier_gauche appliquée à l'ensemble de la base.
+// Nicolas Pistol (transfert confirmé depuis Dinan Léhon FC N1), Geoffrey
+// Marie-Louise (transfert confirmé depuis FC Montlouis N1) et Théo Mothmora
+// (transfert confirmé depuis VFC La Roche-sur-Yon N1) sont exclus de
+// NOUVEAUX, traités via CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Dorian', 'Chiotti', 'gardien', '1998-08-16'],
-  ['Nicolas', 'Pistol', 'gardien', '1996-08-16'],
   ['Lino', 'Duhamel', 'gardien', '2006-01-12'],
   ['Ewen', 'Le Josse', 'gardien', '2006-02-16'],
-  ['Geoffrey', 'Marie-Louise', 'defenseur_central', '1992-01-16'],
   ['Yahaya', 'Médard', 'defenseur_central', '2000-01-14'],
   ['Bryan', 'Debola', 'defenseur_central', '2002-03-25'],
   ['Nathan', 'Bourdin', 'defenseur_central', '2003-09-15'],
@@ -52,13 +54,16 @@ const NOUVEAUX = [
   ['Youssef', 'Talbi', 'milieu_offensif', '2004-02-23'],
   ['Dominique', 'Pandor', 'ailier_droit', '1993-05-15'],
   ['Jonathan', "N'Sondé", 'attaquant', '1996-04-16'],
-  ['Théo', 'Mothmora', 'attaquant', '2002-03-02'],
   ['Matthis', 'Rambo', 'attaquant', '2000-06-06'],
   ['Michael', 'Nsilu Kuyenga', 'attaquant', '2002-01-04'],
   ['Noa', 'Boisset', 'attaquant', '2005-05-21'],
 ];
 
-const CORRECTIONS = [];
+const CORRECTIONS = [
+  { id: '1133db23-85dd-44a0-8919-a77b3d5e2695', prenom: 'Nicolas', nom: 'Pistol', poste: 'gardien' },
+  { id: '71fbe5c1-0958-400a-9721-f6cf7e9b42b0', prenom: 'Geoffrey', nom: 'Marie-Louise', poste: 'defenseur_central' },
+  { id: '998b94a0-2b18-47cf-a039-8b8cccd1cb4b', prenom: 'Théo', nom: 'Mothmora', poste: 'attaquant' },
+];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
 // faut paginer avec .range() sous peine de manquer des doublons situés après
