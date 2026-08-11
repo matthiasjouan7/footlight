@@ -997,14 +997,16 @@ async function checkSession() {
         }
       });
       // Ajouter le raccourci vers la shortlist (accès direct, sans repasser
-      // par "Mon espace")
+      // par "Mon espace"), juste après "Classement"
       const navLinks = document.querySelector('.nav-links');
       if (navLinks && viewerRole === 'recruteur' && !document.getElementById('shortlist-btn')) {
         const shortlistLink = document.createElement('a');
         shortlistLink.id = 'shortlist-btn';
         shortlistLink.textContent = '★ Shortlist';
         shortlistLink.href = 'footlight-recherche.html?shortlist=1';
-        navLinks.appendChild(shortlistLink);
+        const classementLink = Array.from(navLinks.querySelectorAll('a')).find(a => a.textContent.trim() === 'Classement');
+        if (classementLink) classementLink.insertAdjacentElement('afterend', shortlistLink);
+        else navLinks.appendChild(shortlistLink);
       }
       // Ajouter bouton déconnexion
       if (navLinks && !document.getElementById('deco-btn')) {
