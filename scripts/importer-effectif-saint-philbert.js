@@ -24,9 +24,11 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Téo Hamelin (transfert confirmé depuis Dinan Léhon FC N1) et Jordan
+// Cuvier (déjà en base sous le nom de club raccourci "Saint Philbert de
+// Grand Lieu") sont exclus de NOUVEAUX, traités via CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Téo', 'Hamelin', 'gardien', '1997-07-05'],
   ['Marcellin', 'Gohier', 'gardien', '1997-08-05'],
   ['Justin', 'Egron', 'gardien', '2007-03-12'],
   ['Simon', 'Gbegnon', 'defenseur_central', '1992-10-27'],
@@ -50,8 +52,12 @@ const NOUVEAUX = [
   ['Youssef', 'Souley', 'ailier_gauche', '1997-01-31'],
   ['Mathys', 'Renaud', 'ailier_droit', '2003-03-06'],
   ['Adam', 'Hammoudi', 'milieu_offensif', '2003-02-19'],
-  ['Jordan', 'Cuvier', 'attaquant', '1994-04-16'],
   ['Mouhammad', 'Touré', 'attaquant', '2002-06-24'],
+];
+
+const CORRECTIONS = [
+  { id: '201cc219-6000-4192-b647-fb39793bfb10', prenom: 'Téo', nom: 'Hamelin', poste: 'gardien' },
+  { id: 'd3925e36-79c3-4da6-8dd3-c204a585c99f', prenom: 'Jordan', nom: 'Cuvier', poste: 'attaquant' },
 ];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
@@ -86,9 +92,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${CORRECTIONS.length} correction(s)/transfert(s) à appliquer :`);
+for (const c of CORRECTIONS) console.log(`  ${c.prenom} ${c.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${c.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const c of CORRECTIONS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: c.poste }).eq('id', c.id);
+    if (updErr) { console.error(`Erreur mise à jour correction ${c.prenom} ${c.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
