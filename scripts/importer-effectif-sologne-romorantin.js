@@ -24,12 +24,16 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Mohamed Keita est un homonyme (personne différente) du Mohamed Keita déjà
+// en base à US Granville (N1) : inséré comme nouveau joueur, avec un email
+// désambiguïsé pour éviter le conflit sur la contrainte unique joueurs_email_key.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Adama', 'Wagui', 'gardien', '2002-06-25'],
   ['Adrien', 'Jobelot', 'gardien', '1999-11-23'],
   ['Salah', 'Bouazza', 'defenseur_central', '1999-05-26'],
   ['Mohamed', 'Keita', 'defenseur_central', '2006-08-03'],
+  // (email désambiguïsé appliqué plus bas)
   ['Reynald', 'Martial', 'defenseur_central', '2002-07-19'],
   ['Matéo', 'Dos Santos', 'defenseur_central', '2005-07-09'],
   ['Yanis', 'Si Mohammed', 'lateral_gauche', '1996-03-31'],
@@ -74,9 +78,16 @@ for (const [prenom, nom] of NOUVEAUX) {
 }
 console.log(`${doublons} doublon(s) potentiel(s) sur ${NOUVEAUX.length} joueurs de l'effectif.\n`);
 
+// Homonymes nécessitant un email désambiguïsé (préfixe distinct) pour ne pas
+// entrer en conflit avec la contrainte unique joueurs_email_key.
+const EMAILS_HOMONYMES = {
+  'mohamed|keita': `${slugifyName('Mohamed')}.${slugifyName('Keita')}.romorantin.manuel@scoute.footlight.fr`,
+};
+
 const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
   prenom, nom, poste, club: CLUB, niveau: NIVEAU, saison: SAISON, date_naissance,
-  email: `${slugifyName(prenom)}.${slugifyName(nom)}.manuel@scoute.footlight.fr`,
+  email: EMAILS_HOMONYMES[`${normalizeName(prenom)}|${normalizeName(nom)}`]
+    || `${slugifyName(prenom)}.${slugifyName(nom)}.manuel@scoute.footlight.fr`,
   matchs_joues: 0, buts: 0, badge: 'declaratif', profil_public: false,
 }));
 
