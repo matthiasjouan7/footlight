@@ -25,7 +25,9 @@ function slugifyName(s) {
 }
 
 // Mattéo Makhabe est déjà en base sous le nom de club raccourci "Vierzon"
-// (même club que "Vierzon Football Club") : exclu de NOUVEAUX, traité via
+// (même club que "Vierzon Football Club"). Fulgency Kimbembé (transfert
+// confirmé depuis US Granville N1) et Arthur Fiquet (transfert confirmé
+// depuis Les Herbiers VF N1) sont également exclus de NOUVEAUX, traités via
 // CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
@@ -41,7 +43,6 @@ const NOUVEAUX = [
   ['Baptiste', 'Rocher', 'lateral_droit', '2002-08-01'],
   ['Youssouf', 'Traoré', 'milieu_defensif', '1998-01-06'],
   ['Adel', 'Khechim', 'milieu_central', '1992-08-04'],
-  ['Fulgency', 'Kimbembé', 'milieu_central', '1998-12-28'],
   ['Kalvin', 'Paul', 'milieu_central', '2001-07-02'],
   ['Benjamin', 'Duvoux', 'milieu_central', '1995-05-22'],
   ['Saad', 'Trabelsi', 'milieu_offensif', '1991-12-20'],
@@ -52,13 +53,14 @@ const NOUVEAUX = [
   ['Soiyir', 'Sanali', 'ailier_droit', '2002-01-20'],
   ['Yanis', 'Atila', 'ailier_droit', '2006-05-30'],
   ['Sean', 'Tormin', 'attaquant', '2004-05-19'],
-  ['Arthur', 'Fiquet', 'attaquant', '2003-09-10'],
 ];
 
 // La fiche existante de Mattéo Makhabe n'a pas de date de naissance : on en
 // profite pour la compléter avec celle de la nouvelle capture.
 const CORRECTIONS = [
   { id: '5396a6bf-2b47-45ca-bbb9-644d09499d0a', prenom: 'Mattéo', nom: 'Makhabe', poste: 'milieu_offensif', date_naissance: '2003-11-28' },
+  { id: 'b9041ec3-c855-4370-812e-d9133619f494', prenom: 'Fulgency', nom: 'Kimbembé', poste: 'milieu_central' },
+  { id: '36168eab-8e50-45cc-9137-06237a089e04', prenom: 'Arthur', nom: 'Fiquet', poste: 'attaquant' },
 ];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
