@@ -528,6 +528,16 @@ async function checkSession() {
           a.style.display = 'none';
         }
       });
+      // Ajouter le raccourci vers la shortlist (accès direct, sans repasser
+      // par "Mon espace")
+      const navLinks = document.querySelector('.nav-links');
+      if (navLinks && viewerRole === 'recruteur' && !document.getElementById('shortlist-btn')) {
+        const shortlistLink = document.createElement('a');
+        shortlistLink.id = 'shortlist-btn';
+        shortlistLink.textContent = '★ Shortlist';
+        shortlistLink.href = 'footlight-recherche.html?shortlist=1';
+        navLinks.appendChild(shortlistLink);
+      }
     }
     if (!isConnected) {
       document.getElementById('gateBanner').style.display = 'block';
