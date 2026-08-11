@@ -525,6 +525,17 @@ async function loadProfil() {
       ownJoueur = await findOwnJoueur(user);
       viewerRole = ownJoueur ? 'joueur' : 'nouveau';
     }
+
+    // Ajouter le raccourci vers la shortlist (accès direct, sans repasser
+    // par "Mon espace")
+    const navLinks = document.querySelector('.nav-links');
+    if (navLinks && viewerRole === 'recruteur' && !document.getElementById('shortlist-btn')) {
+      const shortlistLink = document.createElement('a');
+      shortlistLink.id = 'shortlist-btn';
+      shortlistLink.textContent = '★ Shortlist';
+      shortlistLink.href = 'footlight-recherche.html?shortlist=1';
+      navLinks.appendChild(shortlistLink);
+    }
   }
 
   // Récupérer l'ID depuis l'URL
