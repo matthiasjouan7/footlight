@@ -24,9 +24,11 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Isaia Hubert est déjà en base sous le nom de club "Challans Fc 1" (même
+// club que "FC Challans", poste déjà correct) : exclu de NOUVEAUX, traité
+// via CORRECTIONS ci-dessous (nom de club à corriger uniquement).
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
-  ['Isaia', 'Hubert', 'gardien', '2002-08-17'],
   ['Nolhan', 'Praud Meunier', 'gardien', '2007-04-20'],
   ['Valentin', 'Miroux', 'defenseur_central', '1998-02-12'],
   ['Tom', 'Fillaudeau', 'defenseur_central', '2002-03-08'],
@@ -46,6 +48,10 @@ const NOUVEAUX = [
   ['Rodney', 'Mazikou', 'attaquant', '1999-09-19'],
   ['Marthy', 'Guillossou', 'attaquant', '2001-01-26'],
   ['Ousmane', 'Soumah', 'attaquant', '2002-02-12'],
+];
+
+const CORRECTIONS = [
+  { id: '11c8e4c4-063f-409a-9a78-387dd4d43b9c', prenom: 'Isaia', nom: 'Hubert', poste: 'gardien' },
 ];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
@@ -80,9 +86,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${CORRECTIONS.length} correction(s) à appliquer :`);
+for (const c of CORRECTIONS) console.log(`  ${c.prenom} ${c.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${c.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const c of CORRECTIONS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: c.poste }).eq('id', c.id);
+    if (updErr) { console.error(`Erreur mise à jour correction ${c.prenom} ${c.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
