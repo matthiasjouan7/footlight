@@ -24,6 +24,10 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Noah Talbot et Sascha Touodop Tekeu sont déjà en base sous le nom de club
+// "Chataigneraie" (même club que "AS La Châtaigneraie") : exclus de
+// NOUVEAUX, traités via CORRECTIONS ci-dessous (nom de club à corriger, et
+// poste de Noah Talbot : piston_gauche → lateral_gauche selon la capture).
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Hugo', 'Bretaigne', 'gardien', '2000-02-08'],
@@ -32,20 +36,23 @@ const NOUVEAUX = [
   ['Lucas', 'Brémond', 'defenseur_central', '2002-12-13'],
   ['Florian', 'Burgaud', 'defenseur_central', '2002-05-29'],
   ['Andréa', 'Heckel', 'defenseur_central', '2007-03-02'],
-  ['Noah', 'Talbot', 'lateral_gauche', '2005-07-12'],
   ['Romuald', 'Marie', 'lateral_droit', '1988-05-19'],
   ['Loan', 'Hochedez', 'lateral_droit', '2005-07-12'],
   ['Mathis', 'Oger', 'milieu_defensif', '2003-05-02'],
   ['Bourhane', 'Conté', 'milieu_defensif', '2005-05-05'],
   ['Evan', 'Goret', 'milieu_central', '2003-04-02'],
   ['Lucas', 'Abreu', 'milieu_central', '2001-08-30'],
-  ['Sascha', 'Touodop Tekeu', 'ailier_gauche', '2005-01-11'],
   ['Paul-Émile', 'Mimault', 'ailier_gauche', '2001-07-12'],
   ['Samuel', 'Biraud', 'ailier_droit', '2002-07-22'],
   ['Pierre', 'Grellier', 'attaquant', '1997-08-15'],
   ['Charles', 'Goyer', 'attaquant', '2004-05-27'],
   ['Hugo', 'Bodin', 'attaquant', '1999-08-02'],
   ['Bastien', 'Déchamps', 'attaquant', '2003-03-20'],
+];
+
+const CORRECTIONS = [
+  { id: '18f36543-0d7a-4717-9e6a-da9360d1138e', prenom: 'Noah', nom: 'Talbot', poste: 'lateral_gauche' },
+  { id: '949fa10c-43ac-4a55-b63f-07626497a1d2', prenom: 'Sascha', nom: 'Touodop Tekeu', poste: 'ailier_gauche' },
 ];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
@@ -80,9 +87,16 @@ const lignes = NOUVEAUX.map(([prenom, nom, poste, date_naissance]) => ({
 console.log(`${lignes.length} joueur(s) à insérer :`);
 for (const l of lignes) console.log(`  ${l.prenom} ${l.nom} | poste=${l.poste} | né(e) le ${l.date_naissance}`);
 
+console.log(`\n${CORRECTIONS.length} correction(s) à appliquer :`);
+for (const c of CORRECTIONS) console.log(`  ${c.prenom} ${c.nom} → club="${CLUB}", niveau="${NIVEAU}", poste="${c.poste}"`);
+
 if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
+  for (const c of CORRECTIONS) {
+    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: c.poste }).eq('id', c.id);
+    if (updErr) { console.error(`Erreur mise à jour correction ${c.prenom} ${c.nom} :`, updErr.message); process.exit(1); }
+  }
   console.log('\nTerminé.');
 } else {
   console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer réellement.');
