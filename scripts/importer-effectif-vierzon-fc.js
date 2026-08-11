@@ -24,6 +24,9 @@ function slugifyName(s) {
   return normalizeName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Mattéo Makhabe est déjà en base sous le nom de club raccourci "Vierzon"
+// (même club que "Vierzon Football Club") : exclu de NOUVEAUX, traité via
+// CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Enzo', 'Pauchet', 'gardien', '1997-03-22'],
@@ -42,7 +45,6 @@ const NOUVEAUX = [
   ['Kalvin', 'Paul', 'milieu_central', '2001-07-02'],
   ['Benjamin', 'Duvoux', 'milieu_central', '1995-05-22'],
   ['Saad', 'Trabelsi', 'milieu_offensif', '1991-12-20'],
-  ['Mattéo', 'Makhabe', 'milieu_offensif', '2003-11-28'],
   ['Nihad', 'Chamouni', 'milieu_offensif', '1999-04-17'],
   ['Enzo', 'Carré', 'milieu_offensif', '2005-05-10'],
   ['Iman', "N'Zete", 'ailier_gauche', '2003-01-30'],
@@ -53,7 +55,11 @@ const NOUVEAUX = [
   ['Arthur', 'Fiquet', 'attaquant', '2003-09-10'],
 ];
 
-const CORRECTIONS = [];
+// La fiche existante de Mattéo Makhabe n'a pas de date de naissance : on en
+// profite pour la compléter avec celle de la nouvelle capture.
+const CORRECTIONS = [
+  { id: '5396a6bf-2b47-45ca-bbb9-644d09499d0a', prenom: 'Mattéo', nom: 'Makhabe', poste: 'milieu_offensif', date_naissance: '2003-11-28' },
+];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
 // faut paginer avec .range() sous peine de manquer des doublons situés après
@@ -94,7 +100,9 @@ if (!dryRun) {
   const { error: insErr } = await supabase.from('joueurs').insert(lignes);
   if (insErr) { console.error('Erreur insertion :', insErr.message); process.exit(1); }
   for (const c of CORRECTIONS) {
-    const { error: updErr } = await supabase.from('joueurs').update({ club: CLUB, niveau: NIVEAU, poste: c.poste }).eq('id', c.id);
+    const patch = { club: CLUB, niveau: NIVEAU, poste: c.poste };
+    if (c.date_naissance) patch.date_naissance = c.date_naissance;
+    const { error: updErr } = await supabase.from('joueurs').update(patch).eq('id', c.id);
     if (updErr) { console.error(`Erreur mise à jour correction ${c.prenom} ${c.nom} :`, updErr.message); process.exit(1); }
   }
   console.log('\nTerminé.');
