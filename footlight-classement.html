@@ -1,0 +1,512 @@
+<!DOCTYPE html><!-- v1.0 -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootLight — Classement joueurs</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --blue:#1f6feb;--blue-l:#79c0ff;
+  --gold:#d29922;--gold-l:#e3b341;
+  --green:#238636;--green-l:#56d364;
+  --red:#da3633;--red-l:#f85149;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-variant-numeric:tabular-nums;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,#79c0ff,#e3b341);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-links{display:flex;gap:16px;align-items:center;overflow-x:auto;min-width:0;scrollbar-width:none;-ms-overflow-style:none;}.nav-links::-webkit-scrollbar{display:none;}.nav-links a{flex-shrink:0;}
+.nav-links a{font-size:0.85rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.nav-links a:hover{color:var(--text);}
+.nav-links a.active{color:var(--blue-l);}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:260px 1fr;padding-top:56px;min-height:100vh;}
+@media(max-width:800px){.layout{grid-template-columns:1fr;}}
+
+/* SIDEBAR */
+.sidebar{border-right:1px solid var(--border);padding:20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;}
+@media(max-width:800px){.sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border);}}
+.sidebar-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:16px;}
+.filter-group{margin-bottom:20px;}
+.filter-label{font-size:0.82rem;font-weight:600;margin-bottom:8px;display:block;}
+.filter-hint{font-size:0.72rem;color:var(--muted);margin-top:6px;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{padding:5px 12px;border-radius:20px;font-size:0.78rem;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;transition:all .15s;}
+.chip:hover{border-color:var(--muted);color:var(--text);}
+.chip.active{background:#1f6feb22;border-color:var(--blue);color:var(--blue-l);}
+.form-select{width:100%;padding:9px 12px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;cursor:pointer;}
+.form-select:focus{border-color:var(--blue);}
+hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
+
+/* MAIN */
+.main{padding:20px 24px 80px;max-width:1040px;}
+.results-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;}
+.results-count{font-size:0.95rem;font-weight:700;}
+.results-count span{color:var(--blue-l);}
+.page-sub{font-size:0.82rem;color:var(--muted);margin-top:4px;max-width:64ch;}
+
+/* LOADING */
+.loading{text-align:center;padding:60px 20px;color:var(--muted);}
+.loading-spin{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.no-results{text-align:center;padding:60px 20px;color:var(--muted);}
+.no-results h3{font-size:1.1rem;margin-bottom:8px;color:var(--text);}
+
+/* SECTION LABEL */
+.section-eyebrow{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.section-eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);}
+
+/* PODIUM */
+.podium-section{margin-bottom:36px;}
+.podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:end;}
+.podium-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px 16px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:9px;}
+.podium-card.rank-1{order:2;border-color:var(--gold);background:linear-gradient(180deg,#d2992214 0%,var(--bg2) 55%);padding-top:26px;transform:translateY(-14px);box-shadow:0 0 0 1px #d2992233,0 18px 34px -18px #d2992255;}
+.podium-card.rank-2{order:1;}
+.podium-card.rank-3{order:3;}
+.rank-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.95rem;background:var(--bg3);border:1px solid var(--border);color:var(--muted);}
+.rank-1 .rank-badge{background:#d2992222;border-color:var(--gold);color:var(--gold-l);width:40px;height:40px;font-size:1.05rem;}
+.rank-2 .rank-badge{color:#c9d1d9;border-color:#4a5158;}
+.rank-3 .rank-badge{color:#d19a6a;border-color:#6e4a30;background:#d19a6a14;}
+.p-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.95rem;color:#fff;flex-shrink:0;}
+.rank-1 .p-avatar{width:58px;height:58px;font-size:1.1rem;}
+.p-name{font-weight:700;font-size:0.92rem;}
+.p-meta{font-size:0.74rem;color:var(--muted);}
+.p-stat-val{font-size:1.65rem;font-weight:800;line-height:1;margin-top:2px;}
+.rank-1 .p-stat-val{color:var(--gold-l);font-size:1.9rem;}
+.p-stat-unit{font-size:0.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;}
+.p-sub-stats{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:4px;font-size:0.7rem;color:var(--muted);}
+.p-sub-stats b{color:var(--text);}
+.badge-chip{font-size:0.64rem;font-weight:700;letter-spacing:0.03em;padding:3px 9px;border-radius:20px;margin-top:2px;border:1px solid var(--border);color:var(--muted);}
+.badge-chip.video,.badge-chip.gps{background:#23863622;border-color:var(--green);color:var(--green-l);}
+.badge-chip.elite{background:#d2992222;border-color:var(--gold);color:var(--gold-l);}
+
+/* LIST */
+.list-scroll{overflow-x:auto;}
+.list-header,.list-row{display:grid;grid-template-columns:34px 1fr 168px 92px 106px 190px;gap:14px;align-items:center;min-width:720px;}
+.list-header{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);padding:0 16px 10px;}
+.list-header .num-col,.list-header .stat-col{text-align:right;}
+.list-body{display:flex;flex-direction:column;gap:6px;}
+.list-row{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;cursor:pointer;transition:border-color .15s,background .15s;}
+.list-row:hover{border-color:#4a5158;background:var(--bg3);}
+.l-rank{font-weight:700;color:var(--muted);font-size:0.86rem;}
+.l-identity{display:flex;align-items:center;gap:11px;min-width:0;}
+.l-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;color:#fff;}
+.l-name-wrap{min-width:0;}
+.l-name{font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.l-poste{font-size:0.72rem;color:var(--muted);}
+.l-club{font-size:0.8rem;min-width:0;}
+.l-club .club-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.l-club .niveau-tag{font-size:0.66rem;color:var(--blue-l);font-weight:600;}
+.l-stat{text-align:right;}
+.l-stat .val{font-size:1.02rem;font-weight:800;}
+.l-stat .unit{font-size:0.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
+.l-secondary{display:flex;justify-content:flex-end;gap:12px;font-size:0.74rem;color:var(--muted);white-space:nowrap;}
+.l-secondary b{color:var(--text);font-weight:600;}
+@media(max-width:760px){
+  .list-header,.list-row{grid-template-columns:28px 1fr 88px 106px;}
+  .l-club .niveau-tag,.l-badge,.l-secondary{display:none;}
+  .podium{grid-template-columns:1fr;gap:10px;}
+  .podium-card.rank-1,.podium-card.rank-2,.podium-card.rank-3{order:initial;transform:none;}
+}
+
+/* GATE (visiteurs non connectés) */
+.gate-banner{background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.15);border-radius:12px;padding:16px;text-align:center;margin-bottom:22px;}
+.gate-banner p{font-size:0.82rem;color:var(--blue-l);margin-bottom:10px;}
+.gate-banner button{padding:8px 18px;border-radius:8px;background:var(--blue);border:none;color:#fff;font-size:0.8rem;font-weight:600;cursor:pointer;}
+.blurred{filter:blur(5px);pointer-events:none;user-select:none;}
+
+.methodo{margin-top:30px;padding:16px 18px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);font-size:0.8rem;color:var(--muted);display:flex;gap:10px;align-items:flex-start;}
+.methodo .ic{color:var(--blue-l);flex-shrink:0;font-size:0.95rem;line-height:1.3;}
+.methodo strong{color:var(--text);}
+</style>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0d1117"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FootLight"/>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">FootLight</a>
+  <div class="nav-links">
+    <a href="index.html">Accueil</a>
+    <a href="footlight-recherche.html">Recherche</a>
+    <a class="active">Classement</a>
+    <a href="footlight-comparaison.html">Comparer</a>
+    <a href="footlight-suggestions.html">Suggestions</a>
+    <a href="footlight-connexion.html">Connexion</a>
+    <a href="footlight-inscription-recruteur.html" style="background:var(--blue);color:#fff;padding:5px 12px;border-radius:8px;font-size:0.8rem;">S'inscrire</a>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-title">Filtres</div>
+
+    <div class="filter-group">
+      <span class="filter-label">Niveau</span>
+      <div class="chips" id="f-niveau">
+        <div class="chip" data-val="Ligue 3" onclick="toggleNiveau('Ligue 3',this)">Ligue 3</div>
+        <div class="chip" data-val="N1" onclick="toggleNiveau('N1',this)">N1</div>
+        <div class="chip active" data-val="N2" onclick="toggleNiveau('N2',this)">N2</div>
+        <div class="chip" data-val="R1" onclick="toggleNiveau('R1',this)">R1</div>
+        <div class="chip" data-val="Autre" onclick="toggleNiveau('Autre',this)">Autre</div>
+      </div>
+      <div class="filter-hint">Cliquez pour combiner plusieurs niveaux.</div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Poste</span>
+      <div class="chips" id="f-poste">
+        <div class="chip active" data-val="tous" onclick="setPoste('tous',this)">Tous</div>
+        <div class="chip" data-val="Gardien" onclick="setPoste('Gardien',this)">Gardiens</div>
+        <div class="chip" data-val="Défenseur" onclick="setPoste('Défenseur',this)">Défenseurs</div>
+        <div class="chip" data-val="Latéral" onclick="setPoste('Latéral',this)">Latéraux</div>
+        <div class="chip" data-val="Milieu" onclick="setPoste('Milieu',this)">Milieux</div>
+        <div class="chip" data-val="Attaquant" onclick="setPoste('Attaquant',this)">Attaquants</div>
+      </div>
+    </div>
+
+    <hr class="fdiv"/>
+
+    <div class="filter-group">
+      <span class="filter-label">Trier par</span>
+      <select class="form-select" id="indicSelect" onchange="state.indic=this.value;render();"></select>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="results-bar">
+      <div>
+        <div class="results-count"><span id="resultCount">—</span> joueurs classés</div>
+        <div class="page-sub">Classement basé sur les statistiques déclarées et vérifiées de chaque joueur — même classement pour tous les recruteurs.</div>
+      </div>
+    </div>
+
+    <div id="gateBanner" class="gate-banner" style="display:none;">
+      <p>🔒 Connectez-vous pour voir les stats complètes et accéder aux profils</p>
+      <button onclick="window.location.href='footlight-connexion.html'">Se connecter</button>
+    </div>
+
+    <div id="loading" class="loading">
+      <div class="loading-spin"></div>
+      Chargement du classement...
+    </div>
+
+    <div id="content" style="display:none;">
+      <section class="podium-section">
+        <div class="section-eyebrow"><span class="dot"></span>Top 3 — <span id="podiumLabel"></span></div>
+        <div class="podium" id="podium"></div>
+      </section>
+
+      <section>
+        <div class="section-eyebrow"><span class="dot"></span>Classement complet</div>
+        <div class="list-scroll">
+          <div class="list-header">
+            <span>#</span>
+            <span>Joueur</span>
+            <span>Club</span>
+            <span>Badge</span>
+            <span class="stat-col" id="statColLabel"></span>
+            <span style="text-align:right">Détail</span>
+          </div>
+          <div class="list-body" id="listBody"></div>
+        </div>
+      </section>
+
+      <div class="methodo">
+        <span class="ic">ⓘ</span>
+        <div><strong>Méthodologie :</strong> le tri par défaut est en ratio par match, pas en total. Pour les gardiens, le menu bascule automatiquement sur des indicateurs propres au poste (buts encaissés/match, % de clean sheets). Combinez plusieurs niveaux si vous recrutez pour un poste ouvert à deux divisions voisines — le niveau de chaque joueur reste indiqué sur sa ligne. Seuls les joueurs ayant joué au moins un match sont classés.</div>
+      </div>
+    </div>
+
+    <div id="noResults" class="no-results" style="display:none;">
+      <h3>Aucun joueur trouvé</h3>
+      <p>Essayez d'élargir les niveaux ou postes sélectionnés.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG SUPABASE ──
+const SUPABASE_URL = 'https://migarohddystlyhuoxfg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZ2Fyb2hkZHlzdGx5aHVveGZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MjI2NjksImV4cCI6MjA5Mjk5ODY2OX0.NKlySSVpnws5WZF41T2qeoMjBi5VZzpnk_h-ejTj9R4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let isConnected = false;
+let viewerRole = 'anonyme';
+
+const POSTE_DISPLAY = {
+  'gardien':'Gardien','defenseur_central':'Défenseur',
+  'lateral_droit':'Latéral','lateral_gauche':'Latéral',
+  'piston_droit':'Latéral','piston_gauche':'Latéral',
+  'milieu_central':'Milieu','milieu_offensif':'Milieu',
+  'milieu_defensif':'Milieu','milieu_gauche':'Milieu',
+  'ailier_droit':'Attaquant','ailier_gauche':'Attaquant',
+  'attaquant':'Attaquant','autre':'Milieu'
+};
+const COULEURS = {
+  'gardien':'#1f6feb','defenseur_central':'#da3633',
+  'lateral_droit':'#8957e5','lateral_gauche':'#8957e5',
+  'piston_droit':'#8957e5','piston_gauche':'#8957e5',
+  'milieu_central':'#238636','milieu_offensif':'#238636',
+  'milieu_defensif':'#238636','milieu_gauche':'#238636',
+  'ailier_droit':'#d29922','ailier_gauche':'#d29922',
+  'attaquant':'#d29922','autre':'#6e7681'
+};
+const BADGE_LABEL = { declaratif: 'Déclaratif', video: 'Vidéo', gps: 'GPS', elite: 'Elite' };
+const NIVEAU_LABEL = { 'Ligue 3': 'Ligue 3', 'N1': 'National 1', 'N2': 'National 2', 'R1': 'R1', 'Autre': 'Autre' };
+
+// Discipline : commun à tous les postes. Un carton rouge pèse 3x un jaune.
+// dir 'asc' : moins de cartons = mieux classé.
+const DISCIPLINE_INDIC = {
+  cartons_ratio:  { label: 'Cartons pondérés / match', unit: 'pts carton / match', fn: p => (n(p.cartons_jaunes) + n(p.cartons_rouges) * 3) / p.matchs_joues, decimals: 2, dir: 'asc' },
+  cartons_jaunes: { label: 'Cartons jaunes (total)', unit: 'jaunes', fn: p => n(p.cartons_jaunes), dir: 'asc' },
+  cartons_rouges: { label: 'Cartons rouges (total)', unit: 'rouges', fn: p => n(p.cartons_rouges), dir: 'asc' },
+};
+const DISCIPLINE_GROUP = { label: 'Discipline', keys: ['cartons_ratio', 'cartons_jaunes', 'cartons_rouges'] };
+
+const OUTFIELD_INDIC = {
+  impact_ratio: { label: 'Buts+passes / match', unit: 'pts / match', fn: p => (n(p.buts) + n(p.passes_decisives)) / p.matchs_joues, decimals: 2, dir: 'desc' },
+  buts_ratio:   { label: 'Buts / match', unit: 'buts / match', fn: p => n(p.buts) / p.matchs_joues, decimals: 2, dir: 'desc' },
+  passes_ratio: { label: 'Passes / match', unit: 'passes / match', fn: p => n(p.passes_decisives) / p.matchs_joues, decimals: 2, dir: 'desc' },
+  buts_90:      { label: 'Buts / 90 min', unit: 'buts / 90 min', fn: p => p.minutes_jouees ? n(p.buts) / (p.minutes_jouees / 90) : null, decimals: 2, dir: 'desc' },
+  impact: { label: 'Buts + passes (total)', unit: 'pts', fn: p => n(p.buts) + n(p.passes_decisives), dir: 'desc' },
+  buts:   { label: 'Buts (total)', unit: 'buts', fn: p => n(p.buts), dir: 'desc' },
+  passes: { label: 'Passes décisives (total)', unit: 'passes', fn: p => n(p.passes_decisives), dir: 'desc' },
+  matchs: { label: 'Matchs joués', unit: 'matchs', fn: p => p.matchs_joues, dir: 'desc' },
+  titu_pct: { label: 'Taux de titularisation', unit: '% de matchs', fn: p => p.titularisations != null ? (p.titularisations / p.matchs_joues) * 100 : null, decimals: 0, dir: 'desc' },
+  vma:      { label: 'VMA (km/h)', unit: 'km/h', fn: p => p.vma_kmh, decimals: 1, dir: 'desc' },
+  vpointe:  { label: 'Vitesse de pointe (km/h)', unit: 'km/h', fn: p => p.vitesse_max_kmh, decimals: 1, dir: 'desc' },
+  sprints:  { label: 'Sprints / match', unit: 'sprints / match', fn: p => p.sprints_match, decimals: 1, dir: 'desc' },
+  ...DISCIPLINE_INDIC,
+};
+const OUTFIELD_GROUPS = [
+  { label: 'Ratio (par match) — recommandé', keys: ['impact_ratio', 'buts_ratio', 'passes_ratio', 'buts_90'] },
+  { label: 'Totaux sur la saison', keys: ['impact', 'buts', 'passes', 'matchs'] },
+  { label: 'Présence', keys: ['titu_pct'] },
+  { label: 'Physique', keys: ['vma', 'vpointe', 'sprints'] },
+  DISCIPLINE_GROUP,
+];
+
+// Gardiens : "Buts encaissés / match" est meilleur quand il est BAS (dir
+// 'asc') — sans quoi le classement des gardiens n'a pas de sens.
+const GK_INDIC = {
+  gk_encaisses_ratio: { label: 'Buts encaissés / match', unit: 'buts encaissés / match', fn: p => p.buts_encaisses_avec != null ? p.buts_encaisses_avec / p.matchs_joues : null, decimals: 2, dir: 'asc' },
+  gk_clean_pct:       { label: 'Clean sheets (%)', unit: '% de matchs', fn: p => p.clean_sheets != null ? (p.clean_sheets / p.matchs_joues) * 100 : null, decimals: 0, dir: 'desc' },
+  gk_clean_total:     { label: 'Clean sheets (total)', unit: 'clean sheets', fn: p => n(p.clean_sheets), dir: 'desc' },
+  matchs:             { label: 'Matchs joués', unit: 'matchs', fn: p => p.matchs_joues, dir: 'desc' },
+  ...DISCIPLINE_INDIC,
+};
+const GK_GROUPS = [
+  { label: 'Gardien — recommandé', keys: ['gk_encaisses_ratio', 'gk_clean_pct'] },
+  { label: 'Totaux sur la saison', keys: ['gk_clean_total', 'matchs'] },
+  DISCIPLINE_GROUP,
+];
+
+const ALL_INDIC = { ...OUTFIELD_INDIC, ...GK_INDIC };
+function groupsFor(poste) { return poste === 'Gardien' ? GK_GROUPS : OUTFIELD_GROUPS; }
+function n(v) { return v || 0; }
+
+let allPlayers = [];
+let state = { niveaux: ['N2'], poste: 'tous', indic: 'impact_ratio' };
+
+function fmtScore(indic, value) { return indic.decimals ? value.toFixed(indic.decimals) : value; }
+function ratioOf(p) { return (n(p.buts) + n(p.passes_decisives)) / p.matchs_joues; }
+function gkRatioOf(p) { return p.buts_encaisses_avec / p.matchs_joues; }
+function initials(prenom, nom) { return ((prenom||'?')[0] + (nom||'?')[0]).toUpperCase(); }
+
+function rebuildIndicSelect() {
+  const sel = document.getElementById('indicSelect');
+  const groups = groupsFor(state.poste);
+  sel.innerHTML = groups.map(g => `
+    <optgroup label="${g.label}">
+      ${g.keys.map(k => `<option value="${k}">${ALL_INDIC[k].label}</option>`).join('')}
+    </optgroup>
+  `).join('');
+  sel.value = state.indic;
+}
+
+function toggleNiveau(val, el) {
+  const willBeActive = !el.classList.contains('active');
+  if (!willBeActive) {
+    const activeCount = document.querySelectorAll('#f-niveau .chip.active').length;
+    if (activeCount <= 1) return;
+  }
+  el.classList.toggle('active');
+  state.niveaux = [...document.querySelectorAll('#f-niveau .chip.active')].map(c => c.dataset.val);
+  render();
+}
+
+function setPoste(val, el) {
+  document.querySelectorAll('#f-poste .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  state.poste = val;
+  state.indic = groupsFor(state.poste)[0].keys[0];
+  rebuildIndicSelect();
+  render();
+}
+
+function cartonsChip(p) {
+  return `<span title="Cartons jaunes / rouges"><b style="color:var(--gold-l)">${n(p.cartons_jaunes)}J</b> <b style="color:var(--red-l)">${n(p.cartons_rouges)}R</b></span>`;
+}
+function subStats(p) {
+  if (p.poste === 'gardien') {
+    return `<span><b>${n(p.clean_sheets)}</b> clean sheets</span><span><b>${n(p.buts_encaisses_avec)}</b> encaissés</span>${cartonsChip(p)}`;
+  }
+  return `<span><b>${n(p.buts)}</b> buts</span><span><b>${n(p.passes_decisives)}</b> passes</span><span><b>${p.matchs_joues}</b> matchs</span>${cartonsChip(p)}`;
+}
+function secondaryStats(p) {
+  if (p.poste === 'gardien') {
+    return `<span><b>${n(p.clean_sheets)}</b> CS en <b>${p.matchs_joues}</b> M</span><span title="Buts encaissés par match"><b>${gkRatioOf(p).toFixed(2)}</b> enc./m</span>${cartonsChip(p)}`;
+  }
+  return `<span><b>${n(p.buts)}</b> B en <b>${p.matchs_joues}</b> M</span><span title="Buts+passes par match"><b>${ratioOf(p).toFixed(2)}</b> ratio/m</span>${cartonsChip(p)}`;
+}
+
+function render() {
+  const indic = ALL_INDIC[state.indic];
+  let players = allPlayers.filter(p => state.niveaux.includes(p.niveau || 'N2'));
+  if (state.poste !== 'tous') players = players.filter(p => POSTE_DISPLAY[p.poste || 'autre'] === state.poste);
+
+  players = players.map(p => ({ ...p, score: indic.fn(p) })).filter(p => Number.isFinite(p.score));
+  players.sort((a, b) => indic.dir === 'asc' ? a.score - b.score : b.score - a.score);
+
+  const POSTE_PLURIEL = { 'Gardien': 'Gardiens', 'Défenseur': 'Défenseurs', 'Latéral': 'Latéraux', 'Milieu': 'Milieux', 'Attaquant': 'Attaquants' };
+  const niveauLabel = state.niveaux.map(nv => NIVEAU_LABEL[nv] || nv).join(' + ');
+  document.getElementById('podiumLabel').textContent = niveauLabel + (state.poste !== 'tous' ? ' · ' + (POSTE_PLURIEL[state.poste] || state.poste) : '');
+  document.getElementById('resultCount').textContent = players.length;
+  document.getElementById('statColLabel').textContent = indic.label;
+
+  if (!players.length) {
+    document.getElementById('content').style.display = 'none';
+    document.getElementById('noResults').style.display = 'block';
+    return;
+  }
+  document.getElementById('content').style.display = 'block';
+  document.getElementById('noResults').style.display = 'none';
+
+  const podiumEl = document.getElementById('podium');
+  podiumEl.innerHTML = players.slice(0, 3).map((p, i) => {
+    const couleur = COULEURS[p.poste || 'autre'] || '#6e7681';
+    return `
+    <div class="podium-card rank-${i + 1}">
+      <div class="rank-badge">${i + 1}</div>
+      <div class="p-avatar" style="background:linear-gradient(135deg,${couleur},${couleur}88)">${initials(p.prenom, p.nom)}</div>
+      <div class="p-name">${p.prenom} ${p.nom || ''}</div>
+      <div class="p-meta">${POSTE_DISPLAY[p.poste || 'autre']} · ${p.club || '—'}${state.niveaux.length > 1 ? ' · ' + (NIVEAU_LABEL[p.niveau] || p.niveau) : ''}</div>
+      <div class="p-stat-val">${fmtScore(indic, p.score)}</div>
+      <div class="p-stat-unit">${indic.unit}</div>
+      <span class="badge-chip ${p.badge}">${BADGE_LABEL[p.badge] || 'Déclaratif'}</span>
+      <div class="p-sub-stats">${subStats(p)}</div>
+    </div>
+  `;
+  }).join('');
+
+  const listEl = document.getElementById('listBody');
+  listEl.innerHTML = players.slice(3).map((p, i) => {
+    const couleur = COULEURS[p.poste || 'autre'] || '#6e7681';
+    return `
+    <div class="list-row" onclick="goToProfile('${p.id}')">
+      <span class="l-rank">${i + 4}</span>
+      <div class="l-identity">
+        <div class="l-avatar" style="background:linear-gradient(135deg,${couleur},${couleur}88)">${initials(p.prenom, p.nom)}</div>
+        <div class="l-name-wrap">
+          <div class="l-name">${p.prenom} ${p.nom || ''}</div>
+          <div class="l-poste">${POSTE_DISPLAY[p.poste || 'autre']}</div>
+        </div>
+      </div>
+      <div class="l-club">
+        <div class="club-name">${p.club || '—'}</div>
+        <div class="niveau-tag">${NIVEAU_LABEL[p.niveau] || p.niveau}</div>
+      </div>
+      <div class="l-badge"><span class="badge-chip ${p.badge}">${BADGE_LABEL[p.badge] || 'Déclaratif'}</span></div>
+      <div class="l-stat"><div class="val">${fmtScore(indic, p.score)}</div><div class="unit">${indic.unit}</div></div>
+      <div class="l-secondary">${secondaryStats(p)}</div>
+    </div>
+  `;
+  }).join('');
+}
+
+function goToProfile(id) {
+  if (viewerRole === 'recruteur') window.location.href = 'footlight-profil.html?id=' + id;
+  else if (!isConnected) window.location.href = 'footlight-connexion.html';
+}
+
+async function loadJoueurs() {
+  try {
+    // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà,
+    // il faut paginer avec .range() sous peine de manquer des joueurs.
+    const PAGE_SIZE = 1000;
+    let all = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await db
+        .from('joueurs')
+        .select('id,prenom,nom,poste,club,niveau,badge,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,sprints_match,buts_encaisses_avec,clean_sheets')
+        .eq('profil_public', true)
+        .gt('matchs_joues', 0)
+        .order('matchs_joues', { ascending: false })
+        .order('id', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) { console.error(error); break; }
+      if (!data || !data.length) break;
+      all = all.concat(data);
+      if (data.length < PAGE_SIZE) break;
+    }
+
+    document.getElementById('loading').style.display = 'none';
+    allPlayers = all;
+    rebuildIndicSelect();
+    render();
+  } catch (err) {
+    console.error('Erreur chargement:', err);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('noResults').style.display = 'block';
+  }
+}
+
+async function checkSession() {
+  try {
+    const { data: { user } } = await db.auth.getUser();
+    isConnected = !!user;
+    if (user) {
+      const { data: recruteur } = await db.from('recruteurs').select('id').eq('email', user.email).single();
+      viewerRole = recruteur ? 'recruteur' : 'nouveau';
+      document.querySelectorAll('.nav-links a').forEach(a => {
+        if (a.href && a.href.includes('footlight-connexion')) {
+          a.textContent = 'Mon espace';
+          a.href = 'footlight-espace.html';
+        }
+        if (a.href && (a.href.includes('footlight-inscription-recruteur') || a.style.background)) {
+          a.style.display = 'none';
+        }
+      });
+    }
+    if (!isConnected) {
+      document.getElementById('gateBanner').style.display = 'block';
+      document.getElementById('content').classList.add('blurred');
+    }
+  } catch (err) {
+    console.error('Erreur session:', err);
+  } finally {
+    loadJoueurs();
+  }
+}
+
+checkSession();
+</script>
+</body>
+</html>
