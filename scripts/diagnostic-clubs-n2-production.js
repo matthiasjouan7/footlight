@@ -43,7 +43,9 @@ const CLUB_MOTS_REMPLACEMENT = {
 };
 const CLUB_SYNONYMES_COMPLETS = {
   qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
-  astdv: { mots: ['touques', 'deauville'], elargi: true },
+  astdv: { mots: ['touques', 'deauville', 'trouville', 'villers'], elargi: true },
+  alencon: { mots: ['alenconnaise', '61'], elargi: true },
+  'anne sainte vertou': { mots: ['ussa'], elargi: true },
   'sables vf': { mots: ['sable', 'vendee'], elargi: false },
   'sable vendee': { mots: ['sable', 'vendee'], elargi: false },
   'sables vendee': { mots: ['sable', 'vendee'], elargi: false },

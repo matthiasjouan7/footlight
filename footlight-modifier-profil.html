@@ -616,7 +616,20 @@ const CLUB_MOTS_REMPLACEMENT = {
 // joueur de FC Rouen qui g\u00e9n\u00e8re son calendrier.
 const CLUB_SYNONYMES_COMPLETS = {
   qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
-  astdv: { mots: ['touques', 'deauville'], elargi: true },
+  // "AS Trouville-Deauville-Villers" (fusion récente) : le sigle du
+  // calendrier officiel reste "ASTDV", hérité du nom précédent "AS Touques
+  // Deauville" — "trouville" et "villers" sont ajoutés pour matcher le nom
+  // complet actuel du club sans perdre la compatibilité avec l'ancien nom.
+  astdv: { mots: ['touques', 'deauville', 'trouville', 'villers'], elargi: true },
+  // "US Alençon 61" : le calendrier officiel utilise le gentilé "US
+  // Alençonnaise 61" — le "61" (département de l'Orne) est par ailleurs
+  // perdu côté joueur par normalizeClub (traité comme un suffixe d'équipe
+  // réserve), d'où son ajout explicite ici pour rester comparable au
+  // calendrier qui le conserve.
+  alencon: { mots: ['alenconnaise', '61'], elargi: true },
+  // "US Sainte-Anne de Vertou" : le calendrier officiel désigne ce club
+  // "Vertou USSA" (sigle de "Union Sportive Sainte-Anne").
+  'anne sainte vertou': { mots: ['ussa'], elargi: true },
   // "Les Sables Vf" (Les Sables-d'Olonne, Vend\u00e9e Football) \u2014 \u00e0 ne pas
   // confondre avec "Sable Fc" (Sabl\u00e9-sur-Sarthe), un club diff\u00e9rent pr\u00e9sent
   // dans les m\u00eames donn\u00e9es. "elargi: false" ici (contrairement \u00e0 Astdv) :
