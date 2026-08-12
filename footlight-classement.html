@@ -128,18 +128,34 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .print-btn{padding:8px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .print-btn:hover{border-color:var(--muted);}
 
-/* Classement imprimable / PDF */
+/* Classement imprimable / PDF — tient sur une seule page : podium et
+   méthodologie masqués, liste compactée en 3 colonnes (rang, nom, valeur
+   uniquement) pour maximiser le nombre de lignes par page. */
 @media print{
-  @page{margin:10mm;}
-  nav,.sidebar,.gate-banner,.no-print{display:none !important;}
+  @page{size:landscape;margin:8mm;}
+  nav,.sidebar,.gate-banner,.no-print,.podium-section,.methodo,.page-sub{display:none !important;}
   .layout{display:block;padding-top:0;}
-  body{background:#fff !important;color:#111 !important;font-size:0.85em;}
+  body{background:#fff !important;color:#111 !important;font-size:0.8em;}
   .main{padding:0;max-width:100%;}
-  .podium-card,.list-row,.methodo{background:#fff !important;border:1px solid #ccc !important;}
-  .p-name,.l-name,.p-stat-val,.l-stat .val,.results-count{color:#111 !important;}
-  .p-meta,.p-stat-unit,.l-poste,.l-club,.l-secondary,.page-sub,.methodo{color:#555 !important;}
+  .results-bar{margin-bottom:8px;}
+  .results-count{color:#111 !important;font-size:0.8rem;}
+  .list-scroll{overflow:visible;}
+  .list-header{grid-template-columns:18px 1fr 46px;gap:6px;min-width:0;padding:0 0 4px;color:#555 !important;}
+  .list-header span:nth-child(3),.list-header span:nth-child(4),.list-header span:nth-child(6){display:none;}
+  .list-body{display:block;column-count:3;column-gap:16px;}
+  .list-row{display:grid;grid-template-columns:18px 1fr 46px;gap:6px;align-items:baseline;min-width:0;
+    background:#fff !important;border:none !important;border-bottom:1px solid #ddd;border-radius:0;
+    padding:2px 0;margin:0;cursor:default;break-inside:avoid;page-break-inside:avoid;}
+  .l-rank{font-size:0.62rem;}
+  .l-identity{gap:4px;min-width:0;}
+  .l-avatar{display:none;}
+  .l-name{font-size:0.64rem;color:#111 !important;}
+  .l-poste{display:none;}
+  .l-club,.l-badge,.l-secondary{display:none;}
+  .l-stat{text-align:right;}
+  .l-stat .val{font-size:0.64rem;color:#111 !important;}
+  .l-stat .unit{display:none;}
   a{color:#111 !important;}
-  .podium-card,.list-row{break-inside:avoid;page-break-inside:avoid;}
 }
 </style>
 <link rel="manifest" href="manifest.json"/>
