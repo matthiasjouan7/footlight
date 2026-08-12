@@ -26,6 +26,9 @@ function slugifyName(s) {
 
 // Dimaël Clichy listé « Défense » (générique) → defenseur_central (confirmé).
 // Thomas Luga listé « Milieu » (générique) → milieu_defensif (confirmé).
+// Thomas Biziki (même club, "Us Colomiers 1" mal formaté), Jordan Adéoti
+// (transfert depuis US Avranches) et Saïdou Sam (transfert depuis Dinan
+// Léhon FC) sont exclus de NOUVEAUX, traités via CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Thomas', 'Himeur', 'gardien', '2001-01-17'],
@@ -37,9 +40,6 @@ const NOUVEAUX = [
   ['Pierre-Yves', 'Polomat', 'lateral_gauche', '1993-12-27'],
   ['Mathieu', 'Gonçalves', 'lateral_gauche', '2001-06-08'],
   ['Rudy', 'Loirette', 'lateral_droit', '1998-07-20'],
-  ['Thomas', 'Biziki', 'lateral_droit', '1995-05-22'],
-  ['Jordan', 'Adéoti', 'milieu_defensif', '1989-03-12'],
-  ['Saïdou', 'Sam', 'milieu_defensif', '1995-02-04'],
   ['Thomas', 'Luga', 'milieu_defensif', '2000-02-22'],
   ['Quentin', 'Ranquine', 'milieu_defensif', '2002-03-18'],
   ['Santino', 'Cucchiara', 'milieu_central', '2002-03-13'],
@@ -50,7 +50,11 @@ const NOUVEAUX = [
   ['Teddy', 'Suares', 'attaquant', '2003-07-02'],
 ];
 
-const CORRECTIONS = [];
+const CORRECTIONS = [
+  { id: '18ce427f-462b-4510-a030-7e49cec06644', prenom: 'Thomas', nom: 'Biziki', poste: 'lateral_droit' },
+  { id: '467f373e-2270-48df-b5d6-53ebd8603181', prenom: 'Jordan', nom: 'Adéoti', poste: 'milieu_defensif' },
+  { id: '321762a4-37c3-4012-ac83-5ed5b4d02760', prenom: 'Saïdou', nom: 'Sam', poste: 'milieu_defensif' },
+];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
 // faut paginer avec .range() sous peine de manquer des doublons situés après
