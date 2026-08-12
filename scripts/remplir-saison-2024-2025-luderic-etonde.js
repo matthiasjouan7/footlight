@@ -1,7 +1,8 @@
 // Ajoute la saison historique 2024/2025 de Luderic Etonde (Les Herbiers
 // Vendée Foot, National 1 - Groupe B), fournie par l'utilisateur via
 // capture d'écran du site officiel. Il n'a pas joué la saison complète
-// (arrivée en cours de saison, à partir de la journée 12).
+// (arrivée en cours de saison, à partir de la journée 12) : 33 points
+// pris par l'équipe sur 36 possibles depuis son arrivée.
 //
 // Écrit dans stats_saisons (upsert sur joueur_id + saison), et non dans
 // joueurs, car ce n'est pas la saison en cours.
@@ -32,6 +33,7 @@ const STATS = {
   cartons_rouges: 0,
   minutes_jouees: 1288,
   buts_equipe: 37,
+  points_avec_lui: 33,
 };
 
 const { data: joueurs, error } = await supabase
