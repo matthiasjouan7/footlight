@@ -12,7 +12,7 @@
 // recruteur.
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
-import { readdir, mkdir } from 'node:fs/promises';
+import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +20,11 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const outDir = process.env.OUT_DIR || path.join(repoRoot, 'demo-video-alerte-recrutement-out');
+
+// Vrai logo FootLight (icons/icon-192.png), embarqué en data URI pour la
+// carte de titre générée côté client (page.setContent n'a pas de contexte
+// réseau pour charger un fichier relatif).
+const logoBase64 = await readFile(path.join(repoRoot, 'icons', 'icon-192.png')).then((b) => b.toString('base64'));
 
 // ---- 1. Serveur statique local (sert le dépôt tel quel, aucune copie/patch nécessaire) ----
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
@@ -65,9 +70,8 @@ body {
     radial-gradient(ellipse 50% 40% at 85% 80%, rgba(124,106,247,0.09) 0%, transparent 60%),
     radial-gradient(ellipse 40% 30% at 50% 50%, rgba(45,216,130,0.05) 0%, transparent 60%);
 }
-.logo { position:relative; font-size:1.3rem; font-weight:800; letter-spacing:0.5px;
-  background:linear-gradient(90deg,#4f8ef7,#7c6af7); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  margin-bottom:36px;
+.logo-img { position:relative; width:88px; height:88px; border-radius:22px;
+  margin-bottom:32px; box-shadow:0 10px 32px rgba(79,142,247,0.25);
 }
 .bell { position:relative; font-size:3.2rem; margin-bottom:18px; }
 h1 { position:relative; font-size:3.4rem; font-weight:800; text-align:center; color:#f0f2f7;
@@ -77,7 +81,7 @@ p { position:relative; font-size:1.05rem; color:#8b93a8; text-align:center; max-
 </style></head>
 <body>
 <div class="bg-mesh"></div>
-<div class="logo">FootLight</div>
+<img class="logo-img" src="data:image/png;base64,${logoBase64}" alt="FootLight"/>
 <div class="bell">🔔</div>
 <h1>Alerte <span>recrutement</span></h1>
 <p>Cherche ton club, retrouve ton profil (ou inscris-toi), renseigne toutes tes infos et tes stats.</p>

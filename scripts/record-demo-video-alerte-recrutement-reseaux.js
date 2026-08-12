@@ -22,6 +22,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const outDir = process.env.OUT_DIR || path.join(repoRoot, 'demo-video-alerte-recrutement-reseaux-out');
 
+// Vrai logo FootLight (icons/icon-192.png), embarqué en data URI pour les
+// cartes de titre générées côté client (page.setContent n'a pas de contexte
+// réseau pour charger un fichier relatif).
+const logoBase64 = await readFile(path.join(repoRoot, 'icons', 'icon-192.png')).then((b) => b.toString('base64'));
+
 const JOUEURS = [
   { prenom: 'Yves', nom: 'DjeDje' },
   { prenom: 'Luderic', nom: 'Etonde' },
@@ -91,9 +96,8 @@ body {
     radial-gradient(ellipse 50% 40% at 85% 80%, rgba(124,106,247,0.09) 0%, transparent 60%),
     radial-gradient(ellipse 40% 30% at 50% 50%, rgba(45,216,130,0.05) 0%, transparent 60%);
 }
-.logo { position:relative; font-size:1.2rem; font-weight:800; letter-spacing:0.5px;
-  background:linear-gradient(90deg,#4f8ef7,#7c6af7); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  margin-bottom:32px;
+.logo-img { position:relative; width:76px; height:76px; border-radius:20px;
+  margin-bottom:28px; box-shadow:0 10px 32px rgba(79,142,247,0.25);
 }
 .emoji { position:relative; font-size:3rem; margin-bottom:16px; }
 h1 { position:relative; font-size:2.6rem; font-weight:800; text-align:center; color:#f0f2f7;
@@ -103,7 +107,7 @@ p { position:relative; font-size:1rem; color:#8b93a8; text-align:center; max-wid
 </style></head>
 <body>
 <div class="bg-mesh"></div>
-<div class="logo">FootLight</div>
+<img class="logo-img" src="data:image/png;base64,${logoBase64}" alt="FootLight"/>
 <div class="emoji">${emoji}</div>
 <h1>${title} <span>${titleAccent}</span></h1>
 <p>${subtitle}</p>
