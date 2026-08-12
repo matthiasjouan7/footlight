@@ -27,6 +27,8 @@ function slugifyName(s) {
 // Hugo De Souza et Charles Thione listés « Défense » (générique) →
 // defenseur_central (confirmé pour les deux).
 // Tony Romero listé « Milieu » (générique) → milieu_defensif (confirmé).
+// Laïd Boukhari (transfert confirmé depuis Aviron Bayonnais FC N1) est
+// exclu de NOUVEAUX, traité via CORRECTIONS ci-dessous.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Yanis', 'Saidani', 'gardien', '2001-08-20'],
@@ -50,13 +52,14 @@ const NOUVEAUX = [
   ['Santiago', 'Ciganda', 'attaquant', '1994-01-16'],
   ['Louis', 'Labat', 'attaquant', '1997-05-12'],
   ['Rémy', 'Vilela Vieira', 'attaquant', '2003-10-22'],
-  ['Laïd', 'Boukhari', 'attaquant', '2001-01-18'],
   ['Emeric', 'Poingt', 'attaquant', '1996-09-23'],
   ['Florian', 'Duval', 'attaquant', '1999-04-22'],
   ['Jeremy', 'Vallejo', 'attaquant', '2001-09-26'],
 ];
 
-const CORRECTIONS = [];
+const CORRECTIONS = [
+  { id: '2c411204-c9e1-47e9-948c-d939aeb69843', prenom: 'Laïd', nom: 'Boukhari', poste: 'attaquant' },
+];
 
 // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà, il
 // faut paginer avec .range() sous peine de manquer des doublons situés après
