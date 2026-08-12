@@ -108,6 +108,9 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .l-stat .unit{font-size:0.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
 .l-secondary{display:flex;justify-content:flex-end;gap:12px;font-size:0.74rem;color:var(--muted);white-space:nowrap;}
 .l-secondary b{color:var(--text);font-weight:600;}
+
+/* Table imprimable uniquement (voir @media print) : invisible à l'écran. */
+#printTable{display:none;}
 @media(max-width:760px){
   .list-header,.list-row{grid-template-columns:28px 1fr 88px 106px;}
   .l-club .niveau-tag,.l-badge,.l-secondary{display:none;}
@@ -128,29 +131,33 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .print-btn{padding:8px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .print-btn:hover{border-color:var(--muted);}
 
-/* Classement imprimable / PDF — le podium (rangs 1-3) est remplacé par
-   #printListBody, qui reprend le classement complet à partir du rang 1
-   (le podium visuel n'a pas d'équivalent imprimable). Pagination fixe :
-   15 joueurs par page, saut de page forcé au-delà. */
+/* Classement imprimable / PDF — un vrai <table> (voir #printTable) plutôt
+   que les cartes/grilles de l'écran : garantit un alignement de colonnes
+   propre à l'impression (pas de chevauchement de texte) et un en-tête qui
+   se répète automatiquement sur chaque page (thead display:table-header-
+   group). Reprend le classement complet à partir du rang 1, le podium
+   visuel n'ayant pas d'équivalent imprimable. Pagination fixe : 15 joueurs
+   par page, saut de page forcé au-delà. */
 @media print{
   @page{size:landscape;margin:10mm;}
-  nav,.sidebar,.gate-banner,.no-print,.podium-section,.methodo,.page-sub,#listBody{display:none !important;}
-  #printListBody{display:flex !important;flex-direction:column;gap:5px;}
+  nav,.sidebar,.gate-banner,.no-print,.podium-section,.methodo,.page-sub,.list-scroll{display:none !important;}
   .layout{display:block;padding-top:0;}
-  body{background:#fff !important;color:#111 !important;font-size:0.82em;}
+  body{background:#fff !important;color:#111 !important;font-size:0.8em;}
   .main{padding:0;max-width:100%;}
   .results-bar{margin-bottom:10px;}
   .results-count{color:#111 !important;}
-  .list-scroll{overflow:visible;}
-  .list-header{color:#555 !important;}
-  .list-row{background:#fff !important;border:1px solid #ccc !important;
-    padding:8px 12px;cursor:default;break-inside:avoid;page-break-inside:avoid;}
-  .l-name,.l-stat .val{color:#111 !important;}
-  .l-poste,.l-club,.l-secondary{color:#555 !important;}
+
+  #printTable{display:table !important;width:100%;border-collapse:collapse;}
+  #printTable thead{display:table-header-group;}
+  #printTable th{text-align:left;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#555;border-bottom:1px solid #999;padding:5px 8px;background:#fff;}
+  #printTable td{padding:5px 8px;font-size:0.72rem;color:#111;border-bottom:1px solid #ddd;vertical-align:middle;}
+  #printTable tr{break-inside:avoid;page-break-inside:avoid;}
+  #printTable .print-sub{display:block;color:#666;font-size:0.62rem;margin-top:1px;}
+  #printTable .print-val{font-weight:800;}
   a{color:#111 !important;}
 
   /* 15 joueurs par page. */
-  #printListBody .list-row:nth-child(15n){break-after:page;page-break-after:always;}
+  #printTableBody tr:nth-child(15n){break-after:page;page-break-after:always;}
 }
 </style>
 <link rel="manifest" href="manifest.json"/>
@@ -255,10 +262,26 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
             <span style="text-align:right">Détail</span>
           </div>
           <div class="list-body" id="listBody"></div>
-          <!-- Version imprimable uniquement : liste complète à partir du rang 1
-               (le podium n'existe pas en impression), masquée à l'écran. -->
-          <div class="list-body" id="printListBody" style="display:none;"></div>
         </div>
+
+        <!-- Version imprimable uniquement : un vrai <table>, dont l'en-tête
+             se répète automatiquement sur chaque page imprimée (thead
+             display:table-header-group), et qui reprend le classement
+             complet à partir du rang 1 (le podium n'a pas d'équivalent
+             imprimable). Masquée à l'écran. -->
+        <table id="printTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Joueur</th>
+              <th>Club</th>
+              <th>Badge</th>
+              <th id="printStatColLabel"></th>
+              <th>Détail</th>
+            </tr>
+          </thead>
+          <tbody id="printTableBody"></tbody>
+        </table>
       </section>
 
       <div class="methodo">
@@ -542,10 +565,23 @@ function render() {
   const listEl = document.getElementById('listBody');
   listEl.innerHTML = players.slice(3).map((p, i) => listRowHtml(p, i + 4)).join('');
 
-  // Liste imprimable : inclut le podium (rangs 1 à 3), absent du reste de la
-  // page à l'impression.
-  const printListEl = document.getElementById('printListBody');
-  printListEl.innerHTML = players.map((p, i) => listRowHtml(p, i + 1)).join('');
+  // Table imprimable : inclut le podium (rangs 1 à 3), absent du reste de
+  // la page à l'impression. Un vrai <table>, pas la grille CSS de l'écran,
+  // pour un alignement de colonnes fiable au moment de l'impression.
+  function printRowHtml(p, rank) {
+    return `
+    <tr>
+      <td>${rank}</td>
+      <td><strong>${p.prenom} ${p.nom || ''}</strong><span class="print-sub">${POSTE_DISPLAY[p.poste || 'autre']}</span></td>
+      <td>${p.club || '—'}<span class="print-sub">${NIVEAU_LABEL[p.niveau] || p.niveau}</span></td>
+      <td>${BADGE_LABEL[p.badge] || 'Déclaratif'}</td>
+      <td><span class="print-val">${fmtScore(indic, p.score)}</span><span class="print-sub">${indic.unit}</span></td>
+      <td>${secondaryStats(p)}</td>
+    </tr>
+  `;
+  }
+  document.getElementById('printStatColLabel').textContent = indic.label;
+  document.getElementById('printTableBody').innerHTML = players.map((p, i) => printRowHtml(p, i + 1)).join('');
 }
 
 function goToProfile(id) {
