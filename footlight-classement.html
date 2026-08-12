@@ -128,34 +128,29 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .print-btn{padding:8px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .print-btn:hover{border-color:var(--muted);}
 
-/* Classement imprimable / PDF — tient sur une seule page : podium et
-   méthodologie masqués, liste compactée en 3 colonnes (rang, nom, valeur
-   uniquement) pour maximiser le nombre de lignes par page. */
+/* Classement imprimable / PDF — le podium (rangs 1-3) est remplacé par
+   #printListBody, qui reprend le classement complet à partir du rang 1
+   (le podium visuel n'a pas d'équivalent imprimable). Pagination fixe :
+   15 joueurs par page, saut de page forcé au-delà. */
 @media print{
-  @page{size:landscape;margin:8mm;}
-  nav,.sidebar,.gate-banner,.no-print,.podium-section,.methodo,.page-sub{display:none !important;}
+  @page{size:landscape;margin:10mm;}
+  nav,.sidebar,.gate-banner,.no-print,.podium-section,.methodo,.page-sub,#listBody{display:none !important;}
+  #printListBody{display:flex !important;flex-direction:column;gap:5px;}
   .layout{display:block;padding-top:0;}
-  body{background:#fff !important;color:#111 !important;font-size:0.8em;}
+  body{background:#fff !important;color:#111 !important;font-size:0.82em;}
   .main{padding:0;max-width:100%;}
-  .results-bar{margin-bottom:8px;}
-  .results-count{color:#111 !important;font-size:0.8rem;}
+  .results-bar{margin-bottom:10px;}
+  .results-count{color:#111 !important;}
   .list-scroll{overflow:visible;}
-  .list-header{grid-template-columns:18px 1fr 46px;gap:6px;min-width:0;padding:0 0 4px;color:#555 !important;}
-  .list-header span:nth-child(3),.list-header span:nth-child(4),.list-header span:nth-child(6){display:none;}
-  .list-body{display:block;column-count:3;column-gap:16px;}
-  .list-row{display:grid;grid-template-columns:18px 1fr 46px;gap:6px;align-items:baseline;min-width:0;
-    background:#fff !important;border:none !important;border-bottom:1px solid #ddd;border-radius:0;
-    padding:2px 0;margin:0;cursor:default;break-inside:avoid;page-break-inside:avoid;}
-  .l-rank{font-size:0.62rem;}
-  .l-identity{gap:4px;min-width:0;}
-  .l-avatar{display:none;}
-  .l-name{font-size:0.64rem;color:#111 !important;}
-  .l-poste{display:none;}
-  .l-club,.l-badge,.l-secondary{display:none;}
-  .l-stat{text-align:right;}
-  .l-stat .val{font-size:0.64rem;color:#111 !important;}
-  .l-stat .unit{display:none;}
+  .list-header{color:#555 !important;}
+  .list-row{background:#fff !important;border:1px solid #ccc !important;
+    padding:8px 12px;cursor:default;break-inside:avoid;page-break-inside:avoid;}
+  .l-name,.l-stat .val{color:#111 !important;}
+  .l-poste,.l-club,.l-secondary{color:#555 !important;}
   a{color:#111 !important;}
+
+  /* 15 joueurs par page. */
+  #printListBody .list-row:nth-child(15n){break-after:page;page-break-after:always;}
 }
 </style>
 <link rel="manifest" href="manifest.json"/>
@@ -260,6 +255,9 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
             <span style="text-align:right">Détail</span>
           </div>
           <div class="list-body" id="listBody"></div>
+          <!-- Version imprimable uniquement : liste complète à partir du rang 1
+               (le podium n'existe pas en impression), masquée à l'écran. -->
+          <div class="list-body" id="printListBody" style="display:none;"></div>
         </div>
       </section>
 
@@ -518,12 +516,11 @@ function render() {
   `;
   }).join('');
 
-  const listEl = document.getElementById('listBody');
-  listEl.innerHTML = players.slice(3).map((p, i) => {
+  function listRowHtml(p, rank) {
     const couleur = COULEURS[p.poste || 'autre'] || '#6e7681';
     return `
     <div class="list-row" onclick="goToProfile('${p.id}')">
-      <span class="l-rank">${i + 4}</span>
+      <span class="l-rank">${rank}</span>
       <div class="l-identity">
         <div class="l-avatar" style="background:linear-gradient(135deg,${couleur},${couleur}88)">${initials(p.prenom, p.nom)}</div>
         <div class="l-name-wrap">
@@ -540,7 +537,15 @@ function render() {
       <div class="l-secondary">${secondaryStats(p)}</div>
     </div>
   `;
-  }).join('');
+  }
+
+  const listEl = document.getElementById('listBody');
+  listEl.innerHTML = players.slice(3).map((p, i) => listRowHtml(p, i + 4)).join('');
+
+  // Liste imprimable : inclut le podium (rangs 1 à 3), absent du reste de la
+  // page à l'impression.
+  const printListEl = document.getElementById('printListBody');
+  printListEl.innerHTML = players.map((p, i) => listRowHtml(p, i + 1)).join('');
 }
 
 function goToProfile(id) {
