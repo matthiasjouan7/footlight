@@ -1408,8 +1408,11 @@ function selectPoste(val, el) {
 
 function toggleDefenseFields() {
   const isDef = POSTES_DEFENSIFS.includes(selectedPoste);
-  document.getElementById('field-buts').style.display = isDef ? 'none' : '';
-  document.getElementById('field-passes').style.display = isDef ? 'none' : '';
+  // Buts/passes décisives restent visibles pour tous les postes : un latéral
+  // ou un défenseur peut tout à fait marquer ou délivrer des passes
+  // décisives (se projeter, centrer, marquer sur coup de pied arrêté) — ça
+  // ne doit pas être caché sous prétexte que le poste est défensif. Même
+  // logique que footlight-modifier-profil.html.
   document.getElementById('field-encaisses').style.display = isDef ? '' : 'none';
   document.getElementById('field-cleansheets').style.display = isDef ? '' : 'none';
 }
