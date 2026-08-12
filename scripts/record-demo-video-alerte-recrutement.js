@@ -1,7 +1,8 @@
 // Enregistre une vidéo de démonstration du parcours joueur « alerte
-// recrutement » : recherche du club, reconnaissance d'un profil déjà
-// importé (ou inscription complète) puis remplissage de toutes les
-// informations / données / stats demandées.
+// recrutement » : carte de titre d'accroche, puis recherche du club,
+// reconnaissance d'un profil déjà importé (ou inscription complète) et
+// remplissage de toutes les informations / données / stats demandées.
+// Utilise le nom réel « Yves DjeDje » plutôt qu'un nom fictif.
 //
 // Lecture seule, aucune écriture en base : la recherche de profil existant
 // et l'autocomplete club interrogent la vraie base (simples lectures), mais
@@ -47,20 +48,56 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
-// --- Scène 1 : page d'accueil (couverture) ---
-console.log('Ouverture de la page d\'accueil (couverture)...');
-await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle', timeout: 60000 });
-await page.waitForTimeout(3000);
+// --- Scène 1 : carte de titre « Alerte recrutement » (accroche) ---
+console.log('Affichage de la carte de titre « Alerte recrutement »...');
+await page.setContent(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#07090e; min-height:100vh; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  position:relative; overflow:hidden;
+}
+.bg-mesh { position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(79,142,247,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 80%, rgba(124,106,247,0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(45,216,130,0.05) 0%, transparent 60%);
+}
+.logo { position:relative; font-size:1.3rem; font-weight:800; letter-spacing:0.5px;
+  background:linear-gradient(90deg,#4f8ef7,#7c6af7); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  margin-bottom:36px;
+}
+.bell { position:relative; font-size:3.2rem; margin-bottom:18px; }
+h1 { position:relative; font-size:3.4rem; font-weight:800; text-align:center; color:#f0f2f7;
+  letter-spacing:-1px; line-height:1.1; margin-bottom:18px; max-width:820px; }
+h1 span { background:linear-gradient(90deg,#4f8ef7,#7c6af7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+p { position:relative; font-size:1.05rem; color:#8b93a8; text-align:center; max-width:560px; line-height:1.6; }
+</style></head>
+<body>
+<div class="bg-mesh"></div>
+<div class="logo">FootLight</div>
+<div class="bell">🔔</div>
+<h1>Alerte <span>recrutement</span></h1>
+<p>Cherche ton club, retrouve ton profil (ou inscris-toi), renseigne toutes tes infos et tes stats.</p>
+</body></html>`);
+await page.waitForTimeout(3200);
 
-// --- Scène 2 : inscription joueur — étape 1, identité ---
+// --- Scène 2 : page d'accueil (couverture) ---
+console.log('Ouverture de la page d\'accueil...');
+await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle', timeout: 60000 });
+await page.waitForTimeout(2200);
+
+// --- Scène 3 : inscription joueur — étape 1, identité ---
 console.log('Ouverture de l\'inscription joueur...');
 await page.goto(`http://127.0.0.1:${port}/footlight-inscription-joueur.html`, { waitUntil: 'networkidle', timeout: 60000 });
 await page.waitForTimeout(1500);
 
 console.log('Étape 1 — Identité...');
-await page.fill('#f-prenom', 'Ronan');
+await page.fill('#f-prenom', 'Yves');
 await page.waitForTimeout(350);
-await page.fill('#f-nom', 'Jay');
+await page.fill('#f-nom', 'DjeDje');
 await page.waitForTimeout(350);
 await page.fill('#f-naissance', '2001-04-25');
 await page.waitForTimeout(300);
@@ -68,7 +105,7 @@ await page.fill('#f-nationalite', 'Française');
 await page.waitForTimeout(300);
 await page.fill('#f-telephone', '06 12 34 56 78');
 await page.waitForTimeout(300);
-await page.fill('#f-email', 'ronan.jay.demo@footlight-demo.fr');
+await page.fill('#f-email', 'yves.djedje.demo@footlight-demo.fr');
 await page.waitForTimeout(300);
 await page.fill('#f-password', 'demofootlight1');
 await page.waitForTimeout(1200);
@@ -142,7 +179,7 @@ await page.waitForTimeout(1000);
 console.log('Étape 4 — GPS & vidéo...');
 await page.click('.gps-card:has-text("Garmin")');
 await page.waitForTimeout(900);
-await page.fill('.video-link-input', 'https://youtube.com/watch?v=demoronanjay');
+await page.fill('.video-link-input', 'https://youtube.com/watch?v=demoyvesdjedje');
 await page.waitForTimeout(900);
 await page.click('text=+ Ajouter un point fort');
 await page.waitForTimeout(500);
@@ -174,9 +211,15 @@ await page.evaluate(() => {
   for (let i = 1; i <= 5; i++) document.getElementById(`step-${i}`).classList.remove('active');
   document.getElementById('progress-wrap').style.display = 'none';
   document.getElementById('bottom-bar').style.display = 'none';
-  document.getElementById('success-avatar').textContent = 'RJ';
-  document.getElementById('success-name').textContent = 'Ronan Jay';
-  document.getElementById('success-detail').textContent = 'milieu central · FC Bourgoin-Jallieu · N2';
+  const prenom = document.getElementById('f-prenom').value.trim();
+  const nom = document.getElementById('f-nom').value.trim();
+  const initiales = ((prenom[0] || '') + (nom[0] || '')).toUpperCase();
+  const club = document.getElementById('f-club').value;
+  const niveau = document.getElementById('f-niveau').value;
+  const poste = (typeof selectedPoste !== 'undefined' ? selectedPoste : '').replace(/_/g, ' ');
+  document.getElementById('success-avatar').textContent = initiales;
+  document.getElementById('success-name').textContent = `${prenom} ${nom}`;
+  document.getElementById('success-detail').textContent = `${poste} · ${club} · ${niveau}`;
   document.getElementById('success-screen').classList.add('visible');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
