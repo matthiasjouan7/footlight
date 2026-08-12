@@ -124,6 +124,23 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .methodo{margin-top:30px;padding:16px 18px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);font-size:0.8rem;color:var(--muted);display:flex;gap:10px;align-items:flex-start;}
 .methodo .ic{color:var(--blue-l);flex-shrink:0;font-size:0.95rem;line-height:1.3;}
 .methodo strong{color:var(--text);}
+
+.print-btn{padding:8px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.print-btn:hover{border-color:var(--muted);}
+
+/* Classement imprimable / PDF */
+@media print{
+  @page{margin:10mm;}
+  nav,.sidebar,.gate-banner,.no-print{display:none !important;}
+  .layout{display:block;padding-top:0;}
+  body{background:#fff !important;color:#111 !important;font-size:0.85em;}
+  .main{padding:0;max-width:100%;}
+  .podium-card,.list-row,.methodo{background:#fff !important;border:1px solid #ccc !important;}
+  .p-name,.l-name,.p-stat-val,.l-stat .val,.results-count{color:#111 !important;}
+  .p-meta,.p-stat-unit,.l-poste,.l-club,.l-secondary,.page-sub,.methodo{color:#555 !important;}
+  a{color:#111 !important;}
+  .podium-card,.list-row{break-inside:avoid;page-break-inside:avoid;}
+}
 </style>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0d1117"/>
@@ -196,6 +213,7 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
         <div class="results-count"><span id="resultCount">—</span> joueurs classés</div>
         <div class="page-sub">Classement basé sur les statistiques déclarées et vérifiées de chaque joueur — même classement pour tous les recruteurs.</div>
       </div>
+      <button class="print-btn no-print" onclick="window.print()">🖨️ Imprimer</button>
     </div>
 
     <div id="gateBanner" class="gate-banner" style="display:none;">
