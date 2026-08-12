@@ -33,6 +33,7 @@ const STATS = {
   minutes_jouees: 1534,
   points_equipe: 62,
   buts_equipe: 51,
+  buts_encaisses_equipe: 28,
 };
 
 const { data: joueurs, error } = await supabase.from('joueurs').select('id, prenom, nom');
