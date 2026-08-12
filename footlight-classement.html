@@ -362,8 +362,39 @@ const GK_GROUPS = [
   DISCIPLINE_GROUP,
 ];
 
+// Défenseurs et latéraux : comme les gardiens, ces postes renseignent à
+// l'inscription "buts encaissés avec" / "clean sheets" (équipe pendant leur
+// présence) plutôt que buts/passes — cf. toggleDefenseFields() dans
+// footlight-inscription-joueur.html, POSTES_DEFENSIFS. Le classement doit
+// donc utiliser les mêmes indicateurs défensifs que pour les gardiens,
+// jamais les stats offensives (buts/passes), quasi toujours à 0 pour eux.
+const DEF_GROUPS = [
+  { label: 'Défensif — recommandé', keys: ['gk_encaisses_ratio', 'gk_clean_pct'] },
+  { label: 'Totaux sur la saison', keys: ['gk_clean_total', 'gk_encaisses_total', 'matchs'] },
+  DISCIPLINE_GROUP,
+];
+
+// Milieux : le bucket "Milieu" mélange milieu offensif/central (buts/passes)
+// et milieu défensif (buts encaissés avec/clean sheets) — les deux familles
+// de critères sont donc proposées, chacune sous son propre libellé
+// "recommandé", plutôt que de forcer les milieux défensifs sur des stats
+// offensives qu'ils ne renseignent pas.
+const MID_GROUPS = [
+  { label: 'Milieu offensif — recommandé', keys: ['impact_ratio', 'buts_ratio', 'passes_ratio', 'buts_90'] },
+  { label: 'Milieu défensif — recommandé', keys: ['gk_encaisses_ratio', 'gk_clean_pct'] },
+  { label: 'Totaux sur la saison', keys: ['impact', 'buts', 'passes', 'matchs', 'gk_clean_total', 'gk_encaisses_total'] },
+  { label: 'Présence', keys: ['titu_pct'] },
+  { label: 'Physique (GPS)', keys: ['vma', 'vpointe', 'sprints'] },
+  DISCIPLINE_GROUP,
+];
+
 const ALL_INDIC = { ...OUTFIELD_INDIC, ...GK_INDIC };
-function groupsFor(poste) { return poste === 'Gardien' ? GK_GROUPS : OUTFIELD_GROUPS; }
+function groupsFor(poste) {
+  if (poste === 'Gardien') return GK_GROUPS;
+  if (poste === 'Défenseur' || poste === 'Latéral') return DEF_GROUPS;
+  if (poste === 'Milieu') return MID_GROUPS;
+  return OUTFIELD_GROUPS;
+}
 function n(v) { return v || 0; }
 function isUnlocked(indic) { return PLAN_RANK[state.viewerPlan] >= PLAN_RANK[indic.plan]; }
 function firstUnlockedKey(groups) {
