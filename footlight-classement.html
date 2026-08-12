@@ -196,11 +196,11 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       <div class="chips" id="f-niveau">
         <div class="chip" data-val="Ligue 3" onclick="toggleNiveau('Ligue 3',this)">Ligue 3</div>
         <div class="chip" data-val="N1" onclick="toggleNiveau('N1',this)">N1</div>
-        <div class="chip active" data-val="N2" onclick="toggleNiveau('N2',this)">N2</div>
+        <div class="chip" data-val="N2" onclick="toggleNiveau('N2',this)">N2</div>
         <div class="chip" data-val="R1" onclick="toggleNiveau('R1',this)">R1</div>
         <div class="chip" data-val="Autre" onclick="toggleNiveau('Autre',this)">Autre</div>
       </div>
-      <div class="filter-hint">Cliquez pour combiner plusieurs niveaux.</div>
+      <div class="filter-hint">Cliquez pour combiner plusieurs niveaux. Aucun niveau sélectionné = tous les niveaux.</div>
     </div>
 
     <div class="filter-group">
@@ -429,7 +429,10 @@ function firstUnlockedKey(groups) {
 }
 
 let allPlayers = [];
-let state = { niveaux: ['N2'], poste: 'tous', indic: 'buts', viewerPlan: 'free' };
+// niveaux: [] = aucun filtre actif, tous les niveaux sont inclus par défaut
+// (le classement s'affiche dès le chargement, sans qu'aucun choix ne soit
+// imposé au recruteur).
+let state = { niveaux: [], poste: 'tous', indic: 'buts', viewerPlan: 'free' };
 
 function fmtScore(indic, value) { return indic.decimals ? value.toFixed(indic.decimals) : value; }
 function ratioOf(p) { return (n(p.buts) + n(p.passes_decisives)) / p.matchs_joues; }
@@ -465,11 +468,8 @@ function rebuildIndicSelect() {
 }
 
 function toggleNiveau(val, el) {
-  const willBeActive = !el.classList.contains('active');
-  if (!willBeActive) {
-    const activeCount = document.querySelectorAll('#f-niveau .chip.active').length;
-    if (activeCount <= 1) return;
-  }
+  // Désélectionner le dernier niveau actif est autorisé : aucun niveau actif
+  // équivaut à "tous les niveaux", pas à un classement vide.
   el.classList.toggle('active');
   state.niveaux = [...document.querySelectorAll('#f-niveau .chip.active')].map(c => c.dataset.val);
   render();
@@ -502,14 +502,17 @@ function secondaryStats(p) {
 
 function render() {
   const indic = ALL_INDIC[state.indic];
-  let players = allPlayers.filter(p => state.niveaux.includes(p.niveau || 'N2'));
+  // Aucun niveau sélectionné = pas de filtre, tous les niveaux sont inclus.
+  let players = state.niveaux.length
+    ? allPlayers.filter(p => state.niveaux.includes(p.niveau || 'N2'))
+    : allPlayers.slice();
   if (state.poste !== 'tous') players = players.filter(p => POSTE_DISPLAY[p.poste || 'autre'] === state.poste);
 
   players = players.map(p => ({ ...p, score: indic.fn(p) })).filter(p => Number.isFinite(p.score));
   players.sort((a, b) => indic.dir === 'asc' ? a.score - b.score : b.score - a.score);
 
   const POSTE_PLURIEL = { 'Gardien': 'Gardiens', 'Défenseur': 'Défenseurs', 'Latéral': 'Latéraux', 'Milieu': 'Milieux', 'Attaquant': 'Attaquants' };
-  const niveauLabel = state.niveaux.map(nv => NIVEAU_LABEL[nv] || nv).join(' + ');
+  const niveauLabel = state.niveaux.length ? state.niveaux.map(nv => NIVEAU_LABEL[nv] || nv).join(' + ') : 'Tous niveaux';
   document.getElementById('podiumLabel').textContent = niveauLabel + (state.poste !== 'tous' ? ' · ' + (POSTE_PLURIEL[state.poste] || state.poste) : '');
   document.getElementById('resultCount').textContent = players.length;
   document.getElementById('statColLabel').textContent = indic.label;
@@ -530,7 +533,7 @@ function render() {
       <div class="rank-badge">${i + 1}</div>
       <div class="p-avatar" style="background:linear-gradient(135deg,${couleur},${couleur}88)">${initials(p.prenom, p.nom)}</div>
       <div class="p-name">${p.prenom} ${p.nom || ''}</div>
-      <div class="p-meta">${POSTE_DISPLAY[p.poste || 'autre']} · ${p.club || '—'}${state.niveaux.length > 1 ? ' · ' + (NIVEAU_LABEL[p.niveau] || p.niveau) : ''}</div>
+      <div class="p-meta">${POSTE_DISPLAY[p.poste || 'autre']} · ${p.club || '—'}${state.niveaux.length !== 1 ? ' · ' + (NIVEAU_LABEL[p.niveau] || p.niveau) : ''}</div>
       <div class="p-stat-val">${fmtScore(indic, p.score)}</div>
       <div class="p-stat-unit">${indic.unit}</div>
       <span class="badge-chip ${p.badge}">${BADGE_LABEL[p.badge] || 'Déclaratif'}</span>
