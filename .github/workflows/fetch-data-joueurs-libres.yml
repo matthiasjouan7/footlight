@@ -1,0 +1,22 @@
+name: Récupère les stats des joueurs libres (lecture seule, aucune écriture)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Récupérer les données
+        working-directory: scripts
+        run: node fetch-data-joueurs-libres.js
