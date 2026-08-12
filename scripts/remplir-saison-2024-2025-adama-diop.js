@@ -29,6 +29,9 @@ const STATS = {
   cartons_jaunes: 2,
   cartons_rouges: 0,
   minutes_jouees: 2338,
+  points_equipe: 34,
+  buts_equipe: 34,
+  buts_encaisses_equipe: 49,
 };
 
 const { data: joueurs, error } = await supabase.from('joueurs').select('id, prenom, nom');
