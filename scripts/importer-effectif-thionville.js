@@ -47,7 +47,7 @@ const NOUVEAUX = [
   ['Jérémy', 'Lauratet', 'milieu_defensif', '1992-06-25'],
   ['Samed', 'Kılıç', 'milieu_central', '1996-01-28'],
   ['Gauthier', 'Laurens', 'ailier_droit', '2000-07-28'],
-  ['Jalil', 'Moustaid', 'milieu_offensif', '2001-06-29'],
+  // Jalil Moustaid déjà en base (même club/niveau/poste) : non réinséré.
   ['Fadel', 'Gobitaka', 'ailier_gauche', '1998-01-16'],
   ['Kylian', 'Tubio', 'ailier_droit', '2002-04-18'],
   ['Bryan', 'Labissiere', 'attaquant', '1997-02-11'],
