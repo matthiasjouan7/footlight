@@ -13,7 +13,7 @@ console.log(`Mode : ${dryRun ? 'DRY RUN (aucune écriture)' : 'ÉCRITURE RÉELLE
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const CLUB = 'Bourg-en-Bresse Péronnas 01';
+const CLUB = 'F BOURG EN BRESSE P01';
 const NIVEAU = 'Ligue 3';
 const SAISON = '2026-2027';
 
@@ -27,6 +27,8 @@ function slugifyName(s) {
 // Tous les postes sont donnés précisément par la source (aucun "Milieu"/
 // "Défense" générique) : "Arrière gauche/droit" → lateral_gauche/droit
 // (latéral), "Avant-centre" → attaquant.
+// Mahmoud El Wakil et Ikauar Mendes existent déjà (même club, même poste) :
+// exclus de NOUVEAUX pour éviter un doublon exact.
 // [prenom, nom, poste, date_naissance ISO]
 const NOUVEAUX = [
   ['Lenny', 'Montfort', 'gardien', '2002-01-16'],
@@ -50,9 +52,7 @@ const NOUVEAUX = [
   ['Yassine', 'Abraou', 'milieu_offensif', '2007-04-19'],
   ['Zola', 'Oniesim', 'milieu_offensif', '2003-10-19'],
   ['Exaucé', 'Mpembele Boula', 'ailier_gauche', '2002-05-15'],
-  ['Mahmoud', 'El Wakil', 'ailier_gauche', '2002-05-15'],
   ['Amine', 'Groune', 'ailier_droit', '1997-09-05'],
-  ['Ikauar', 'Mendes', 'attaquant', '1999-07-05'],
   ['Aness', 'Gharbi', 'attaquant', '2002-06-21'],
 ];
 
