@@ -414,7 +414,11 @@ function normalizeClub(s) {
     .replace(/[.'/-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-    .replace(/\s\d+$/, '');
+    // Retire un suffixe d'équipe réserve ("Paris FC 2") mais pas une année de
+    // fondation à 3-4 chiffres ("FC Rouen 1899"), sous peine de réduire ce
+    // club à son seul mot générique restant ("Rouen") et de créer une
+    // fausse collision avec tout autre club contenant ce mot.
+    .replace(/\s\d{1,2}$/, '');
 }
 const CLUB_MOTS_GENERIQUES = new Set([
   'fc','ofc','afc','asc','ac','sc','csc','cs','us','uso','as','ol','om','rc',

@@ -24,7 +24,7 @@ function normalizeClub(s) {
     .replace(/[.'/-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-    .replace(/\s\d+$/, '');
+    .replace(/\s\d{1,2}$/, '');
 }
 const CLUB_MOTS_GENERIQUES = new Set([
   'fc','ofc','afc','asc','ac','sc','csc','cs','us','uso','as','ol','om','rc',
