@@ -1084,8 +1084,19 @@ async function finishInit() {
   document.getElementById('f-saison').value = currentSeason.saison;
   previousSaisonValue = currentSeason.saison;
   fillSeasonFields(currentSeason);
-  loadMatchsForSeason(currentSeason.saison);
+  await loadMatchsForSeason(currentSeason.saison);
   loadBlessures();
+
+  // Rattrapage : juste après l'inscription, la session n'est pas encore
+  // authentifiée (confirmation email en attente), donc l'écriture dans
+  // matchs_joueur y est bloquée par la policy RLS et genererCalendrierAuto()
+  // ne peut rien générer (voir footlight-inscription-joueur.html). Une fois
+  // que le joueur consulte son profil connecté, la session est valide : on
+  // retente ici silencieusement si son calendrier est encore vide.
+  if (!currentMatchsList.length && joueur.club && joueur.niveau && currentSeason.saison) {
+    const nbMatchsGeneres = await genererCalendrierSilencieux(currentSeason.saison, joueur.club, joueur.niveau);
+    if (nbMatchsGeneres) await loadMatchsForSeason(currentSeason.saison);
+  }
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('form-content').style.display = 'block';
