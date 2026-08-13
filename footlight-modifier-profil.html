@@ -820,42 +820,29 @@ async function findCalendrierMatch(dateStr, clubJoueur, niveauJoueur) {
 // calendrier officiel FFF (National 1 / National 2), pour le club renseigné.
 // Chaque fiche générée n'a que date/adversaire/domicile-extérieur pré-remplis
 // et "vérifié FFF" : le joueur n'a plus qu'à ajouter le score et ses stats.
-async function genererCalendrier() {
-  const saison = getSelectedSaisonText();
-  if (!saison) { alert('Choisis ou saisis une saison avant de générer ton calendrier.'); return; }
-  const club = document.getElementById('f-club').value.trim();
-  if (!club) { alert('Renseigne ton club avant de générer ton calendrier.'); return; }
-
-  // Un même nom de club peut exister dans plusieurs championnats à la fois
-  // (ex: "SM CAEN" en Ligue 3 et sa réserve "Sm Caen 2" en National 2, qui
-  // se rapprochent tous les deux du même club une fois normalisés) : on
-  // utilise le niveau déjà renseigné par le joueur pour lever l'ambiguïté
-  // à la source plutôt que de mélanger deux calendriers différents.
-  const niveau = document.getElementById('f-niveau').value;
+// Recherche les matchs du calendrier officiel correspondant à un club/
+// saison, sans rien écrire — factorisé pour être partagé entre le bouton
+// manuel "Générer mon calendrier" et la génération automatique silencieuse
+// déclenchée à l'enregistrement du profil (voir genererCalendrierSilencieux).
+// diviserParNiveau : un même nom de club peut exister dans plusieurs
+// championnats à la fois (ex: "SM CAEN" en Ligue 3 et sa réserve "Sm Caen 2"
+// en National 2, qui se rapprochent tous les deux du même club une fois
+// normalisés) : on utilise le niveau déjà renseigné par le joueur pour lever
+// l'ambiguïté à la source plutôt que de mélanger deux calendriers différents.
+async function chercherMatchsCalendrier(saison, club, niveau) {
   const diviserParNiveau = ['N1', 'N2', 'Ligue 3'].includes(niveau);
-
-  const btn = document.getElementById('btn-generer-calendrier');
-  btn.disabled = true;
-  btn.textContent = 'Recherche...';
 
   const { data, error } = await fetchToutesLesLignes(() => {
     let q = db.from('calendrier_officiel').select('*').eq('saison', saison);
     if (diviserParNiveau) q = q.eq('division', niveau);
     return q;
   });
-
-  btn.disabled = false;
-  btn.textContent = '📅 Générer mon calendrier depuis le calendrier officiel FFF';
-
-  if (error) { alert('Erreur lors de la recherche : ' + error.message); return; }
+  if (error) return { error };
 
   const matchsClub = (data || []).filter(row =>
     clubWordsMatch(row.equipe_domicile, club) || clubWordsMatch(row.equipe_exterieur, club)
   );
-  if (!matchsClub.length) {
-    alert(`Aucun match trouvé dans le calendrier officiel pour "${club}"${diviserParNiveau ? ` en ${niveau}` : ''} en ${saison}. Vérifie l'orthographe du club et ton niveau renseigné, ou ton championnat n'est pas encore couvert (National 1, National 2 et Ligue 3 uniquement pour l'instant).`);
-    return;
-  }
+  if (!matchsClub.length) return { matchsClub: [], diviserParNiveau };
 
   // Le rapprochement par mots est volontairement tolérant (ordre, mots
   // manquants, mots génériques) : si ça fait quand même remonter plusieurs
@@ -875,15 +862,14 @@ async function genererCalendrier() {
       if (!rencontres.has(cle)) rencontres.set(cle, { nom: row.equipe_exterieur, division: row.division });
     }
   });
-  if (rencontres.size > 1) {
-    const liste = [...rencontres.values()].map(({nom, division}) => `${nom} (${division})`).join(', ');
-    alert(`Plusieurs clubs différents du calendrier officiel correspondent à "${club}" : ${liste}. Renseigne ton niveau (Ligue 3, N1, N2...) ci-dessus pour lever l'ambiguïté, ou précise le nom exact du club.`);
-    return;
-  }
 
+  return { matchsClub, rencontres, diviserParNiveau };
+}
+
+function matchsAInserer(matchsClub, club, saison) {
   const idsExistants = new Set(currentMatchsList.filter(m => m.calendrier_officiel_id).map(m => String(m.calendrier_officiel_id)));
   const datesExistantes = new Set(currentMatchsList.filter(m => m.date_match).map(m => m.date_match));
-  const aInserer = matchsClub.filter(row => !idsExistants.has(String(row.id)) && !datesExistantes.has(row.date_match)).map(row => {
+  return matchsClub.filter(row => !idsExistants.has(String(row.id)) && !datesExistantes.has(row.date_match)).map(row => {
     const domicile = clubWordsMatch(row.equipe_domicile, club);
     return {
       joueur_id: joueur.id,
@@ -896,6 +882,38 @@ async function genererCalendrier() {
       calendrier_officiel_id: row.id,
     };
   });
+}
+
+async function genererCalendrier() {
+  const saison = getSelectedSaisonText();
+  if (!saison) { alert('Choisis ou saisis une saison avant de générer ton calendrier.'); return; }
+  const club = document.getElementById('f-club').value.trim();
+  if (!club) { alert('Renseigne ton club avant de générer ton calendrier.'); return; }
+  const niveau = document.getElementById('f-niveau').value;
+
+  const btn = document.getElementById('btn-generer-calendrier');
+  btn.disabled = true;
+  btn.textContent = 'Recherche...';
+
+  const { matchsClub, rencontres, diviserParNiveau, error } = await chercherMatchsCalendrier(saison, club, niveau);
+
+  btn.disabled = false;
+  btn.textContent = '📅 Générer mon calendrier depuis le calendrier officiel FFF';
+
+  if (error) { alert('Erreur lors de la recherche : ' + error.message); return; }
+
+  if (!matchsClub.length) {
+    alert(`Aucun match trouvé dans le calendrier officiel pour "${club}"${diviserParNiveau ? ` en ${niveau}` : ''} en ${saison}. Vérifie l'orthographe du club et ton niveau renseigné, ou ton championnat n'est pas encore couvert (National 1, National 2 et Ligue 3 uniquement pour l'instant).`);
+    return;
+  }
+
+  if (rencontres.size > 1) {
+    const liste = [...rencontres.values()].map(({nom, division}) => `${nom} (${division})`).join(', ');
+    alert(`Plusieurs clubs différents du calendrier officiel correspondent à "${club}" : ${liste}. Renseigne ton niveau (Ligue 3, N1, N2...) ci-dessus pour lever l'ambiguïté, ou précise le nom exact du club.`);
+    return;
+  }
+
+  const aInserer = matchsAInserer(matchsClub, club, saison);
 
   if (!aInserer.length) {
     alert('Toutes les journées de ce championnat sont déjà dans ton historique de matchs.');
@@ -915,6 +933,25 @@ async function genererCalendrier() {
 
   await loadMatchsForSeason(saison);
   alert(`${aInserer.length} match${aInserer.length>1?'s':''} ajouté${aInserer.length>1?'s':''} à ton calendrier !`);
+}
+
+// Même recherche que le bouton manuel, déclenchée automatiquement après
+// l'enregistrement du profil dès qu'un club est renseigné — sans alerte ni
+// confirmation, pour ne pas interrompre l'enregistrement. En cas d'ambiguïté,
+// d'absence de match ou d'erreur, ne fait simplement rien : le bouton manuel
+// reste disponible pour ces cas-là. Retourne le nombre de matchs ajoutés.
+async function genererCalendrierSilencieux(saison, club, niveau) {
+  if (!club || !saison) return 0;
+  const { matchsClub, rencontres, error } = await chercherMatchsCalendrier(saison, club, niveau);
+  if (error || !matchsClub || !matchsClub.length) return 0;
+  if (rencontres && rencontres.size > 1) return 0;
+
+  const aInserer = matchsAInserer(matchsClub, club, saison);
+  if (!aInserer.length) return 0;
+
+  const { error: insError } = await db.from('matchs_joueur').insert(aInserer);
+  if (insError) { console.error('Génération auto du calendrier :', insError.message); return 0; }
+  return aInserer.length;
 }
 
 // Si l'email de connexion a changé (via changeEmail ci-dessous) et a été
@@ -1485,19 +1522,28 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
 
   const { error } = await persistSeasonFromForm(selectedSaison);
 
-  btn.disabled = false;
-  btn.textContent = 'Enregistrer';
-
   if (error) {
+    btn.disabled = false;
+    btn.textContent = 'Enregistrer';
     msg.classList.add('error');
     msg.textContent = 'Erreur lors de l\'enregistrement : ' + error.message;
     return;
   }
 
+  const club = document.getElementById('f-club').value.trim();
+  const niveau = document.getElementById('f-niveau').value;
+  const nbMatchsGeneres = await genererCalendrierSilencieux(selectedSaison, club, niveau);
+  if (nbMatchsGeneres) await loadMatchsForSeason(selectedSaison);
+
+  btn.disabled = false;
+  btn.textContent = 'Enregistrer';
+
   await checkEliteUpgrade();
 
   msg.classList.add('success');
-  msg.textContent = 'Profil mis à jour !';
+  msg.textContent = nbMatchsGeneres
+    ? `Profil mis à jour ! ${nbMatchsGeneres} match${nbMatchsGeneres > 1 ? 's' : ''} ajouté${nbMatchsGeneres > 1 ? 's' : ''} au calendrier.`
+    : 'Profil mis à jour !';
   setTimeout(() => {
     window.location.href = isRecruiterEditing ? `footlight-profil.html?id=${joueur.id}` : 'footlight-profil.html';
   }, 900);
