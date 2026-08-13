@@ -1013,6 +1013,90 @@ function clubWordsPourSuggestion(s) {
   const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
   return synonyme ? [...mots, ...synonyme.mots] : mots;
 }
+// Signature d'identité d'un club (mots triés, sigle résolu vers son nom
+// complet). Deux clubs avec la même signature sont considérés comme le
+// même club, sans passer par la comparaison par sous-ensemble plus permissive.
+function clubIdentitySignature(s) {
+  const cle = clubWords(s).slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? synonyme.mots.slice().sort().join(' ') : cle;
+}
+// Mots d'un club, augmentés du nom développé pour les sigles marqués
+// "elargi: true" (voir CLUB_SYNONYMES_COMPLETS) : permet à clubWordsMatch
+// d'accepter un mot seul du nom complet (ex: "Deauville") sans risquer les
+// collisions qu'une expansion systématique (comme pour QRM) créerait.
+function clubWordsElargi(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
+}
+function clubWordsMatch(a, b) {
+  const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
+  if (sigA && sigB && sigA === sigB) return true;
+  const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
+  if (!wa.length || !wb.length) return false;
+  const setA = new Set(wa), setB = new Set(wb);
+  const small = wa.length <= wb.length ? setA : setB;
+  const big = wa.length <= wb.length ? setB : setA;
+  for (const w of small) if (!big.has(w)) return false;
+  return true;
+}
+// Après l'inscription, si le club renseigné correspond sans ambiguïté à un
+// club du calendrier officiel FFF, génère automatiquement le calendrier de
+// la saison en cours (mêmes règles que "Générer mon calendrier" sur la page
+// profil, en silencieux : pas d'alerte, pour ne pas interrompre l'écran de
+// succès — en cas d'ambiguïté, d'absence de match ou d'erreur, on ne fait
+// simplement rien, le joueur pourra toujours le faire depuis son profil).
+async function genererCalendrierAuto(joueurId, club, niveau, saison) {
+  if (!club || !saison) return;
+  try {
+    const diviserParNiveau = ['N1', 'N2', 'Ligue 3'].includes(niveau);
+    const { data, error } = await fetchToutesLesLignes(() => {
+      let q = db.from('calendrier_officiel').select('*').eq('saison', saison);
+      if (diviserParNiveau) q = q.eq('division', niveau);
+      return q;
+    });
+    if (error || !data) return;
+
+    const matchsClub = data.filter(row =>
+      clubWordsMatch(row.equipe_domicile, club) || clubWordsMatch(row.equipe_exterieur, club)
+    );
+    if (!matchsClub.length) return;
+
+    const rencontres = new Map();
+    matchsClub.forEach(row => {
+      if (clubWordsMatch(row.equipe_domicile, club)) {
+        const cle = clubIdentitySignature(row.equipe_domicile) + '|' + row.division;
+        rencontres.set(cle, true);
+      }
+      if (clubWordsMatch(row.equipe_exterieur, club)) {
+        const cle = clubIdentitySignature(row.equipe_exterieur) + '|' + row.division;
+        rencontres.set(cle, true);
+      }
+    });
+    if (rencontres.size > 1) return;
+
+    const aInserer = matchsClub.map(row => {
+      const domicile = clubWordsMatch(row.equipe_domicile, club);
+      return {
+        joueur_id: joueurId,
+        saison,
+        date_match: row.date_match,
+        adversaire: domicile ? row.equipe_exterieur : row.equipe_domicile,
+        competition: 'championnat',
+        domicile,
+        verifie: true,
+        calendrier_officiel_id: row.id,
+      };
+    });
+    if (!aInserer.length) return;
+
+    await db.from('matchs_joueur').insert(aInserer);
+  } catch (err) {
+    console.error('Génération auto du calendrier :', err);
+  }
+}
 async function fetchToutesLesLignes(construireRequete) {
   const TAILLE_PAGE = 1000;
   let toutes = [];
@@ -1533,7 +1617,7 @@ async function submitForm() {
     }
 
     // 2. Créer le profil joueur dans la table
-    const { error: profileError } = await db.from('joueurs').insert([{
+    const { data: nouveauJoueur, error: profileError } = await db.from('joueurs').insert([{
       prenom, nom, email,
       date_naissance: naiss || null,
       nationalite: nationalite || null,
@@ -1560,13 +1644,17 @@ async function submitForm() {
       badge: videoLinks.length ? 'video' : selectedGPS && selectedGPS !== 'Aucun' ? 'gps' : 'declaratif',
       score: 50,
       profil_public: false,
-    }]);
+    }]).select().single();
 
     if (profileError) {
       btn.disabled = false;
       btn.textContent = 'Créer mon profil ✓';
       alert('Erreur lors de la création du profil : ' + profileError.message);
       return;
+    }
+
+    if (nouveauJoueur) {
+      await genererCalendrierAuto(nouveauJoueur.id, club, niveau, saison);
     }
 
   } catch(err) {
