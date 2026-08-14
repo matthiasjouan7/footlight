@@ -68,3 +68,17 @@ for (const a of attaquants) {
     console.log(`  ${a.prenom} ${a.nom} (${a.club}) — ${totalButs} but(s) sur ${journeesButeur}/${sesMatchs.length} journée(s) jouée(s) [${detail}]`);
   }
 }
+
+// Compteur encore à 0 : attaquants ayant joué au moins un match synchronisé
+// sans avoir marqué — candidats à "ouvrir leur compteur" à la prochaine
+// journée, utile pour teaser du contenu avant un match.
+console.log(`\n--- Attaquants au compteur encore vierge (ont joué, 0 but) ---`);
+for (const a of attaquants) {
+  const sesMatchs = matchsJoues.filter((m) => m.joueur_id === a.id);
+  if (!sesMatchs.length) continue;
+  const totalButs = sesMatchs.reduce((s, m) => s + (m.buts || 0), 0);
+  if (totalButs === 0) {
+    const minutesTotal = sesMatchs.reduce((s, m) => s + (m.minutes_jouees || 0), 0);
+    console.log(`  ${a.prenom} ${a.nom} (${a.club}) — 0 but sur ${sesMatchs.length} match(s) joué(s), ${minutesTotal} min au total`);
+  }
+}
