@@ -7,21 +7,11 @@ on:
         description: "Prénom Nom des joueurs à filmer, séparés par des virgules"
         required: true
         type: string
-      titre:
-        description: "Titre de la carte d'ouverture (avant l'accent)"
+      saison:
+        description: "Saison à sélectionner (ex: 2026-2027)"
         required: false
         type: string
-        default: "Qui va"
-      titre_accent:
-        description: "Titre de la carte d'ouverture (partie accentuée dorée)"
-        required: false
-        type: string
-        default: "confirmer ?"
-      sous_titre:
-        description: "Sous-titre de la carte d'ouverture"
-        required: false
-        type: string
-        default: "Après une journée 1 explosive, ces attaquants sont attendus ce soir."
+        default: "2026-2027"
 
 jobs:
   record:
@@ -47,10 +37,9 @@ jobs:
         working-directory: scripts
         env:
           NOMS: ${{ inputs.noms }}
-          TITRE: ${{ inputs.titre }}
-          TITRE_ACCENT: ${{ inputs.titre_accent }}
-          SOUS_TITRE: ${{ inputs.sous_titre }}
+          SAISON_CIBLE: ${{ inputs.saison }}
           OUT_DIR: ${{ github.workspace }}/demo-video-buteurs-out
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node record-video-buteurs.js
 
       - name: Publier la vidéo en artefact
