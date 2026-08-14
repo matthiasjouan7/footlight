@@ -1,0 +1,37 @@
+name: Résumé buteurs / régularité attaquants (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      division:
+        description: "Division (ex: Ligue 3, N1, N2)"
+        required: false
+        type: string
+        default: "Ligue 3"
+      saison:
+        description: "Saison (ex: 2026-2027)"
+        required: false
+        type: string
+        default: "2026-2027"
+
+jobs:
+  resume:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Résumer
+        working-directory: scripts
+        env:
+          DIVISION: ${{ inputs.division }}
+          SAISON: ${{ inputs.saison }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node resume-journee-buteurs.js
