@@ -14,12 +14,16 @@ const SAISON = process.env.SAISON || '2026-2027';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// .range() (LIMIT/OFFSET) sans ORDER BY n'est pas stable en cas d'écriture
+// concurrente (ex: le sync quotidien) : une ligne déplacée physiquement
+// entre deux pages peut être renvoyée deux fois. On trie par id pour rendre
+// la pagination déterministe.
 async function selectAll(query) {
   const pageSize = 1000;
   let toutes = [];
   let page = 0;
   for (;;) {
-    const { data, error } = await query.range(page * pageSize, page * pageSize + pageSize - 1);
+    const { data, error } = await query.order('id').range(page * pageSize, page * pageSize + pageSize - 1);
     if (error) { console.error('Erreur lecture :', error.message); process.exit(1); }
     toutes = toutes.concat(data || []);
     if (!data || data.length < pageSize) break;
@@ -34,9 +38,11 @@ const idsJoueurs = joueurs.map((j) => j.id);
 
 if (!idsJoueurs.length) { console.log(`Aucun joueur trouvé pour ${DIVISION} (${SAISON}).`); process.exit(0); }
 
-const matchs = await selectAll(
-  supabase.from('matchs_joueur').select('joueur_id, date_match, adversaire, buts, minutes_jouees, titulaire').eq('saison', SAISON).in('joueur_id', idsJoueurs)
+const matchsBruts = await selectAll(
+  supabase.from('matchs_joueur').select('id, joueur_id, date_match, adversaire, buts, minutes_jouees, titulaire').eq('saison', SAISON).in('joueur_id', idsJoueurs)
 );
+// Filet de sécurité supplémentaire contre un doublon de pagination.
+const matchs = [...new Map(matchsBruts.map((m) => [m.id, m])).values()];
 
 // Le calendrier est pré-généré pour toute la saison (matchs futurs inclus) :
 // seul minutes_jouees renseigné distingue un match déjà joué et synchronisé
