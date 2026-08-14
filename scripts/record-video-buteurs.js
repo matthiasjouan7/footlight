@@ -120,6 +120,53 @@ for (const j of joueurs) {
   await page.waitForTimeout(1200);
 }
 
+// --- Scène finale : qui va marquer à la prochaine journée ? (basé sur le dernier match joué de chacun) ---
+console.log('Récupération des dernières stats jouées pour la scène de pronostic...');
+const pronostics = [];
+for (const j of joueurs) {
+  const { data: dernierMatch } = await supabase
+    .from('matchs_joueur')
+    .select('buts, minutes_jouees, date_match, adversaire')
+    .eq('joueur_id', j.id)
+    .not('minutes_jouees', 'is', null)
+    .order('date_match', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  pronostics.push({ ...j, dernierMatch });
+}
+
+function ligneProno({ prenom, nom, dernierMatch }) {
+  const buts = dernierMatch?.buts || 0;
+  if (buts >= 3) return { emoji: '🔥', texte: `${prenom} ${nom} — triplé au dernier match, il confirme ?` };
+  if (buts === 2) return { emoji: '🔥', texte: `${prenom} ${nom} — doublé au dernier match, la forme continue ?` };
+  if (buts === 1) return { emoji: '⚽', texte: `${prenom} ${nom} — déjà buteur, il repart de plus belle ?` };
+  return { emoji: '👀', texte: `${prenom} ${nom} — encore à 0, il ouvre son compteur ?` };
+}
+
+const pronoHtml = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0d1117;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;padding:0 40px;color:#e6edf3;}
+.eyebrow{font-size:0.8rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8b949e;margin-bottom:14px;}
+h1{font-size:2.1rem;font-weight:800;text-align:center;line-height:1.25;margin-bottom:32px;}
+h1 span{color:#e3b341;}
+.row{display:flex;align-items:center;gap:14px;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px 20px;width:100%;max-width:520px;margin-bottom:14px;}
+.row .emoji{font-size:1.6rem;}
+.row .texte{font-size:0.98rem;font-weight:600;line-height:1.35;}
+.cta{margin-top:20px;font-size:0.85rem;color:#8b949e;}
+.cta b{color:#79c0ff;}
+</style></head>
+<body>
+<div class="eyebrow">Prochaine journée</div>
+<h1>Qui va <span>marquer</span> ce week-end ?</h1>
+${pronostics.map((p) => { const { emoji, texte } = ligneProno(p); return `<div class="row"><div class="emoji">${emoji}</div><div class="texte">${texte}</div></div>`; }).join('\n')}
+<div class="cta">Suis les stats en direct sur <b>footlight.fr</b></div>
+</body></html>`;
+
+console.log('Affichage de la scène de pronostic...');
+await page.setContent(pronoHtml);
+await page.waitForTimeout(4200);
+
 await context.close();
 await browser.close();
 server.close();
