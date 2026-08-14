@@ -57,6 +57,11 @@ profilHtml = profilHtml.replace(
   'const canHistory = true; // DEMO uniquement (copie temporaire, jamais commit)'
 );
 if (profilHtml === avant) { console.error('Motif canHistory non trouvé, la page ne sera pas modifiée.'); }
+// La sidebar "Filtres" (recherche rapide pour recruteurs) passe en pleine
+// largeur au-dessus du profil sur un écran étroit (<800px, voir la media
+// query .sidebar dans le <style>) — masquée pour la démo verticale, sinon
+// la vidéo montre la recherche avant le vrai profil du joueur.
+profilHtml = profilHtml.replace('</head>', '<style>.sidebar{display:none!important;}</style></head>');
 await writeFile(profilPath, profilHtml, 'utf8');
 
 // ---- 2. Serveur statique local ----
