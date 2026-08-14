@@ -1,0 +1,48 @@
+name: Enregistre une vidéo — buteurs / attaquants à suivre (lecture seule, aucune écriture)
+
+on:
+  workflow_dispatch:
+    inputs:
+      noms:
+        description: "Prénom Nom des joueurs à filmer, séparés par des virgules"
+        required: true
+        type: string
+      saison:
+        description: "Saison à sélectionner (ex: 2026-2027)"
+        required: false
+        type: string
+        default: "2026-2027"
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Enregistrer la vidéo
+        working-directory: scripts
+        env:
+          NOMS: ${{ inputs.noms }}
+          SAISON_CIBLE: ${{ inputs.saison }}
+          OUT_DIR: ${{ github.workspace }}/demo-video-buteurs-out
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node record-video-buteurs.js
+
+      - name: Publier la vidéo en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-video-buteurs
+          path: demo-video-buteurs-out/*.webm
+          retention-days: 7
