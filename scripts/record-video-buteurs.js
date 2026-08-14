@@ -91,16 +91,14 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
-// --- Scène 1 : page de présentation du site (couverture, accueil) ---
+// --- Scène 1 : page de présentation du site (couverture, accueil), version courte ---
 console.log('Ouverture de la page d\'accueil (couverture)...');
 await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle', timeout: 60000 });
-await page.waitForTimeout(2500);
-for (const y of [600, 1400, 2200, 3000, 3800]) {
+await page.waitForTimeout(1500);
+for (const y of [700, 1600]) {
   await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'smooth' }), y);
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(1200);
 }
-await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-await page.waitForTimeout(1200);
 
 // --- Scènes suivantes : un profil réel par joueur ---
 for (const j of joueurs) {
