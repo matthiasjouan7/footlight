@@ -709,7 +709,6 @@ async function renderProfil(j, isOwner) {
     const prevRatioButsMatch = (prevSeason && prevSeason.matchs_joues > 0) ? (prevSeason.buts||0) / prevSeason.matchs_joues : null;
     const evolutionPct = (ratioButsMatch != null && prevRatioButsMatch > 0) ? Math.round((ratioButsMatch - prevRatioButsMatch) / prevRatioButsMatch * 100) : null;
     const ratioMinBut = (s.buts > 0) ? Math.round((s.minutes_jouees||0) / s.buts) : null;
-    const pctButsEquipe = (s.buts_equipe > 0) ? Math.round((s.buts||0) / s.buts_equipe * 100) : null;
     const matchsSaison = (s.isGlobal ? Object.values(matchsBySaison).flat() : (matchsBySaison[s.saison] || []))
       .filter(m => !m.competition || m.competition === 'championnat');
     // Scores connus par match — une ligne matchs_joueur existe pour chaque
@@ -733,6 +732,11 @@ async function renderProfil(j, isOwner) {
     const matchsEquipeEffectif = matchsEquipeCalcule != null ? matchsEquipeCalcule : s.matchs_equipe;
     const butsEncaissesEquipeCalcule = couvertureComplete ? matchsEquipeJoues.reduce((sum,m) => sum + m.score_contre, 0) : null;
     const butsEncaissesEquipeEffectif = butsEncaissesEquipeCalcule != null ? butsEncaissesEquipeCalcule : s.buts_encaisses_equipe;
+    // Buts marqués par l'équipe (saison) : même principe côté attaque, à
+    // partir de score_pour au lieu de score_contre.
+    const butsEquipeCalcule = couvertureComplete ? matchsEquipeJoues.reduce((sum,m) => sum + m.score_pour, 0) : null;
+    const butsEquipeEffectif = butsEquipeCalcule != null ? butsEquipeCalcule : s.buts_equipe;
+    const pctButsEquipe = (butsEquipeEffectif > 0) ? Math.round((s.buts||0) / butsEquipeEffectif * 100) : null;
     // Buts encaissés / clean sheets : somme sur les matchs qu'il a réellement
     // joués (pas besoin de couverture complète, contrairement au total
     // d'équipe — c'est une somme sur SES matchs, pas ceux de toute l'équipe).
