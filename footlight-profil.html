@@ -747,27 +747,50 @@ async function renderProfil(j, isOwner) {
     // Impact collectif réel : points pris par match joué (3/1/0, déduits du
     // score de ses fiches de match, ou à défaut du champ points_avec_lui
     // saisi manuellement) vs moyenne de points de l'équipe sur la saison.
+    // matchsAvecScore contient TOUS les matchs de l'équipe pour lesquels le
+    // score est connu (une ligne matchs_joueur existe pour chaque match de
+    // l'équipe dès l'inscription, joué ou non — voir
+    // generer-calendriers-existants.js) : sert à calculer le total de points
+    // de l'ÉQUIPE. matchsJouesAvecScore ne garde que ceux où LUI a joué
+    // (minutes_jouees connu) : sert à ses stats personnelles — sans ce
+    // filtre, les matchs où il n'a pas joué diluent son propre ratio.
+    const pointsMatch = (m) => m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0;
     const matchsAvecScore = matchsSaison.filter(m => m.score_pour != null && m.score_contre != null);
-    const ptsAvecLui = matchsAvecScore.length > 0
-      ? matchsAvecScore.reduce((sum,m) => sum + (m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0), 0) / matchsAvecScore.length
+    const matchsJouesAvecScore = matchsAvecScore.filter(m => m.minutes_jouees != null);
+    const ptsAvecLui = matchsJouesAvecScore.length > 0
+      ? matchsJouesAvecScore.reduce((sum,m) => sum + pointsMatch(m), 0) / matchsJouesAvecScore.length
       : (s.matchs_joues > 0 && s.points_avec_lui != null ? s.points_avec_lui / s.matchs_joues : null);
-    const ratioPointsEquipeTotal = (s.matchs_equipe > 0 && s.points_equipe != null) ? s.points_equipe / s.matchs_equipe : null;
+    // Total de points de l'équipe : calculé à partir des scores connus dès
+    // que TOUS les matchs déjà joués par l'équipe cette saison ont un score
+    // (couverture complète, sinon un total partiel sous-estimerait la vraie
+    // valeur) ; sinon on retombe sur la saisie manuelle "Points de l'équipe".
+    const matchsEquipeJoues = matchsSaison.filter(m => m.date_match && new Date(m.date_match) <= new Date());
+    const couvertureComplete = matchsEquipeJoues.length > 0 && matchsEquipeJoues.every(m => m.score_pour != null && m.score_contre != null);
+    const pointsEquipeCalcule = couvertureComplete ? matchsEquipeJoues.reduce((sum,m) => sum + pointsMatch(m), 0) : null;
+    const matchsEquipeCalcule = couvertureComplete ? matchsEquipeJoues.length : null;
+    const pointsEquipeEffectif = pointsEquipeCalcule != null ? pointsEquipeCalcule : s.points_equipe;
+    const matchsEquipeEffectif = matchsEquipeCalcule != null ? matchsEquipeCalcule : s.matchs_equipe;
+    const ratioPointsEquipeTotal = (matchsEquipeEffectif > 0 && pointsEquipeEffectif != null) ? pointsEquipeEffectif / matchsEquipeEffectif : null;
     const impactPointsReel = (ptsAvecLui != null && ratioPointsEquipeTotal != null) ? ptsAvecLui - ratioPointsEquipeTotal : null;
     // Comme pour l'impact défensif, la comparaison à la moyenne globale de
     // l'équipe dilue l'écart réel (ses propres matchs sont inclus dans cette
     // moyenne). On calcule aussi "sans lui" : les points pris par l'équipe
     // uniquement sur les matchs où il n'a pas joué, déduits du total saison.
-    const ptsAvecLuiTotal = matchsAvecScore.length > 0
-      ? matchsAvecScore.reduce((sum,m) => sum + (m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0), 0)
+    const ptsAvecLuiTotal = matchsJouesAvecScore.length > 0
+      ? matchsJouesAvecScore.reduce((sum,m) => sum + pointsMatch(m), 0)
       : s.points_avec_lui;
-    const ptsSansLuiTotal = (s.points_equipe != null && ptsAvecLuiTotal != null) ? s.points_equipe - ptsAvecLuiTotal : null;
-    const ptsSansLui = (matchsSansLui > 0 && ptsSansLuiTotal != null) ? ptsSansLuiTotal / matchsSansLui : null;
+    // Dénominateur cohérent avec pointsEquipeEffectif (calculé ou manuel) —
+    // matchsSansLui plus haut reste basé sur s.matchs_equipe (manuel) pour
+    // les stats défensives, sans lien avec ce calcul de points.
+    const matchsSansLuiPourPoints = (matchsEquipeEffectif > 0) ? matchsEquipeEffectif - (s.matchs_joues||0) : null;
+    const ptsSansLuiTotal = (pointsEquipeEffectif != null && ptsAvecLuiTotal != null) ? pointsEquipeEffectif - ptsAvecLuiTotal : null;
+    const ptsSansLui = (matchsSansLuiPourPoints > 0 && ptsSansLuiTotal != null) ? ptsSansLuiTotal / matchsSansLuiPourPoints : null;
     const impactPointsReelSansLui = (ptsAvecLui != null && ptsSansLui != null) ? ptsAvecLui - ptsSansLui : null;
     // Matchs décisifs : sur ses fiches de match, on retire ses buts perso du
     // score final et on recalcule les points — si le résultat aurait été
     // moins bon sans ses buts (victoire → nul/défaite, ou nul → défaite),
     // le match est "décisif" et on compte les points gagnés grâce à lui.
-    const matchsDecisifsButs = matchsAvecScore
+    const matchsDecisifsButs = matchsJouesAvecScore
       .filter(m => (m.buts||0) > 0)
       .map(m => {
         const ptsReel = m.score_pour > m.score_contre ? 3 : m.score_pour === m.score_contre ? 1 : 0;
@@ -938,20 +961,20 @@ async function renderProfil(j, isOwner) {
       ${impactPointsReel != null ? (canImpact ? `
       <div class="section">
         <div class="section-title">Impact collectif réel</div>
-        <div class="info-row"><span class="info-key">Matchs de l'équipe (saison)</span><span class="info-val">${s.matchs_equipe}</span></div>
-        <div class="info-row"><span class="info-key">Points de l'équipe (saison)</span><span class="info-val">${s.points_equipe}</span></div>
+        <div class="info-row"><span class="info-key">Matchs de l'équipe (saison)</span><span class="info-val">${matchsEquipeEffectif}${matchsEquipeCalcule != null ? ' <span style="color:var(--muted);font-weight:400;">(calculé)</span>' : ''}</span></div>
+        <div class="info-row"><span class="info-key">Points de l'équipe (saison)</span><span class="info-val">${pointsEquipeEffectif}${pointsEquipeCalcule != null ? ' <span style="color:var(--muted);font-weight:400;">(calculé)</span>' : ''}</span></div>
         <div class="info-row" style="margin-top:6px;"><span class="info-key">Points pris/match avec lui</span><span class="info-val">${ptsAvecLui.toFixed(2)}</span></div>
         <div class="info-row"><span class="info-key">Points pris/match (moyenne équipe)</span><span class="info-val">${ratioPointsEquipeTotal.toFixed(2)}</span></div>
         <div class="bar-item" style="margin-top:12px;">
-          <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
-          <div style="font-size:0.75rem;color:${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactPointsReel, matchsSansLui, offensiveImpactTier).label}</div>
+          <div class="bar-label-row"><span class="k">Différentiel vs moyenne équipe</span><span class="v" style="color:${tierSansLui(impactPointsReel, matchsSansLuiPourPoints, offensiveImpactTier).color}">${impactPointsReel>=0?'+':''}${impactPointsReel.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${tierSansLui(impactPointsReel, matchsSansLuiPourPoints, offensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactPointsReel, matchsSansLuiPourPoints, offensiveImpactTier).label}</div>
         </div>
         ${impactPointsReelSansLui != null ? `
-        <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLui}</span></div>
+        <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs sans lui (déduit)</span><span class="info-val">${matchsSansLuiPourPoints}</span></div>
         <div class="info-row"><span class="info-key">Points pris/match sans lui</span><span class="info-val">${ptsSansLui.toFixed(2)}</span></div>
         <div class="bar-item" style="margin-top:12px;">
-          <div class="bar-label-row"><span class="k">Différentiel avec lui - sans lui</span><span class="v" style="color:${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).color}">${impactPointsReelSansLui>=0?'+':''}${impactPointsReelSansLui.toFixed(2)}</span></div>
-          <div style="font-size:0.75rem;color:${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactPointsReelSansLui, matchsSansLui, offensiveImpactTier).label}</div>
+          <div class="bar-label-row"><span class="k">Différentiel avec lui - sans lui</span><span class="v" style="color:${tierSansLui(impactPointsReelSansLui, matchsSansLuiPourPoints, offensiveImpactTier).color}">${impactPointsReelSansLui>=0?'+':''}${impactPointsReelSansLui.toFixed(2)}</span></div>
+          <div style="font-size:0.75rem;color:${tierSansLui(impactPointsReelSansLui, matchsSansLuiPourPoints, offensiveImpactTier).color};margin-top:6px;">${tierSansLui(impactPointsReelSansLui, matchsSansLuiPourPoints, offensiveImpactTier).label}</div>
         </div>
         <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Matchs sans lui déduits (matchs de l'équipe − matchs joués) : donnée approximative si des absences ne sont pas liées à des matchs manqués (blessure, banc...).</div>
         ` : `<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Différentiel "sans lui" indisponible : il a joué la totalité (ou la quasi-totalité) des matchs de l'équipe cette saison, aucun match "sans lui" à comparer.</div>`}
@@ -959,7 +982,7 @@ async function renderProfil(j, isOwner) {
         <div class="info-row" style="margin-top:14px;"><span class="info-key">Matchs décisifs (ses buts ont fait gagner des points)</span><span class="info-val" style="color:var(--green-l)">${nbMatchsDecisifs}</span></div>
         <div class="info-row"><span class="info-key">Points gagnés grâce à ses buts</span><span class="info-val" style="color:var(--green-l)">+${ptsGagnesGraceASesButs}</span></div>
         <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Un match est compté "décisif" quand, sans ses buts personnels, le résultat de l'équipe aurait été moins bon (victoire → nul ou défaite, ou nul → défaite) — calculé à partir de ses fiches de match avec score et buts renseignés.</div>
-        ` : (matchsAvecScore.filter(m => (m.buts||0) > 0).length > 0 ? `<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Aucun de ses buts n'a été décisif pour le résultat sur les fiches renseignées cette saison.</div>` : '')}
+        ` : (matchsJouesAvecScore.filter(m => (m.buts||0) > 0).length > 0 ? `<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Aucun de ses buts n'a été décisif pour le résultat sur les fiches renseignées cette saison.</div>` : '')}
       </div>` : `
       <div class="section">
         <div class="section-title">Impact collectif réel</div>
