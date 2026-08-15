@@ -1,0 +1,84 @@
+name: Enregistre une vidéo — récap journée (buteurs + clean sheets, lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      noms:
+        description: "Prénom Nom des attaquants à filmer, séparés par des virgules"
+        required: true
+        type: string
+      saison:
+        description: "Saison à sélectionner (ex: 2026-2027)"
+        required: false
+        type: string
+        default: "2026-2027"
+      clean_sheets_actuelles:
+        description: "Nombre de clean sheets cette journée"
+        required: false
+        type: string
+      clean_sheets_precedentes:
+        description: "Nombre de clean sheets la journée précédente"
+        required: false
+        type: string
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Enregistrer la vidéo
+        working-directory: scripts
+        env:
+          NOMS: ${{ inputs.noms }}
+          SAISON_CIBLE: ${{ inputs.saison }}
+          CLEAN_SHEETS_ACTUELLES: ${{ inputs.clean_sheets_actuelles }}
+          CLEAN_SHEETS_PRECEDENTES: ${{ inputs.clean_sheets_precedentes }}
+          OUT_DIR: ${{ github.workspace }}/demo-video-recap-out
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node record-video-recap-journee.js
+
+      - name: Publier la vidéo en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-video-recap
+          path: demo-video-recap-out/*.webm
+          retention-days: 7
+
+      # .webm n'est pas lisible sur iPhone/Safari, et l'artefact Actions
+      # (stocké sur blob storage) n'est pas accessible depuis certains
+      # environnements réseau restreints : convertit en .mp4 (H.264, lu
+      # partout) et le pousse directement sur une branche du dépôt, servi
+      # ensuite via raw.githubusercontent.com.
+      - name: Convertir en mp4 (compatibilité universelle)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          webm=$(ls demo-video-recap-out/*.webm | head -1)
+          ffmpeg -y -i "$webm" -c:v libx264 -pix_fmt yuv420p -movflags +faststart -c:a aac demo-video-recap-out/video.mp4
+
+      - name: Publier sur la branche de livraison
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git checkout --orphan video-delivery-recap
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -maxdepth 1 ! -name '.' ! -name '.git' ! -name 'demo-video-recap-out' -exec rm -rf {} +
+          mv demo-video-recap-out/video.mp4 .
+          rm -rf demo-video-recap-out
+          git add -A
+          git commit -m "Livraison vidéo récap journée (run ${{ github.run_id }})"
+          git push origin video-delivery-recap --force
