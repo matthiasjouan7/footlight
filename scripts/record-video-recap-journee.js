@@ -166,6 +166,13 @@ const ouvertureHtml = `<!DOCTYPE html>
 ${avecStats.map((p) => { const { emoji, texte } = ligneOuverture(p); return `<div class="row"><div class="emoji">${emoji}</div><div class="texte">${texte}</div></div>`; }).join('\n')}
 </body></html>`;
 
+// Avant le tout premier rendu sur une page qui n'a jamais navigué,
+// Playwright peut encoder les premières frames de la vidéo avec une taille
+// de cadre incorrecte (bande grise, contenu réduit dans un coin) tant
+// qu'aucune vraie navigation n'a eu lieu — une navigation minimale « chauffe »
+// la taille de frame avant le premier setContent affiché à l'écran.
+await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'commit', timeout: 60000 });
+
 console.log('Affichage de la scène d\'ouverture...');
 await page.setContent(ouvertureHtml);
 await page.waitForTimeout(4200);
