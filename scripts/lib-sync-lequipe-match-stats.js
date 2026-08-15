@@ -315,6 +315,15 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
     }
     const evtDomicile = evenementsCote(specifics.domicile);
     const evtExterieur = evenementsCote(specifics.exterieur);
+    // Score final : nombre de buteurs de chaque côté (déjà extraits
+    // ci-dessus pour les buts individuels). Contrairement aux buts/cartons
+    // personnels, c'est une info de MATCH, pas de joueur : elle s'applique à
+    // toute ligne matchs_joueur liée à ce match, qu'il ait joué ou non — une
+    // ligne existe déjà pour chaque match de l'équipe dès l'inscription
+    // (voir generer-calendriers-existants.js), pas besoin d'un scraper
+    // séparé pour connaître les résultats complets de la saison.
+    const butsDom = evtDomicile.buts.length;
+    const butsExt = evtExterieur.buts.length;
 
     // Minutes jouées : pas de champ direct sur lequipe.fr — calculées à
     // partir des titulaires/remplaçants et des instants d'entrée/sortie.
@@ -334,57 +343,69 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
     for (const row of mj) {
       const joueur = joueursById.get(row.joueur_id);
       if (!joueur) continue;
-      const attendu = abregeAttendu(joueur.prenom, joueur.nom);
-      if (!attendu) continue;
-
-      const cote = row.domicile ? evtDomicile : evtExterieur;
       const cle = `${joueur.prenom} ${joueur.nom}`;
-
-      // Ambiguïté : un autre joueur FootLight du même côté a le même abrégé attendu.
-      const ambiguite = mj.some((other) => {
-        if (other === row || other.domicile !== row.domicile) return false;
-        const autreJoueur = joueursById.get(other.joueur_id);
-        return autreJoueur && abregeAttendu(autreJoueur.prenom, autreJoueur.nom) === attendu;
-      });
-      if (ambiguite) {
-        console.log(`  ${cle} : ambigu (plusieurs joueurs FootLight partagent "${attendu}"), ignoré.`);
-        totalAmbigus++;
-        continue;
-      }
-
-      const nbButs = cote.buts.filter((b) => b.abrege === attendu).length;
-      const nbJaunes = cote.jaunes.filter((a) => a === attendu).length;
-      const nbRouges = cote.rouges.filter((a) => a === attendu).length;
 
       const maj = {};
       const details = [];
-      if (nbButs > 0) {
-        if (row.buts == null) { maj.buts = nbButs; details.push(`buts: ${nbButs}`); }
-        else { details.push(`buts déjà renseigné (${row.buts}), non modifié malgré ${nbButs} détecté(s)`); totalDejaRenseignes++; }
-      }
-      if (nbJaunes > 0) {
-        if (row.cartons_jaunes == null) { maj.cartons_jaunes = nbJaunes; details.push(`cartons_jaunes: ${nbJaunes}`); }
-        else { details.push(`cartons_jaunes déjà renseigné (${row.cartons_jaunes}), non modifié`); totalDejaRenseignes++; }
-      }
-      if (nbRouges > 0) {
-        if (row.cartons_rouges == null) { maj.cartons_rouges = nbRouges; details.push(`cartons_rouges: ${nbRouges}`); }
-        else { details.push(`cartons_rouges déjà renseigné (${row.cartons_rouges}), non modifié`); totalDejaRenseignes++; }
+
+      // Score du match : indépendant du rapprochement par nom ci-dessous,
+      // s'applique même si le joueur n'a pas été identifié dans les
+      // événements (bloqué le jour du match, remplaçant non utilisé, etc.).
+      if (row.score_pour == null || row.score_contre == null) {
+        const scorePour = row.domicile ? butsDom : butsExt;
+        const scoreContre = row.domicile ? butsExt : butsDom;
+        maj.score_pour = scorePour;
+        maj.score_contre = scoreContre;
+        details.push(`score: ${scorePour}-${scoreContre}`);
       }
 
-      const sportifIds = cote.sportifsParAbrege.get(attendu) || [];
-      if (sportifIds.length === 1) {
-        const minutes = minutesJouees(cote, sportifIds[0]);
-        if (minutes != null) {
-          if (row.minutes_jouees == null) { maj.minutes_jouees = minutes; details.push(`minutes_jouees: ${minutes}`); }
-          else { details.push(`minutes_jouees déjà renseigné (${row.minutes_jouees}), non modifié malgré ${minutes} calculé`); totalDejaRenseignes++; }
+      const attendu = abregeAttendu(joueur.prenom, joueur.nom);
+      if (attendu) {
+        const cote = row.domicile ? evtDomicile : evtExterieur;
+
+        // Ambiguïté : un autre joueur FootLight du même côté a le même abrégé attendu.
+        const ambiguite = mj.some((other) => {
+          if (other === row || other.domicile !== row.domicile) return false;
+          const autreJoueur = joueursById.get(other.joueur_id);
+          return autreJoueur && abregeAttendu(autreJoueur.prenom, autreJoueur.nom) === attendu;
+        });
+        if (ambiguite) {
+          console.log(`  ${cle} : ambigu (plusieurs joueurs FootLight partagent "${attendu}"), ignoré pour buts/cartons/minutes.`);
+          totalAmbigus++;
+        } else {
+          const nbButs = cote.buts.filter((b) => b.abrege === attendu).length;
+          const nbJaunes = cote.jaunes.filter((a) => a === attendu).length;
+          const nbRouges = cote.rouges.filter((a) => a === attendu).length;
+
+          if (nbButs > 0) {
+            if (row.buts == null) { maj.buts = nbButs; details.push(`buts: ${nbButs}`); }
+            else { details.push(`buts déjà renseigné (${row.buts}), non modifié malgré ${nbButs} détecté(s)`); totalDejaRenseignes++; }
+          }
+          if (nbJaunes > 0) {
+            if (row.cartons_jaunes == null) { maj.cartons_jaunes = nbJaunes; details.push(`cartons_jaunes: ${nbJaunes}`); }
+            else { details.push(`cartons_jaunes déjà renseigné (${row.cartons_jaunes}), non modifié`); totalDejaRenseignes++; }
+          }
+          if (nbRouges > 0) {
+            if (row.cartons_rouges == null) { maj.cartons_rouges = nbRouges; details.push(`cartons_rouges: ${nbRouges}`); }
+            else { details.push(`cartons_rouges déjà renseigné (${row.cartons_rouges}), non modifié`); totalDejaRenseignes++; }
+          }
+
+          const sportifIds = cote.sportifsParAbrege.get(attendu) || [];
+          if (sportifIds.length === 1) {
+            const minutes = minutesJouees(cote, sportifIds[0]);
+            if (minutes != null) {
+              if (row.minutes_jouees == null) { maj.minutes_jouees = minutes; details.push(`minutes_jouees: ${minutes}`); }
+              else { details.push(`minutes_jouees déjà renseigné (${row.minutes_jouees}), non modifié malgré ${minutes} calculé`); totalDejaRenseignes++; }
+            }
+            if (row.titulaire == null) {
+              if (cote.titulaires.has(sportifIds[0])) { maj.titulaire = true; details.push('titulaire: true'); }
+              else if (cote.remplacants.has(sportifIds[0])) { maj.titulaire = false; details.push('titulaire: false'); }
+            }
+          } else if (sportifIds.length > 1) {
+            details.push(`minutes_jouees/titulaire : ${sportifIds.length} joueurs lequipe.fr partagent l'abrégé "${attendu}", ignoré`);
+            totalAmbigus++;
+          }
         }
-        if (row.titulaire == null) {
-          if (cote.titulaires.has(sportifIds[0])) { maj.titulaire = true; details.push('titulaire: true'); }
-          else if (cote.remplacants.has(sportifIds[0])) { maj.titulaire = false; details.push('titulaire: false'); }
-        }
-      } else if (sportifIds.length > 1) {
-        details.push(`minutes_jouees/titulaire : ${sportifIds.length} joueurs lequipe.fr partagent l'abrégé "${attendu}", ignoré`);
-        totalAmbigus++;
       }
 
       if (!details.length) continue;

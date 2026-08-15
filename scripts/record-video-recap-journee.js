@@ -30,16 +30,29 @@ if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); proces
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ---- 0. Résolution des noms en joueur_id (essai prénom+nom, puis repli sur le nom complet) ----
+// ---- 0. Résolution des noms en joueur_id ----
+// Un seul mot fourni (ex: "Samb", "Legendre") : c'est un nom de famille, jamais
+// un prénom seul — recherche uniquement sur `nom`. Sinon, essai prénom+nom
+// (premier mot = prénom, reste = nom), avec repli sur le nom complet si ça ne
+// donne rien (ex: "El Khoumisti" est un nom de famille à deux mots).
+// Piège évité : avec un seul mot, un split naïf (prenom=mot, nom='') fait
+// matcher n'importe quel joueur via `ilike(nom, '%%')`, qui accepte tout —
+// "Samb" retombait alors sur "Samba" Diop (prénom) au lieu de Mansour Samb.
 const joueurs = [];
 for (const nomComplet of noms) {
-  const [prenom, ...reste] = nomComplet.split(' ');
-  const nom = reste.join(' ');
-  let { data, error } = await supabase.from('joueurs').select('id, prenom, nom, club').ilike('prenom', `%${prenom}%`).ilike('nom', `%${nom}%`).limit(1).maybeSingle();
-  if (!data) {
-    const repli = await supabase.from('joueurs').select('id, prenom, nom, club').ilike('nom', `%${nomComplet}%`).limit(1).maybeSingle();
-    data = repli.data;
-    error = repli.error;
+  const mots = nomComplet.trim().split(/\s+/);
+  let data, error;
+  if (mots.length === 1) {
+    ({ data, error } = await supabase.from('joueurs').select('id, prenom, nom, club').ilike('nom', `%${nomComplet}%`).order('id').limit(1).maybeSingle());
+  } else {
+    const [prenom, ...reste] = mots;
+    const nom = reste.join(' ');
+    ({ data, error } = await supabase.from('joueurs').select('id, prenom, nom, club').ilike('prenom', `%${prenom}%`).ilike('nom', `%${nom}%`).order('id').limit(1).maybeSingle());
+    if (!data) {
+      const repli = await supabase.from('joueurs').select('id, prenom, nom, club').ilike('nom', `%${nomComplet}%`).order('id').limit(1).maybeSingle();
+      data = repli.data;
+      error = repli.error;
+    }
   }
   if (error || !data) { console.log(`Introuvable, ignoré : "${nomComplet}" (${error?.message || 'aucun résultat'})`); continue; }
   console.log(`Trouvé : ${data.prenom} ${data.nom} (${data.club}) — id=${data.id}`);
@@ -152,6 +165,13 @@ const ouvertureHtml = `<!DOCTYPE html>
 <h1>Les attaquants ont <span>répondu présent</span></h1>
 ${avecStats.map((p) => { const { emoji, texte } = ligneOuverture(p); return `<div class="row"><div class="emoji">${emoji}</div><div class="texte">${texte}</div></div>`; }).join('\n')}
 </body></html>`;
+
+// Avant le tout premier rendu sur une page qui n'a jamais navigué,
+// Playwright peut encoder les premières frames de la vidéo avec une taille
+// de cadre incorrecte (bande grise, contenu réduit dans un coin) tant
+// qu'aucune vraie navigation n'a eu lieu — une navigation minimale « chauffe »
+// la taille de frame avant le premier setContent affiché à l'écran.
+await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'commit', timeout: 60000 });
 
 console.log('Affichage de la scène d\'ouverture...');
 await page.setContent(ouvertureHtml);
