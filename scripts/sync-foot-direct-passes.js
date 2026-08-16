@@ -121,6 +121,13 @@ async function appliquerDeltaSaison(joueurId, joueurSaison, saisonFiche, delta) 
 }
 
 // ---- 1. Page de division : liste des matchs (/live/...) ----
+// La page de division ne liste que les journées récentes/à venir (ex: les
+// matchs de la journée 1 en disparaissent après quelques semaines). Chaque
+// page de match affiche cependant un widget "matchs récents" par équipe qui
+// continue de pointer vers ces anciennes pages — on suit donc ces liens sur
+// un deuxième niveau (limité à 2 sauts) pour retrouver les journées
+// disparues. Les pages hors Ligue 3 (coupe, autres divisions) rencontrées au
+// passage échouent simplement au rapprochement calendrier_officiel plus bas.
 const resDiv = await fetch(targetUrl, { headers: HEADERS });
 if (!resDiv.ok) { console.error(`Échec chargement page division : statut ${resDiv.status}`); process.exit(1); }
 const htmlDiv = await resDiv.text();
@@ -139,12 +146,31 @@ console.log(`${calRows?.length || 0} match(s) dans calendrier_officiel pour ${di
 
 let totalMatchsTraites = 0, totalMatchsNonRapproches = 0, totalJoueursMaj = 0, totalAmbigus = 0, totalPasseursIgnores = 0;
 
-for (const matchUrl of matchUrls) {
+const MAX_SAUTS = 2;
+const dejaVus = new Set();
+const dejaEnFile = new Set(matchUrls);
+let file = [...matchUrls];
+
+for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
+  const lot = file;
+  file = [];
+  for (const matchUrl of lot) {
+  if (dejaVus.has(matchUrl)) continue;
+  dejaVus.add(matchUrl);
   const resMatch = await fetch(matchUrl, { headers: HEADERS });
   if (!resMatch.ok) { console.log(`${matchUrl} : échec chargement (${resMatch.status}), ignoré.`); continue; }
   const htmlMatch = await resMatch.text();
   const $m = cheerio.load(htmlMatch);
   const titre = $m('title').text().trim();
+
+  if (saut < MAX_SAUTS) {
+    const liensWidget = $m('a[href*="/live/"]').map((i, el) => $m(el).attr('href')).get()
+      .filter((h) => /\/live\/\d+-/.test(h))
+      .map((h) => new URL(h, matchUrl).toString());
+    for (const l of liensWidget) {
+      if (!dejaEnFile.has(l)) { dejaEnFile.add(l); file.push(l); }
+    }
+  }
 
   // Équipes depuis le slug de l'URL ("cannes-vs-fleury-merogis").
   const slug = matchUrl.split('/live/')[1]?.replace(/^\d+-/, '').replace(/\/$/, '') || '';
@@ -220,7 +246,8 @@ for (const matchUrl of matchUrls) {
       await appliquerDeltaSaison(row.joueur_id, joueur.saison, row.saison, delta);
     }
   }
+  }
 }
 
-console.log(`\nRésumé : ${matchUrls.length} page(s) de match visitée(s), ${totalMatchsTraites} avec au moins un but analysé, ${totalMatchsNonRapproches} non rapproché(s) à calendrier_officiel, ${totalJoueursMaj} mise(s) à jour ${dryRun ? 'proposée(s)' : 'effectuée(s)'}, ${totalAmbigus} ambiguïté(s) ignorée(s).`);
+console.log(`\nRésumé : ${dejaVus.size} page(s) de match visitée(s) (dont ${matchUrls.length} sur la page de division), ${totalMatchsTraites} avec au moins un but analysé, ${totalMatchsNonRapproches} non rapproché(s) à calendrier_officiel, ${totalJoueursMaj} mise(s) à jour ${dryRun ? 'proposée(s)' : 'effectuée(s)'}, ${totalAmbigus} ambiguïté(s) ignorée(s).`);
 if (dryRun) console.log('DRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour écrire réellement.');
