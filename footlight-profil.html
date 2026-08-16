@@ -662,6 +662,16 @@ async function renderProfil(j, isOwner) {
     isCurrent: true
   };
   const seasonsData = [currentSeason, ...historique].sort((a,b) => (b.saison||'').localeCompare(a.saison||''));
+  // Passes décisives : le scraper L'Équipe ne les fournit pas du tout (un
+  // "but" n'y contient que le buteur, jamais le passeur), donc pas moyen de
+  // les déduire des scores comme pour buts encaissés/points. flashscore.fr
+  // les fournit en revanche (sync-flashscore-officielles.js, table
+  // stats_officielles, résumé saison par club) : on les préfère ici à la
+  // saisie manuelle quand elles sont disponibles pour la saison.
+  for (const s of seasonsData) {
+    const flash = statsOfficielles.find(o => o.source === 'flashscore' && o.saison === s.saison && o.passes_decisives != null);
+    if (flash) s.passes_decisives = flash.passes_decisives;
+  }
 
   const sumKey = (list,k) => list.reduce((a,s)=>a+(Number(s[k])||0),0);
   const avgKey = (list,k) => { const v = list.map(s=>s[k]).filter(x=>x!=null); return v.length ? v.reduce((a,b)=>a+Number(b),0)/v.length : null; };
