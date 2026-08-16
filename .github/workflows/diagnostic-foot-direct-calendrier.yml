@@ -1,0 +1,29 @@
+name: Diagnostic — recherche calendrier journée foot-direct.com (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "URL à inspecter sur foot-direct.com"
+        required: true
+        type: string
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Chercher les liens de matchs et de navigation
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.target_url }}
+        run: node diagnostic-foot-direct-calendrier.js
