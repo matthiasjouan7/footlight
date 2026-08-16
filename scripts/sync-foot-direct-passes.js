@@ -42,8 +42,21 @@ function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
   return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
 }
+// Alias explicites : certains noms foot-direct.com n'ont aucun mot commun
+// avec le nom officiel en base, même après retrait des mots génériques
+// (ex: "Quevilly-Rouen" vs "QRM", "Bourg-Péronnas" vs "F BOURG EN BRESSE
+// P01" — aucun rapprochement flou possible, "peronnas"/"quevilly" n'existe
+// pas dans le nom officiel). Repérés en pratique via un run à blanc.
+const ALIAS_EQUIPE = {
+  'quevilly rouen': 'QRM',
+  'fleury merogis': 'FC FLEURY 91',
+  'bourg peronnas': 'F BOURG EN BRESSE P01',
+};
+function resolverAlias(nom) {
+  return ALIAS_EQUIPE[normaliserClub(nom)] || nom;
+}
 function clubsCorrespondent(a, b) {
-  const wa = new Set(motsClub(a)), wb = new Set(motsClub(b));
+  const wa = new Set(motsClub(resolverAlias(a))), wb = new Set(motsClub(resolverAlias(b)));
   if (!wa.size || !wb.size) return false;
   const [small, big] = wa.size <= wb.size ? [wa, wb] : [wb, wa];
   for (const w of small) if (!big.has(w)) return false;
@@ -140,11 +153,16 @@ for (const matchUrl of matchUrls) {
   const [equipeA, equipeB] = parties.map((p) => p.replace(/-/g, ' '));
   const dateMatch = dateDepuisTitre(titre, saison);
 
-  const candidats = (calRows || []).filter((c) => {
-    const matchDirect = clubsCorrespondent(c.equipe_domicile, equipeA) && clubsCorrespondent(c.equipe_exterieur, equipeB);
-    const matchInverse = clubsCorrespondent(c.equipe_domicile, equipeB) && clubsCorrespondent(c.equipe_exterieur, equipeA);
-    return matchDirect || matchInverse;
-  });
+  // On privilégie l'ordre domicile/extérieur strict du slug ("A-vs-B" =
+  // A reçoit B) : un aller et un retour entre les deux mêmes équipes ont
+  // l'ordre inversé, donc n'accepter l'ordre inverse qu'en absence de
+  // candidat dans l'ordre direct évite l'ambiguïté (ex: Caen vs Bastia).
+  const candidatsDirects = (calRows || []).filter((c) =>
+    clubsCorrespondent(c.equipe_domicile, equipeA) && clubsCorrespondent(c.equipe_exterieur, equipeB)
+  );
+  const candidats = candidatsDirects.length ? candidatsDirects : (calRows || []).filter((c) =>
+    clubsCorrespondent(c.equipe_domicile, equipeB) && clubsCorrespondent(c.equipe_exterieur, equipeA)
+  );
   const calRow = candidats.length === 1 ? candidats[0]
     : (dateMatch ? candidats.find((c) => c.date_match === dateMatch) : null);
   if (!calRow) {
