@@ -669,7 +669,7 @@ async function renderProfil(j, isOwner) {
   // stats_officielles, résumé saison par club) : on les préfère ici à la
   // saisie manuelle quand elles sont disponibles pour la saison.
   for (const s of seasonsData) {
-    const flash = statsOfficielles.find(o => o.source === 'flashscore' && o.saison === s.saison && o.passes_decisives != null);
+    const flash = statsOfficielles.find(o => o.saison === s.saison && o.passes_decisives != null);
     if (flash) s.passes_decisives = flash.passes_decisives;
   }
 
@@ -870,7 +870,7 @@ async function renderProfil(j, isOwner) {
         if (!off) return '';
         return `
       <div class="section">
-        <div class="section-title">Stats officielles (source : ${off.source === 'flashscore' ? 'flashscore.fr' : off.source})</div>
+        <div class="section-title">Stats officielles (source : ${ {flashscore:'flashscore.fr', footdirect:'foot-direct.com'}[off.source] || off.source })</div>
         <div class="stats-grid">
           ${off.matchs_joues!=null?`<div class="stat-card"><div class="stat-val">${off.matchs_joues}</div><div class="stat-lbl">Matchs joués</div></div>`:''}
           ${off.minutes!=null?`<div class="stat-card"><div class="stat-val">${off.minutes}</div><div class="stat-lbl">Minutes</div></div>`:''}
@@ -879,7 +879,7 @@ async function renderProfil(j, isOwner) {
           ${off.cartons_jaunes!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--gold-l)">${off.cartons_jaunes}</div><div class="stat-lbl">Cartons jaunes</div></div>`:''}
           ${off.cartons_rouges!=null?`<div class="stat-card"><div class="stat-val" style="color:var(--red)">${off.cartons_rouges}</div><div class="stat-lbl">Cartons rouges</div></div>`:''}
         </div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Résumé automatique issu de ${off.source === 'flashscore' ? 'flashscore.fr' : off.source}${off.club ? ` (${off.club})` : ''}, indépendant des stats saisies ci-dessus. Mis à jour le ${new Date(off.updated_at).toLocaleDateString('fr-FR')}.</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Résumé automatique issu de ${ {flashscore:'flashscore.fr', footdirect:'foot-direct.com'}[off.source] || off.source }${off.club ? ` (${off.club})` : ''}, indépendant des stats saisies ci-dessus. Mis à jour le ${new Date(off.updated_at).toLocaleDateString('fr-FR')}.</div>
       </div>`;
       })()}
 
