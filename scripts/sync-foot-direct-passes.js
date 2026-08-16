@@ -189,8 +189,15 @@ for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
   const candidats = candidatsDirects.length ? candidatsDirects : (calRows || []).filter((c) =>
     clubsCorrespondent(c.equipe_domicile, equipeB) && clubsCorrespondent(c.equipe_exterieur, equipeA)
   );
-  const calRow = candidats.length === 1 ? candidats[0]
-    : (dateMatch ? candidats.find((c) => c.date_match === dateMatch) : null);
+  // La date doit toujours être vérifiée quand elle est connue : le crawl
+  // multi-sauts remonte aussi d'anciens matchs entre les deux mêmes clubs
+  // (saisons précédentes), et un candidat unique ne suffit pas à garantir
+  // qu'il s'agit bien du match de la saison en cours (ex: "Quevilly-Rouen
+  // vs Fleury-Mérogis" du 03/10/2025, hors saison, aurait sinon écrasé les
+  // stats du seul match 2026-2027 entre ces deux clubs).
+  const calRow = dateMatch
+    ? candidats.find((c) => c.date_match === dateMatch) || null
+    : (candidats.length === 1 ? candidats[0] : null);
   if (!calRow) {
     console.log(`${titre} : aucune correspondance calendrier_officiel (${candidats.length} candidat(s)), ignoré.`);
     totalMatchsNonRapproches++;
