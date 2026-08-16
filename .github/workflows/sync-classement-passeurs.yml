@@ -1,0 +1,49 @@
+name: Sync classement des passeurs -> stats_officielles (DRY_RUN par défaut)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL de la page classement des passeurs (ex: foot-direct.com)"
+        required: true
+        type: string
+        default: "https://www.foot-direct.com/france/ligue-3/classement-passeurs"
+      division:
+        description: "Division FootLight correspondante (ex: Ligue 3)"
+        required: true
+        type: string
+        default: "Ligue 3"
+      saison:
+        description: "Saison (ex: 2026-2027)"
+        required: true
+        type: string
+        default: "2026-2027"
+      write:
+        description: "Écrire réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Synchroniser le classement des passeurs
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+          DIVISION: ${{ inputs.division }}
+          SAISON: ${{ inputs.saison }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node sync-classement-passeurs.js
