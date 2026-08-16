@@ -1,6 +1,11 @@
 name: Sync passes décisives par match foot-direct.com (DRY_RUN par défaut)
 
 on:
+  schedule:
+    # Chaque jour à 6h45 UTC — après la synchro L'Équipe (6h30) qui met à
+    # jour matchs_joueur, pour retrouver les passes décisives des matchs
+    # déjà joués (y compris pour un joueur nouvellement inscrit).
+    - cron: "45 6 * * *"
   workflow_dispatch:
     inputs:
       url:
@@ -46,10 +51,15 @@ jobs:
       - name: Synchroniser les passes décisives par match
         working-directory: scripts
         env:
-          TARGET_URL: ${{ inputs.url }}
-          DIVISION: ${{ inputs.division }}
-          GROUPE: ${{ inputs.groupe }}
-          SAISON: ${{ inputs.saison }}
-          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          # inputs.* n'est renseigné que pour workflow_dispatch : on retombe
+          # sur les valeurs par défaut pour le déclenchement schedule.
+          TARGET_URL: ${{ inputs.url || 'https://www.foot-direct.com/france/ligue-3/' }}
+          DIVISION: ${{ inputs.division || 'Ligue 3' }}
+          GROUPE: ${{ inputs.groupe || 'Unique' }}
+          SAISON: ${{ inputs.saison || '2026-2027' }}
+          # Écriture réelle automatique tous les matins ; en déclenchement
+          # manuel, DRY_RUN reste la valeur sûre par défaut sauf si "write"
+          # est explicitement coché.
+          DRY_RUN: ${{ (github.event_name == 'schedule' || inputs.write == true) && 'false' || 'true' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node sync-foot-direct-passes.js

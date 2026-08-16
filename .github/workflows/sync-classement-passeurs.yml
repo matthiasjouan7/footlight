@@ -1,6 +1,10 @@
 name: Sync classement des passeurs -> stats_officielles (DRY_RUN par défaut)
 
 on:
+  schedule:
+    # Chaque jour à 6h50 UTC — juste après sync-foot-direct-passes.yml, pour
+    # recouper avec le total saison du classement des passeurs.
+    - cron: "50 6 * * *"
   workflow_dispatch:
     inputs:
       url:
@@ -41,9 +45,14 @@ jobs:
       - name: Synchroniser le classement des passeurs
         working-directory: scripts
         env:
-          TARGET_URL: ${{ inputs.url }}
-          DIVISION: ${{ inputs.division }}
-          SAISON: ${{ inputs.saison }}
-          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          # inputs.* n'est renseigné que pour workflow_dispatch : on retombe
+          # sur les valeurs par défaut pour le déclenchement schedule.
+          TARGET_URL: ${{ inputs.url || 'https://www.foot-direct.com/france/ligue-3/classement-passeurs' }}
+          DIVISION: ${{ inputs.division || 'Ligue 3' }}
+          SAISON: ${{ inputs.saison || '2026-2027' }}
+          # Écriture réelle automatique tous les matins ; en déclenchement
+          # manuel, DRY_RUN reste la valeur sûre par défaut sauf si "write"
+          # est explicitement coché.
+          DRY_RUN: ${{ (github.event_name == 'schedule' || inputs.write == true) && 'false' || 'true' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node sync-classement-passeurs.js

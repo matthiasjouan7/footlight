@@ -42,8 +42,21 @@ function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
   return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
 }
+// Alias explicites : certains noms foot-direct.com n'ont aucun mot commun
+// avec le nom officiel en base, même après retrait des mots génériques
+// (ex: "Quevilly-Rouen" vs "QRM", "Bourg-Péronnas" vs "F BOURG EN BRESSE
+// P01" — aucun rapprochement flou possible, "peronnas"/"quevilly" n'existe
+// pas dans le nom officiel). Repérés en pratique via un run à blanc.
+const ALIAS_EQUIPE = {
+  'quevilly rouen': 'QRM',
+  'fleury merogis': 'FC FLEURY 91',
+  'bourg peronnas': 'F BOURG EN BRESSE P01',
+};
+function resolverAlias(nom) {
+  return ALIAS_EQUIPE[normaliserClub(nom)] || nom;
+}
 function clubsCorrespondent(a, b) {
-  const wa = new Set(motsClub(a)), wb = new Set(motsClub(b));
+  const wa = new Set(motsClub(resolverAlias(a))), wb = new Set(motsClub(resolverAlias(b)));
   if (!wa.size || !wb.size) return false;
   const [small, big] = wa.size <= wb.size ? [wa, wb] : [wb, wa];
   for (const w of small) if (!big.has(w)) return false;
@@ -108,6 +121,13 @@ async function appliquerDeltaSaison(joueurId, joueurSaison, saisonFiche, delta) 
 }
 
 // ---- 1. Page de division : liste des matchs (/live/...) ----
+// La page de division ne liste que les journées récentes/à venir (ex: les
+// matchs de la journée 1 en disparaissent après quelques semaines). Chaque
+// page de match affiche cependant un widget "matchs récents" par équipe qui
+// continue de pointer vers ces anciennes pages — on suit donc ces liens sur
+// un deuxième niveau (limité à 2 sauts) pour retrouver les journées
+// disparues. Les pages hors Ligue 3 (coupe, autres divisions) rencontrées au
+// passage échouent simplement au rapprochement calendrier_officiel plus bas.
 const resDiv = await fetch(targetUrl, { headers: HEADERS });
 if (!resDiv.ok) { console.error(`Échec chargement page division : statut ${resDiv.status}`); process.exit(1); }
 const htmlDiv = await resDiv.text();
@@ -126,12 +146,31 @@ console.log(`${calRows?.length || 0} match(s) dans calendrier_officiel pour ${di
 
 let totalMatchsTraites = 0, totalMatchsNonRapproches = 0, totalJoueursMaj = 0, totalAmbigus = 0, totalPasseursIgnores = 0;
 
-for (const matchUrl of matchUrls) {
+const MAX_SAUTS = 2;
+const dejaVus = new Set();
+const dejaEnFile = new Set(matchUrls);
+let file = [...matchUrls];
+
+for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
+  const lot = file;
+  file = [];
+  for (const matchUrl of lot) {
+  if (dejaVus.has(matchUrl)) continue;
+  dejaVus.add(matchUrl);
   const resMatch = await fetch(matchUrl, { headers: HEADERS });
   if (!resMatch.ok) { console.log(`${matchUrl} : échec chargement (${resMatch.status}), ignoré.`); continue; }
   const htmlMatch = await resMatch.text();
   const $m = cheerio.load(htmlMatch);
   const titre = $m('title').text().trim();
+
+  if (saut < MAX_SAUTS) {
+    const liensWidget = $m('a[href*="/live/"]').map((i, el) => $m(el).attr('href')).get()
+      .filter((h) => /\/live\/\d+-/.test(h))
+      .map((h) => new URL(h, matchUrl).toString());
+    for (const l of liensWidget) {
+      if (!dejaEnFile.has(l)) { dejaEnFile.add(l); file.push(l); }
+    }
+  }
 
   // Équipes depuis le slug de l'URL ("cannes-vs-fleury-merogis").
   const slug = matchUrl.split('/live/')[1]?.replace(/^\d+-/, '').replace(/\/$/, '') || '';
@@ -140,13 +179,25 @@ for (const matchUrl of matchUrls) {
   const [equipeA, equipeB] = parties.map((p) => p.replace(/-/g, ' '));
   const dateMatch = dateDepuisTitre(titre, saison);
 
-  const candidats = (calRows || []).filter((c) => {
-    const matchDirect = clubsCorrespondent(c.equipe_domicile, equipeA) && clubsCorrespondent(c.equipe_exterieur, equipeB);
-    const matchInverse = clubsCorrespondent(c.equipe_domicile, equipeB) && clubsCorrespondent(c.equipe_exterieur, equipeA);
-    return matchDirect || matchInverse;
-  });
-  const calRow = candidats.length === 1 ? candidats[0]
-    : (dateMatch ? candidats.find((c) => c.date_match === dateMatch) : null);
+  // On privilégie l'ordre domicile/extérieur strict du slug ("A-vs-B" =
+  // A reçoit B) : un aller et un retour entre les deux mêmes équipes ont
+  // l'ordre inversé, donc n'accepter l'ordre inverse qu'en absence de
+  // candidat dans l'ordre direct évite l'ambiguïté (ex: Caen vs Bastia).
+  const candidatsDirects = (calRows || []).filter((c) =>
+    clubsCorrespondent(c.equipe_domicile, equipeA) && clubsCorrespondent(c.equipe_exterieur, equipeB)
+  );
+  const candidats = candidatsDirects.length ? candidatsDirects : (calRows || []).filter((c) =>
+    clubsCorrespondent(c.equipe_domicile, equipeB) && clubsCorrespondent(c.equipe_exterieur, equipeA)
+  );
+  // La date doit toujours être vérifiée quand elle est connue : le crawl
+  // multi-sauts remonte aussi d'anciens matchs entre les deux mêmes clubs
+  // (saisons précédentes), et un candidat unique ne suffit pas à garantir
+  // qu'il s'agit bien du match de la saison en cours (ex: "Quevilly-Rouen
+  // vs Fleury-Mérogis" du 03/10/2025, hors saison, aurait sinon écrasé les
+  // stats du seul match 2026-2027 entre ces deux clubs).
+  const calRow = dateMatch
+    ? candidats.find((c) => c.date_match === dateMatch) || null
+    : (candidats.length === 1 ? candidats[0] : null);
   if (!calRow) {
     console.log(`${titre} : aucune correspondance calendrier_officiel (${candidats.length} candidat(s)), ignoré.`);
     totalMatchsNonRapproches++;
@@ -202,7 +253,8 @@ for (const matchUrl of matchUrls) {
       await appliquerDeltaSaison(row.joueur_id, joueur.saison, row.saison, delta);
     }
   }
+  }
 }
 
-console.log(`\nRésumé : ${matchUrls.length} page(s) de match visitée(s), ${totalMatchsTraites} avec au moins un but analysé, ${totalMatchsNonRapproches} non rapproché(s) à calendrier_officiel, ${totalJoueursMaj} mise(s) à jour ${dryRun ? 'proposée(s)' : 'effectuée(s)'}, ${totalAmbigus} ambiguïté(s) ignorée(s).`);
+console.log(`\nRésumé : ${dejaVus.size} page(s) de match visitée(s) (dont ${matchUrls.length} sur la page de division), ${totalMatchsTraites} avec au moins un but analysé, ${totalMatchsNonRapproches} non rapproché(s) à calendrier_officiel, ${totalJoueursMaj} mise(s) à jour ${dryRun ? 'proposée(s)' : 'effectuée(s)'}, ${totalAmbigus} ambiguïté(s) ignorée(s).`);
 if (dryRun) console.log('DRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour écrire réellement.');
