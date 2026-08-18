@@ -1,9 +1,9 @@
 // Publie (profil_public: false -> true) tous les joueurs ajoutés cette
 // session via les scripts ajouter-effectif-*.js (Bastia, Versailles, Caen,
 // Amiens, Valenciennes, Orléans, Fleury, Villefranche, Concarneau, Paris
-// 13 Atletico) : sans cette validation ils restent invisibles sur les
-// pages publiques (recherche, classement, comparaison), visibles
-// seulement dans footlight-admin.html.
+// 13 Atletico, Le Puy-en-Velay) : sans cette validation ils restent
+// invisibles sur les pages publiques (recherche, classement,
+// comparaison), visibles seulement dans footlight-admin.html.
 //
 // Ciblage : joueurs de ces clubs, email synthétique
 // "*.manuel@scoute.footlight.fr" (signature des scripts ajouter-effectif-*),
@@ -30,6 +30,7 @@ const CLUBS = [
   'FC Villefranche Beaujolais',
   'US Concarneau',
   'Paris 13 Atletico',
+  'Le Puy-en-Velay FC',
 ];
 
 const { data: joueurs, error } = await supabase
