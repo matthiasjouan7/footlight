@@ -1,8 +1,8 @@
 // Publie (profil_public: false -> true) tous les joueurs ajoutés cette
 // session via les scripts ajouter-effectif-*.js (Bastia, Versailles, Caen,
 // Amiens, Valenciennes, Orléans, Fleury, Villefranche, Concarneau, Paris
-// 13 Atletico, Le Puy-en-Velay, Cannes) : sans cette validation ils
-// restent invisibles sur les pages publiques (recherche, classement,
+// 13 Atletico, Le Puy-en-Velay, Cannes, Aubagne) : sans cette validation
+// ils restent invisibles sur les pages publiques (recherche, classement,
 // comparaison), visibles seulement dans footlight-admin.html.
 //
 // Ciblage : joueurs de ces clubs, email synthétique
@@ -32,6 +32,7 @@ const CLUBS = [
   'Paris 13 Atletico',
   'Le Puy-en-Velay FC',
   'AS Cannes',
+  'SC Aubagne Air Bel',
 ];
 
 const { data: joueurs, error } = await supabase
