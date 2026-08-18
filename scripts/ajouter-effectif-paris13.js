@@ -54,9 +54,17 @@ function slugifier(str) {
   return normaliser(str).replace(/[^a-z0-9]+/g, '');
 }
 
-const { data: joueurs, error } = await supabase.from('joueurs').select('id, prenom, nom, club');
-if (error) { console.error('Erreur lecture joueurs :', error.message); process.exit(1); }
-console.log(`${joueurs?.length || 0} joueur(s) en base.\n`);
+// Pagination manuelle : au-delà de 1000 lignes, PostgREST tronque
+// silencieusement la réponse par défaut, ce qui aurait fait manquer des
+// homonymes existants (la base dépasse maintenant 1000 joueurs).
+const joueurs = [];
+for (let page = 0; ; page++) {
+  const { data, error } = await supabase.from('joueurs').select('id, prenom, nom, club').range(page * 1000, page * 1000 + 999);
+  if (error) { console.error('Erreur lecture joueurs :', error.message); process.exit(1); }
+  joueurs.push(...(data || []));
+  if (!data || data.length < 1000) break;
+}
+console.log(`${joueurs.length} joueur(s) en base.\n`);
 
 let aInserer = 0, ignores = 0;
 for (const j of EFFECTIF) {
