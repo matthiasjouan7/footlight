@@ -98,7 +98,7 @@ await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'commit', ti
 console.log('Scène 1 : ouverture...');
 await page.setContent(pageHtml(`
 <div class="eyebrow">National 1 — Saison 2026-2027</div>
-<h1>Le National <span>reprend ses droits</span> ce week-end</h1>
+<h1>Le National 1 <span>reprend ses droits</span> ce week-end</h1>
 `));
 await page.waitForTimeout(3800);
 
