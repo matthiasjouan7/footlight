@@ -1,0 +1,68 @@
+name: Enregistre une vidéo — succession National 1 (lecture seule, aucune écriture)
+
+on:
+  workflow_dispatch:
+    inputs:
+      saison:
+        description: "Saison à sélectionner sur le profil Keita (ex: 2025-2026)"
+        required: false
+        type: string
+        default: "2025-2026"
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Enregistrer la vidéo
+        working-directory: scripts
+        env:
+          SAISON_CIBLE: ${{ inputs.saison }}
+          OUT_DIR: ${{ github.workspace }}/demo-video-succession-out
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node record-video-succession-national.js
+
+      - name: Publier la vidéo en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-video-succession-national
+          path: demo-video-succession-out/*.webm
+          retention-days: 7
+
+      # .webm n'est pas lisible sur iPhone/Safari : conversion en .mp4
+      # (H.264, lu partout), poussé directement sur une branche du dépôt et
+      # servi via raw.githubusercontent.com (même chemin que
+      # record-video-buteurs.yml).
+      - name: Convertir en mp4 (compatibilité universelle)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          webm=$(ls demo-video-succession-out/*.webm | head -1)
+          ffmpeg -y -i "$webm" -c:v libx264 -pix_fmt yuv420p -movflags +faststart -c:a aac demo-video-succession-out/video.mp4
+
+      - name: Publier sur la branche de livraison
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git checkout --orphan video-delivery
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -maxdepth 1 ! -name '.' ! -name '.git' ! -name 'demo-video-succession-out' -exec rm -rf {} +
+          mv demo-video-succession-out/video.mp4 .
+          rm -rf demo-video-succession-out
+          git add -A
+          git commit -m "Livraison vidéo succession National 1 (run ${{ github.run_id }})"
+          git push origin video-delivery --force
