@@ -3,20 +3,16 @@
 // Keita, 17 buts ; Chafik Abbas, 14 passes décisives) puis relance sur "qui
 // va leur succéder cette saison ?". Format vertical.
 //
-// Ibrahima Keita a un vrai profil sur le site (VFC La Roche-sur-Yon,
-// National 1) : sa scène navigue sur le vrai site, comme
-// record-video-buteurs.js. Chafik Abbas n'existe pas en base (recherché sous
-// les deux ordres nom/prénom, aucun résultat) : sa scène est une carte
-// générée, pas une navigation réelle.
-//
-// Même technique que record-video-buteurs.js pour débloquer temporairement
-// l'historique de matchs (canHistory) : copie modifiée de
-// footlight-profil.html servie depuis un répertoire temporaire, jamais
-// commit, uniquement pour ce qui est filmé.
+// Les deux joueurs sont présentés via des cartes générées, pas une
+// navigation sur un vrai profil du site : Chafik Abbas n'existe pas en base
+// (recherché sous les deux ordres nom/prénom, aucun résultat), et pour
+// garder les deux scènes cohérentes entre elles, Ibrahima Keita (qui a un
+// vrai profil, VFC La Roche-sur-Yon) utilise la même carte plutôt qu'une
+// navigation réelle.
 import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
 import { createServer } from 'node:http';
-import { readFile, cp, mkdtemp, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readdir } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -25,7 +21,6 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-const saisonCible = process.env.SAISON_CIBLE || '2025-2026';
 const outDir = process.env.OUT_DIR || path.join(repoRoot, 'demo-video-out');
 const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -39,24 +34,13 @@ const { data: keita, error: keitaErr } = await supabase
 if (keitaErr || !keita) { console.error(`Ibrahima Keita introuvable : ${keitaErr?.message || 'aucun résultat'}`); process.exit(1); }
 console.log(`Trouvé : ${keita.prenom} ${keita.nom} (${keita.club}) — id=${keita.id}`);
 
-// ---- 1. Copie temporaire du site avec canHistory forcé (démo uniquement) ----
+// ---- 1. Copie temporaire du site (sert uniquement l'index pour la
+// navigation de chauffe ci-dessous, aucune page de profil n'est filmée) ----
 const tmpSite = await mkdtemp(path.join(os.tmpdir(), 'footlight-demo-'));
 for (const entry of await readdir(repoRoot, { withFileTypes: true })) {
   if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'scripts' || entry.name === '.github') continue;
   await cp(path.join(repoRoot, entry.name), path.join(tmpSite, entry.name), { recursive: true });
 }
-const profilPath = path.join(tmpSite, 'footlight-profil.html');
-let profilHtml = await readFile(profilPath, 'utf8');
-const avant = profilHtml;
-profilHtml = profilHtml.replace(
-  /const canHistory = isOwner \|\| \(viewerRole === 'recruteur' && \(viewerPlan === 'pro' \|\| viewerPlan === 'premium'\)\);/,
-  'const canHistory = true; // DEMO uniquement (copie temporaire, jamais commit)'
-);
-if (profilHtml === avant) { console.error('Motif canHistory non trouvé, la page ne sera pas modifiée.'); }
-// Sidebar recruteur (recherche rapide) masquée pour la démo : voir
-// record-video-buteurs.js pour le détail du bug qu'elle provoque sinon.
-profilHtml = profilHtml.replace('</head>', '<style>.sidebar{display:none!important;}</style></head>');
-await writeFile(profilPath, profilHtml, 'utf8');
 
 // ---- 2. Serveur statique local ----
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
@@ -131,36 +115,21 @@ await page.setContent(pageHtml(`
 `));
 await page.waitForTimeout(3800);
 
-// --- Scène 3 : vrai profil d'Ibrahima Keita ---
-console.log(`Scène 3 : profil réel de ${keita.prenom} ${keita.nom}...`);
-await page.goto(`http://127.0.0.1:${port}/footlight-profil.html?id=${keita.id}`, { waitUntil: 'networkidle', timeout: 60000 });
-await page.waitForTimeout(2000);
-const selectExiste = await page.$('#season-select');
-if (selectExiste) {
-  await page.selectOption('#season-select', saisonCible).catch(() => {});
-  await page.waitForTimeout(1500);
-}
-await page.waitForTimeout(1500);
-for (const y of [500, 1100, 1700, 2300, 2900]) {
-  await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'smooth' }), y);
-  await page.waitForTimeout(1600);
-}
-await page.waitForTimeout(1200);
-
-// --- Scène 4 : record Abbas (carte générée, pas de profil réel) ---
-console.log('Scène 4 : record Chafik Abbas...');
+// --- Scène 3 : record Abbas (carte générée, pas de profil réel) ---
+console.log('Scène 3 : record Chafik Abbas...');
 await page.setContent(pageHtml(`
 <div class="eyebrow">Saison 2025-2026 — Meilleur passeur</div>
 <div class="recordcard">
   <div class="nom">Chafik Abbas</div>
+  <div class="club">AS Cannes</div>
   <div class="val">14</div>
   <div class="lbl">Passes décisives</div>
 </div>
 `));
 await page.waitForTimeout(3800);
 
-// --- Scène 5 : relance + CTA ---
-console.log('Scène 5 : relance...');
+// --- Scène 4 : relance + CTA ---
+console.log('Scène 4 : relance...');
 await page.setContent(pageHtml(`
 <h1>Qui va <span>leur succéder</span> cette saison ?</h1>
 <div class="cta">Suis les stats en direct sur <b>footlight.fr</b></div>
