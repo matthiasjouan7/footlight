@@ -73,6 +73,8 @@ h1 span{color:#e3b341;}
 .stat-box .lbl{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#8b949e;}
 .cta{margin-top:24px;font-size:0.85rem;color:#8b949e;}
 .cta b{color:#79c0ff;}
+.sous-titre{font-size:1.15rem;font-weight:700;color:#8b949e;margin-top:-16px;}
+.sous-titre b{color:#e3b341;}
 `;
 
 function pageHtml(body) {
@@ -88,8 +90,9 @@ await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'commit', ti
 // --- Scène 1 : ouverture ---
 console.log('Scène 1 : ouverture...');
 await page.setContent(pageHtml(`
-<div class="eyebrow">Cette semaine</div>
-<h1>Le <span>doublé</span> et les supers remplaçants</h1>
+<div class="eyebrow">Aujourd'hui</div>
+<h1>On vous présente <span>le doublé</span></h1>
+<div class="sous-titre">et en dessous, les <b>supers remplaçants</b></div>
 `));
 await page.waitForTimeout(3800);
 
