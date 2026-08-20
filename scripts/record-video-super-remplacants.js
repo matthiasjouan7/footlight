@@ -1,9 +1,10 @@
-// Enregistre un Reel (lecture seule, aucune écriture en base) : le doublé
-// buts + passes d'Ibrahima Keita (24 contributions, VFC La Roche-sur-Yon,
-// National 1) puis deux "supers remplaçants" à l'efficacité remarquable
-// malgré peu de minutes — Karim Bouhmidi (US Thionville Lusitanos, Ligue 3 :
-// 6 buts, 16 matchs, 445 minutes) et Quentin Le Coz (US Saint-Malo,
-// National 1 : 6 buts, 20 matchs, 425 minutes). Format vertical.
+// Enregistre un Reel (lecture seule, aucune écriture en base), saison
+// 2025-2026 : le doublé buts + passes d'Ibrahima Keita (24 contributions,
+// VFC La Roche-sur-Yon, National 1) puis deux "supers remplaçants" à
+// l'efficacité remarquable malgré peu de minutes — Karim Bouhmidi (US
+// Thionville Lusitanos, National 1 : 6 buts, 16 matchs, 445 minutes) et
+// Quentin Le Coz (Olympique Saumur, National 1 : 6 buts, 20 matchs, 425
+// minutes). Format vertical.
 //
 // Cartes générées (pas de navigation sur un vrai profil du site), même
 // technique que record-video-succession-national.js.
@@ -118,7 +119,7 @@ await page.setContent(pageHtml(`
 <div class="eyebrow">Super remplaçant</div>
 <div class="recordcard">
   <div class="nom">Karim Bouhmidi</div>
-  <div class="club">US Thionville Lusitanos — Ligue 3</div>
+  <div class="club">US Thionville Lusitanos — National 1</div>
 </div>
 <div class="stats-trio">
   <div class="stat-box"><div class="val">6</div><div class="lbl">Buts</div></div>
@@ -134,7 +135,7 @@ await page.setContent(pageHtml(`
 <div class="eyebrow">Super remplaçant</div>
 <div class="recordcard">
   <div class="nom">Quentin Le Coz</div>
-  <div class="club">US Saint-Malo — National 1</div>
+  <div class="club">Olympique Saumur — National 1</div>
 </div>
 <div class="stats-trio">
   <div class="stat-box"><div class="val">6</div><div class="lbl">Buts</div></div>
