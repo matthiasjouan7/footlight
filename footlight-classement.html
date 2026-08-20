@@ -592,6 +592,57 @@ function goToProfile(id) {
   else if (!isConnected) window.location.href = 'footlight-connexion.html';
 }
 
+// Postes qui renseignent "buts encaissés avec" / "clean sheets" plutôt que
+// buts/passes à l'inscription (POSTES_DEFENSIFS dans
+// footlight-inscription-joueur.html) — ce sont les seuls pour qui le
+// classement a besoin des clean sheets calculées ci-dessous.
+const POSTES_DEFENSIFS_CLASSEMENT = ['gardien', 'defenseur_central', 'lateral_droit', 'lateral_gauche', 'piston_droit', 'piston_gauche', 'milieu_defensif'];
+
+// joueurs.clean_sheets / buts_encaisses_avec ne sont que la saisie manuelle
+// du joueur, quasi toujours vide : footlight-profil.html calcule déjà ces
+// stats depuis les scores de match synchronisés (matchsJouesAvecScore) sans
+// jamais les réécrire en base, donc le classement — qui ne lisait jusqu'ici
+// que ces colonnes — affichait 0 clean sheet pour la quasi-totalité des
+// gardiens/défenseurs. Reproduit ici le même calcul, à partir des lignes
+// matchs_joueur de la saison en cours de chaque joueur défensif.
+async function calculerCleanSheetsDefensifs(joueurs) {
+  const defensifs = joueurs.filter(p => POSTES_DEFENSIFS_CLASSEMENT.includes(p.poste));
+  if (!defensifs.length) return;
+
+  const CHUNK_SIZE = 200;
+  const PAGE_SIZE = 1000;
+  const parJoueur = new Map();
+  for (let i = 0; i < defensifs.length; i += CHUNK_SIZE) {
+    const ids = defensifs.slice(i, i + CHUNK_SIZE).map(p => p.id);
+    // Même plafond PostgREST de 1000 lignes par requête que pour joueurs :
+    // un chunk de 200 joueurs sur une saison complète peut largement le
+    // dépasser, d'où la pagination .range() ici aussi.
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await db
+        .from('matchs_joueur')
+        .select('joueur_id,saison,competition,minutes_jouees,score_contre')
+        .in('joueur_id', ids)
+        .not('minutes_jouees', 'is', null)
+        .not('score_contre', 'is', null)
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) { console.error(error); break; }
+      if (!data || !data.length) break;
+      for (const m of data) {
+        if (!parJoueur.has(m.joueur_id)) parJoueur.set(m.joueur_id, []);
+        parJoueur.get(m.joueur_id).push(m);
+      }
+      if (data.length < PAGE_SIZE) break;
+    }
+  }
+
+  for (const p of defensifs) {
+    const matchs = (parJoueur.get(p.id) || []).filter(m => m.saison === p.saison && (!m.competition || m.competition === 'championnat'));
+    if (!matchs.length) continue;
+    p.clean_sheets = matchs.filter(m => m.score_contre === 0).length;
+    p.buts_encaisses_avec = matchs.reduce((sum, m) => sum + m.score_contre, 0);
+  }
+}
+
 async function loadJoueurs() {
   try {
     // Supabase plafonne chaque requête à 1000 lignes (db-max-rows) : au-delà,
@@ -601,7 +652,7 @@ async function loadJoueurs() {
     for (let from = 0; ; from += PAGE_SIZE) {
       const { data, error } = await db
         .from('joueurs')
-        .select('id,prenom,nom,poste,club,niveau,badge,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,sprints_match,buts_encaisses_avec,clean_sheets')
+        .select('id,prenom,nom,poste,club,niveau,badge,buts,passes_decisives,matchs_joues,minutes_jouees,titularisations,cartons_jaunes,cartons_rouges,vitesse_max_kmh,vma_kmh,sprints_match,buts_encaisses_avec,clean_sheets,saison')
         .eq('profil_public', true)
         .gt('matchs_joues', 0)
         .order('matchs_joues', { ascending: false })
@@ -612,6 +663,8 @@ async function loadJoueurs() {
       all = all.concat(data);
       if (data.length < PAGE_SIZE) break;
     }
+
+    await calculerCleanSheetsDefensifs(all);
 
     document.getElementById('loading').style.display = 'none';
     allPlayers = all;
