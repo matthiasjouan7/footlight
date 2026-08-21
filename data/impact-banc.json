@@ -1,0 +1,187 @@
+{
+  "saison": "2026-2027",
+  "division": "Ligue 3",
+  "groupe": "Unique",
+  "updated_at": "2026-08-21T09:13:50.932Z",
+  "joueurs": [
+    {
+      "id": "12425871-dded-4368-80c7-b6f6f4d5e83c",
+      "prenom": "Diabé",
+      "nom": "Kanouté",
+      "club": "SM Caen",
+      "niveau": "Ligue 3",
+      "poste": "milieu_central",
+      "points": 3,
+      "contributions": [
+        {
+          "date": "2026-08-20",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        }
+      ]
+    },
+    {
+      "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
+      "prenom": "Fadel",
+      "nom": "Gobitaka",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "ailier_gauche",
+      "points": 3,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "SM CAEN",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        }
+      ]
+    },
+    {
+      "id": "5aa0139d-fb4e-4dc4-9054-aca4a213752a",
+      "prenom": "Sory",
+      "nom": "Traoré",
+      "club": "FC Rouen 1899",
+      "niveau": "Ligue 3",
+      "poste": "ailier_droit",
+      "points": 3,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "US ORLEANS",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-08-20",
+          "adversaire": "QRM",
+          "domicile": true,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
+      "prenom": "Félix",
+      "nom": "Tomi",
+      "club": "SC Bastia",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-20",
+          "adversaire": "FC VERSAILLES",
+          "domicile": true,
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
+      "prenom": "Armand",
+      "nom": "Gnanduillet",
+      "club": "SM Caen",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "US THIONVILLE LUSITANOS",
+          "domicile": false,
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
+      "prenom": "Marvin",
+      "nom": "Emmanuel",
+      "club": "Le Puy-en-Velay FC",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC BASTIA",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
+      "prenom": "George",
+      "nom": "Morgan",
+      "club": "AS Cannes",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "FC FLEURY 91",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
+          "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "a7b216af-f55e-4e8c-809a-a7096bc29538",
+      "prenom": "Alexis",
+      "nom": "Gouletquer",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "09b12a16-8987-4e18-826f-baea9db78e71",
+      "prenom": "Jalil",
+      "nom": "Moustaid",
+      "club": "US THIONVILLE LUSITANOS",
+      "niveau": "Ligue 3",
+      "poste": "milieu_offensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    }
+  ]
+}
