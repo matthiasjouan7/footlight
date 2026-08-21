@@ -198,7 +198,8 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
         <div class="chip" data-val="N1" onclick="toggleNiveau('N1',this)">N1</div>
         <div class="chip" data-val="N2" onclick="toggleNiveau('N2',this)">N2</div>
         <div class="chip" data-val="R1" onclick="toggleNiveau('R1',this)">R1</div>
-        <div class="chip" data-val="Autre" onclick="toggleNiveau('Autre',this)">Autre</div>
+        <div class="chip" data-val="Étranger" onclick="toggleNiveau('Étranger',this)">Étranger</div>
+        <div class="chip" data-val="Sans club" onclick="toggleNiveau('Sans club',this)">Sans club</div>
       </div>
       <div class="filter-hint">Cliquez pour combiner plusieurs niveaux. Aucun niveau sélectionné = tous les niveaux.</div>
     </div>
@@ -325,7 +326,7 @@ const COULEURS = {
   'attaquant':'#d29922','autre':'#6e7681'
 };
 const BADGE_LABEL = { declaratif: 'Déclaratif', video: 'Vidéo', gps: 'GPS', elite: 'Elite' };
-const NIVEAU_LABEL = { 'Ligue 3': 'Ligue 3', 'N1': 'National 1', 'N2': 'National 2', 'R1': 'R1', 'Autre': 'Autre' };
+const NIVEAU_LABEL = { 'Ligue 3': 'Ligue 3', 'N1': 'National 1', 'N2': 'National 2', 'R1': 'R1', 'Étranger': 'Étranger', 'Sans club': 'Sans club' };
 
 // Chaque indicateur porte le palier d'abonnement à partir duquel il est
 // débloqué, aligné sur la grille tarifaire (#tarifs sur index.html) :
