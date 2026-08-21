@@ -121,6 +121,23 @@ console.log(`${calRows?.length || 0} match(s) dans calendrier_officiel pour ${di
 const impacts = []; // { joueur, points, detail }
 let totalMatchsAnalyses = 0, totalMatchsNonRapproches = 0, totalMatchsSansEvenement = 0;
 
+const attendre = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// foot-direct.com renvoie 429 (trop de requêtes) au-delà d'une vingtaine
+// de pages visitées rapidement — un délai entre chaque requête, avec une
+// nouvelle tentative après une pause plus longue en cas de 429, permet de
+// couvrir toute la saison sans se faire bloquer.
+async function chargerAvecRetry(url, tentative = 1) {
+  await attendre(500);
+  const res = await fetch(url, { headers: HEADERS });
+  if (res.status === 429 && tentative <= 3) {
+    console.log(`  (429, nouvelle tentative dans ${5 * tentative}s pour ${url})`);
+    await attendre(5000 * tentative);
+    return chargerAvecRetry(url, tentative + 1);
+  }
+  return res;
+}
+
 const MAX_SAUTS = 2;
 const dejaVus = new Set();
 const dejaEnFile = new Set(matchUrls);
@@ -132,7 +149,7 @@ for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
   for (const matchUrl of lot) {
   if (dejaVus.has(matchUrl)) continue;
   dejaVus.add(matchUrl);
-  const resMatch = await fetch(matchUrl, { headers: HEADERS });
+  const resMatch = await chargerAvecRetry(matchUrl);
   if (!resMatch.ok) { console.log(`${matchUrl} : échec chargement (${resMatch.status}), ignoré.`); continue; }
   const htmlMatch = await resMatch.text();
   const $m = cheerio.load(htmlMatch);
