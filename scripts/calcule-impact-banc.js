@@ -101,8 +101,47 @@ function points(diffEntree, resultat) {
   return 0; // défaite malgré tout
 }
 
+const attendre = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Le fetch natif n'a pas de timeout par défaut : une requête qui ne
+// répond jamais (connexion ouverte sans réponse) bloquerait le script
+// indéfiniment. AbortController force une limite.
+async function fetchAvecTimeout(url, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { headers: HEADERS, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// foot-direct.com renvoie 429 (trop de requêtes) au-delà d'une vingtaine
+// de pages visitées rapidement — un délai entre chaque requête, avec une
+// nouvelle tentative après une pause plus longue en cas de 429, permet de
+// couvrir toute la saison sans se faire bloquer. Au-delà de 2 tentatives
+// (429 persistant ou timeout), on abandonne cette page plutôt que de
+// bloquer tout le script.
+async function chargerAvecRetry(url, tentative = 1) {
+  await attendre(500);
+  let res;
+  try {
+    res = await fetchAvecTimeout(url);
+  } catch (err) {
+    console.log(`  (${err.name === 'AbortError' ? 'timeout' : err.message} pour ${url}${tentative <= 2 ? ', nouvelle tentative' : ', abandon'})`);
+    if (tentative <= 2) return chargerAvecRetry(url, tentative + 1);
+    return { ok: false, status: 0 };
+  }
+  if (res.status === 429 && tentative <= 2) {
+    console.log(`  (429, nouvelle tentative dans ${5 * tentative}s pour ${url})`);
+    await attendre(5000 * tentative);
+    return chargerAvecRetry(url, tentative + 1);
+  }
+  return res;
+}
+
 // ---- 1. Page de division : liste des matchs (/live/...) ----
-const resDiv = await fetch(targetUrl, { headers: HEADERS });
+const resDiv = await chargerAvecRetry(targetUrl);
 if (!resDiv.ok) { console.error(`Échec chargement page division : statut ${resDiv.status}`); process.exit(1); }
 const htmlDiv = await resDiv.text();
 const $div = cheerio.load(htmlDiv);
@@ -120,23 +159,6 @@ console.log(`${calRows?.length || 0} match(s) dans calendrier_officiel pour ${di
 
 const impacts = []; // { joueur, points, detail }
 let totalMatchsAnalyses = 0, totalMatchsNonRapproches = 0, totalMatchsSansEvenement = 0;
-
-const attendre = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// foot-direct.com renvoie 429 (trop de requêtes) au-delà d'une vingtaine
-// de pages visitées rapidement — un délai entre chaque requête, avec une
-// nouvelle tentative après une pause plus longue en cas de 429, permet de
-// couvrir toute la saison sans se faire bloquer.
-async function chargerAvecRetry(url, tentative = 1) {
-  await attendre(500);
-  const res = await fetch(url, { headers: HEADERS });
-  if (res.status === 429 && tentative <= 3) {
-    console.log(`  (429, nouvelle tentative dans ${5 * tentative}s pour ${url})`);
-    await attendre(5000 * tentative);
-    return chargerAvecRetry(url, tentative + 1);
-  }
-  return res;
-}
 
 const MAX_SAUTS = 2;
 const dejaVus = new Set();
