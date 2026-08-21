@@ -19,11 +19,21 @@
 // remplaçant, la situation exacte au moment de son entrée.
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
+import { writeFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const targetUrl = process.env.TARGET_URL; // page de division, ex: https://www.foot-direct.com/france/ligue-3/
 const division = process.env.DIVISION || 'Ligue 3';
 const groupe = process.env.GROUPE || 'Unique';
 const saison = process.env.SAISON;
+// Écrit data/impact-banc.json (classement "super remplaçants" affiché sur
+// footlight-classement.html) en plus du rapport console. Séparé du rapport
+// lecture seule par défaut car ce fichier est ensuite committé sur main par
+// le workflow (voir calcule-impact-banc.yml) — inutile à chaque diagnostic.
+const writeJson = process.env.WRITE_JSON === 'true';
 const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -257,7 +267,7 @@ for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
   // Joueurs FootLight liés à ce match.
   const { data: mj } = await supabase.from('matchs_joueur').select('id, joueur_id, saison').eq('calendrier_officiel_id', calRow.id);
   if (!mj || !mj.length) continue;
-  const { data: joueursData } = await supabase.from('joueurs').select('id, prenom, nom, club, saison').in('id', [...new Set(mj.map((m) => m.joueur_id))]);
+  const { data: joueursData } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau, poste, saison').in('id', [...new Set(mj.map((m) => m.joueur_id))]);
   const joueursById = new Map((joueursData || []).map((j) => [j.id, j]));
 
   // Contributions (but ou passe déc.) par remplaçant identifié.
@@ -286,13 +296,48 @@ for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
 
     const situation = diffEntree >= 2 ? `menait ${Math.abs(diffEntree)} but(s)` : diffEntree === 1 ? 'menait de 1 but' : diffEntree === 0 ? 'à égalité' : `était mené ${Math.abs(diffEntree)} but(s)`;
     console.log(`  ${joueur.prenom} ${joueur.nom} (${joueur.club}) : entré à la ${e.minute}', ${situation}, résultat final ${resultat} -> ${pts} pt(s)`);
-    impacts.push({ joueur: `${joueur.prenom} ${joueur.nom}`, club: joueur.club, points: pts, match: titre });
+    impacts.push({
+      joueurId: joueur.id, prenom: joueur.prenom, nom: joueur.nom, club: joueur.club,
+      niveau: joueur.niveau, poste: joueur.poste,
+      points: pts, match: titre,
+      date: calRow.date_match,
+      adversaire: e.cote === 'domicile' ? calRow.equipe_exterieur : calRow.equipe_domicile,
+      domicile: e.cote === 'domicile',
+      situation, resultat,
+    });
   }
   }
 }
 
 impacts.sort((a, b) => b.points - a.points);
 console.log(`\n\n=== Classement impact banc (${impacts.length} contribution(s) identifiée(s)) ===`);
-for (const i of impacts) console.log(`  ${i.points} pt(s) — ${i.joueur} (${i.club}) — ${i.match}`);
+for (const i of impacts) console.log(`  ${i.points} pt(s) — ${i.prenom} ${i.nom} (${i.club}) — ${i.match}`);
 
 console.log(`\nRésumé : ${dejaVus.size} page(s) de match visitée(s), ${totalMatchsAnalyses} avec événements analysés, ${totalMatchsNonRapproches} non rapproché(s) à calendrier_officiel, ${totalMatchsSansEvenement} sans but/entrée détecté(s) (match pas encore joué probablement).`);
+
+// ---- 4. data/impact-banc.json (classement "Super remplaçants" du site) ----
+// Un joueur peut cumuler plusieurs contributions sur la saison (ex: Sory
+// Traoré, 3 pts un match puis 0 pt un autre) : le classement du site trie
+// sur le total, pas sur la meilleure contribution isolée.
+if (writeJson) {
+  const parJoueur = new Map();
+  for (const imp of impacts) {
+    if (!imp.joueurId) continue;
+    if (!parJoueur.has(imp.joueurId)) {
+      parJoueur.set(imp.joueurId, {
+        id: imp.joueurId, prenom: imp.prenom, nom: imp.nom, club: imp.club,
+        niveau: imp.niveau, poste: imp.poste, points: 0, contributions: [],
+      });
+    }
+    const entry = parJoueur.get(imp.joueurId);
+    entry.points += imp.points;
+    entry.contributions.push({ date: imp.date, adversaire: imp.adversaire, domicile: imp.domicile, situation: imp.situation, resultat: imp.resultat, points: imp.points });
+  }
+  const classement = [...parJoueur.values()].sort((a, b) => b.points - a.points);
+
+  const sortie = { saison, division, groupe, updated_at: new Date().toISOString(), joueurs: classement };
+  const outPath = path.join(repoRoot, 'data', 'impact-banc.json');
+  await mkdir(path.dirname(outPath), { recursive: true });
+  await writeFile(outPath, JSON.stringify(sortie, null, 2) + '\n');
+  console.log(`\n${classement.length} joueur(s) écrit(s) dans data/impact-banc.json.`);
+}

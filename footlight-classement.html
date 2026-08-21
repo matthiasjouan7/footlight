@@ -203,7 +203,7 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       <div class="filter-hint">Cliquez pour combiner plusieurs niveaux. Aucun niveau sélectionné = tous les niveaux.</div>
     </div>
 
-    <div class="filter-group">
+    <div class="filter-group" id="posteFilterGroup">
       <span class="filter-label">Poste</span>
       <div class="chips" id="f-poste">
         <div class="chip active" data-val="tous" onclick="setPoste('tous',this)">Tous</div>
@@ -215,9 +215,9 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       </div>
     </div>
 
-    <hr class="fdiv"/>
+    <hr class="fdiv" id="posteFilterDiv"/>
 
-    <div class="filter-group">
+    <div class="filter-group" id="indicFilterGroup">
       <span class="filter-label">Trier par</span>
       <select class="form-select" id="indicSelect" onchange="state.indic=this.value;render();"></select>
       <div id="indicPlanHint" class="filter-hint" style="display:none;"></div>
@@ -226,6 +226,11 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
 
   <!-- MAIN -->
   <div class="main">
+    <div class="mode-tabs no-print" style="display:flex;gap:8px;margin-bottom:18px;">
+      <div class="chip active" id="tabStats" onclick="setMode('stats')">Classement stats</div>
+      <div class="chip" id="tabBanc" onclick="setMode('banc')">★ Super remplaçants</div>
+    </div>
+
     <div class="results-bar">
       <div>
         <div class="results-count"><span id="resultCount">—</span> joueurs classés</div>
@@ -429,10 +434,15 @@ function firstUnlockedKey(groups) {
 }
 
 let allPlayers = [];
+let bancData = null; // data/impact-banc.json, chargé une fois au démarrage
 // niveaux: [] = aucun filtre actif, tous les niveaux sont inclus par défaut
 // (le classement s'affiche dès le chargement, sans qu'aucun choix ne soit
 // imposé au recruteur).
-let state = { niveaux: [], poste: 'tous', indic: 'buts', viewerPlan: 'free' };
+// mode: 'stats' = classement habituel (niveau/poste/indicateur) ; 'banc' =
+// classement "Super remplaçants" (impact banc, cf. data/impact-banc.json),
+// qui n'a ni poste ni indicateur à choisir — un seul score, le total de
+// points sur la saison.
+let state = { niveaux: [], poste: 'tous', indic: 'buts', viewerPlan: 'free', mode: 'stats' };
 
 function fmtScore(indic, value) { return indic.decimals ? value.toFixed(indic.decimals) : value; }
 function ratioOf(p) { return (n(p.buts) + n(p.passes_decisives)) / p.matchs_joues; }
@@ -484,6 +494,23 @@ function setPoste(val, el) {
   render();
 }
 
+function setMode(mode) {
+  state.mode = mode;
+  document.getElementById('tabStats').classList.toggle('active', mode === 'stats');
+  document.getElementById('tabBanc').classList.toggle('active', mode === 'banc');
+  // Le poste et l'indicateur trié n'ont pas de sens pour le classement
+  // impact banc (un seul score : le total de points sur la saison) — seul
+  // le filtre niveau reste commun aux deux modes.
+  document.getElementById('posteFilterGroup').style.display = mode === 'banc' ? 'none' : '';
+  document.getElementById('posteFilterDiv').style.display = mode === 'banc' ? 'none' : '';
+  document.getElementById('indicFilterGroup').style.display = mode === 'banc' ? 'none' : '';
+  document.querySelector('.print-btn').style.display = mode === 'banc' ? 'none' : '';
+  document.querySelector('.page-sub').textContent = mode === 'banc'
+    ? 'Points marqués par les remplaçants entrés en cours de jeu, selon la situation du match au moment de leur entrée et le résultat final (voir méthodologie ci-dessous).'
+    : 'Classement basé sur les statistiques déclarées et vérifiées de chaque joueur — même classement pour tous les recruteurs.';
+  render();
+}
+
 function cartonsChip(p) {
   return `<span title="Cartons jaunes / rouges"><b style="color:var(--gold-l)">${n(p.cartons_jaunes)}J</b> <b style="color:var(--red-l)">${n(p.cartons_rouges)}R</b></span>`;
 }
@@ -500,7 +527,86 @@ function secondaryStats(p) {
   return `<span><b>${n(p.buts)}</b> B en <b>${p.matchs_joues}</b> M</span><span title="Buts+passes par match"><b>${ratioOf(p).toFixed(2)}</b> ratio/m</span>${cartonsChip(p)}`;
 }
 
+// Barème impact banc (validé) : équipe menée ou menant d'1 but à l'entrée
+// -> 1 pt ; menant de 2 buts ou plus -> 0 pt ; à égalité à l'entrée ->
+// 3 pts si victoire finale, 1 pt si nul, 0 pt si défaite quand même.
+const SITUATION_LABEL = { 'victoire': 'victoire', 'nul': 'match nul', 'defaite': 'défaite' };
+function contribLine(c) {
+  const date = c.date ? new Date(c.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '';
+  return `<span>${c.domicile ? 'vs' : '@'} ${c.adversaire || '—'} (${date}) — entré ${c.situation}, ${SITUATION_LABEL[c.resultat] || c.resultat} <b>${c.points} pt${c.points > 1 ? 's' : ''}</b></span>`;
+}
+
+function renderBanc() {
+  document.getElementById('statColLabel').textContent = 'Points impact banc';
+  document.getElementById('printStatColLabel') && (document.getElementById('printStatColLabel').textContent = '');
+  document.getElementById('printTableBody').innerHTML = '';
+
+  if (!bancData) {
+    document.getElementById('content').style.display = 'none';
+    document.getElementById('noResults').style.display = 'block';
+    document.querySelector('#noResults h3').textContent = 'Classement pas encore disponible';
+    document.querySelector('#noResults p').textContent = 'Le calcul de l\'impact banc n\'a pas encore été publié pour cette saison.';
+    return;
+  }
+
+  let joueurs = state.niveaux.length
+    ? bancData.joueurs.filter(p => state.niveaux.includes(p.niveau || 'N2'))
+    : bancData.joueurs.slice();
+  joueurs.sort((a, b) => b.points - a.points);
+
+  const niveauLabel = state.niveaux.length ? state.niveaux.map(nv => NIVEAU_LABEL[nv] || nv).join(' + ') : 'Tous niveaux';
+  document.getElementById('podiumLabel').textContent = niveauLabel + ' · Super remplaçants';
+  document.getElementById('resultCount').textContent = joueurs.length;
+
+  if (!joueurs.length) {
+    document.getElementById('content').style.display = 'none';
+    document.getElementById('noResults').style.display = 'block';
+    document.querySelector('#noResults h3').textContent = 'Aucun remplaçant décisif';
+    document.querySelector('#noResults p').textContent = 'Essayez d\'élargir les niveaux sélectionnés.';
+    return;
+  }
+  document.getElementById('content').style.display = 'block';
+  document.getElementById('noResults').style.display = 'none';
+
+  const podiumEl = document.getElementById('podium');
+  podiumEl.innerHTML = joueurs.slice(0, 3).map((p, i) => `
+    <div class="podium-card rank-${i + 1}">
+      <div class="rank-badge">${i + 1}</div>
+      <div class="p-avatar" style="background:linear-gradient(135deg,#d29922,#d2992288)">${initials(p.prenom, p.nom)}</div>
+      <div class="p-name">${p.prenom} ${p.nom || ''}</div>
+      <div class="p-meta">${p.club || '—'}${state.niveaux.length !== 1 ? ' · ' + (NIVEAU_LABEL[p.niveau] || p.niveau || '—') : ''}</div>
+      <div class="p-stat-val">${p.points}</div>
+      <div class="p-stat-unit">pts impact banc</div>
+      <div class="p-sub-stats" style="flex-direction:column;gap:3px;">${p.contributions.map(contribLine).join('')}</div>
+    </div>
+  `).join('');
+
+  function rowHtml(p, rank) {
+    return `
+    <div class="list-row" onclick="goToProfile('${p.id}')">
+      <span class="l-rank">${rank}</span>
+      <div class="l-identity">
+        <div class="l-avatar" style="background:linear-gradient(135deg,#d29922,#d2992288)">${initials(p.prenom, p.nom)}</div>
+        <div class="l-name-wrap">
+          <div class="l-name">${p.prenom} ${p.nom || ''}</div>
+          <div class="l-poste">${p.contributions.length} contribution${p.contributions.length > 1 ? 's' : ''}</div>
+        </div>
+      </div>
+      <div class="l-club">
+        <div class="club-name">${p.club || '—'}</div>
+        <div class="niveau-tag">${NIVEAU_LABEL[p.niveau] || p.niveau || '—'}</div>
+      </div>
+      <div class="l-badge"></div>
+      <div class="l-stat"><div class="val">${p.points}</div><div class="unit">pts</div></div>
+      <div class="l-secondary" style="flex-direction:column;align-items:flex-end;gap:3px;">${p.contributions.map(contribLine).join('')}</div>
+    </div>
+  `;
+  }
+  document.getElementById('listBody').innerHTML = joueurs.slice(3).map((p, i) => rowHtml(p, i + 4)).join('');
+}
+
 function render() {
+  if (state.mode === 'banc') { renderBanc(); return; }
   const indic = ALL_INDIC[state.indic];
   // Aucun niveau sélectionné = pas de filtre, tous les niveaux sont inclus.
   let players = state.niveaux.length
@@ -520,6 +626,8 @@ function render() {
   if (!players.length) {
     document.getElementById('content').style.display = 'none';
     document.getElementById('noResults').style.display = 'block';
+    document.querySelector('#noResults h3').textContent = 'Aucun joueur trouvé';
+    document.querySelector('#noResults p').textContent = 'Essayez d\'élargir les niveaux ou postes sélectionnés.';
     return;
   }
   document.getElementById('content').style.display = 'block';
@@ -677,6 +785,21 @@ async function loadJoueurs() {
   }
 }
 
+// data/impact-banc.json est un fichier statique du site (généré par
+// scripts/calcule-impact-banc.js, committé sur main par le workflow), pas
+// une requête Supabase — un 404 signifie simplement qu'il n'a pas encore
+// été publié pour cette saison, pas une erreur à afficher.
+async function loadBanc() {
+  try {
+    const res = await fetch('data/impact-banc.json', { cache: 'no-store' });
+    if (!res.ok) return;
+    bancData = await res.json();
+    if (state.mode === 'banc') render();
+  } catch (err) {
+    console.error('Erreur chargement impact banc:', err);
+  }
+}
+
 async function checkSession() {
   try {
     const { data: { user } } = await db.auth.getUser();
@@ -716,6 +839,7 @@ async function checkSession() {
     console.error('Erreur session:', err);
   } finally {
     loadJoueurs();
+    loadBanc();
   }
 }
 

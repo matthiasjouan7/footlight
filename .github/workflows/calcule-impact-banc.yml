@@ -1,4 +1,4 @@
-name: Calcule l'impact banc des remplaçants (lecture seule, aucune écriture)
+name: Calcule l'impact banc des remplaçants (rapport, écrit data/impact-banc.json sur "write")
 
 on:
   workflow_dispatch:
@@ -23,10 +23,17 @@ on:
         required: true
         type: string
         default: "2026-2027"
+      write:
+        description: "Écrire data/impact-banc.json et le committer sur main (sinon rapport seul)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   calcule:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -45,5 +52,14 @@ jobs:
           DIVISION: ${{ inputs.division }}
           GROUPE: ${{ inputs.groupe }}
           SAISON: ${{ inputs.saison }}
+          WRITE_JSON: ${{ inputs.write }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node calcule-impact-banc.js
+
+      - name: Committer data/impact-banc.json sur main
+        if: ${{ inputs.write == true }}
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add data/impact-banc.json
+          git diff --cached --quiet && echo "Aucun changement, rien à committer." || (git commit -m "Met à jour le classement impact banc (super remplaçants)" && git push origin HEAD:main)
