@@ -1,7 +1,7 @@
 // Enregistre un Reel (lecture seule, aucune écriture en base), pour clore
 // la série National 1 : les pourcentages qui comptent. Youba Dramé (Goal
 // FC, National 1) auteur de 15 des 38 buts de son équipe (39,5 %), puis
-// deux gardiens à l'efficacité remarquable — Mickael Salomone (Nîmes,
+// deux gardiens à l'efficacité remarquable — Mickael Salamone (Nîmes,
 // National 1 : 18 clean sheets sur 28 matchs, 64,3 %) et Valentin
 // Rabouille (Bourges, National 1 : 11 clean sheets sur 16 matchs, 68,8 %).
 // Format vertical.
@@ -117,12 +117,12 @@ await page.setContent(pageHtml(`
 `));
 await page.waitForTimeout(3200);
 
-// --- Scène 4 : Mickael Salomone ---
-console.log('Scène 4 : Mickael Salomone...');
+// --- Scène 4 : Mickael Salamone ---
+console.log('Scène 4 : Mickael Salamone...');
 await page.setContent(pageHtml(`
 <div class="eyebrow">Clean sheets</div>
 <div class="recordcard">
-  <div class="nom">Mickael Salomone</div>
+  <div class="nom">Mickael Salamone</div>
   <div class="club">Nîmes — National 1</div>
   <div class="pct">64,3%</div>
   <div class="lbl">de matchs sans encaisser</div>
