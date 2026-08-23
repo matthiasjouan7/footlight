@@ -26,6 +26,16 @@ async function selectAll(table, colonnes, filtre) {
   return tous;
 }
 
+// Recherche large par nom (pas seulement club Touraine) : détecte un
+// éventuel doublon de PROFIL (deux lignes joueurs pour la même personne,
+// ex. un ancien profil resté actif à un autre club).
+const NOMS_CIBLES_LARGE = (process.env.NOMS_CIBLES || 'popineau,lopez').split(',').map((s) => s.trim());
+for (const nom of NOMS_CIBLES_LARGE) {
+  const profilsLarges = await selectAll('joueurs', 'id, prenom, nom, club, niveau, saison, profil_public, email', (q) => q.ilike('nom', `%${nom}%`));
+  console.log(`\nRecherche large "${nom}" dans TOUTE la table joueurs (tous clubs) : ${profilsLarges.length} résultat(s)`);
+  for (const p of profilsLarges) console.log(`  id=${p.id} — ${p.prenom} ${p.nom} — club="${p.club}" niveau=${p.niveau} saison=${p.saison} profil_public=${p.profil_public} email=${p.email}`);
+}
+
 const joueurs = await selectAll('joueurs', 'id, prenom, nom, club, niveau, saison', (q) => q.ilike('club', '%touraine%'));
 console.log(`Joueurs avec "Touraine" dans le club : ${joueurs.length}`);
 for (const j of joueurs) console.log(`  id=${j.id} — ${j.prenom} ${j.nom} — club="${j.club}" niveau=${j.niveau} saison=${j.saison}`);
@@ -65,4 +75,8 @@ for (const joueur of aTraiter) {
   for (const [adv, ms] of doublonsAdversaire) {
     console.log(`  ${adv} -> ${ms.map((m) => `id=${m.id} date=${m.date_match} cal_id=${m.calendrier_officiel_id}`).join(' | ')}`);
   }
+
+  const stats = await selectAll('stats_saisons', '*', (q) => q.eq('joueur_id', joueur.id));
+  console.log(`Lignes stats_saisons : ${stats.length}`);
+  for (const s of stats) console.log(`  id=${s.id} — club="${s.club}" niveau=${s.niveau} saison=${s.saison}`);
 }
