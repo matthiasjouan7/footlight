@@ -1,0 +1,34 @@
+name: Importe le calendrier National 1 groupe C depuis la FFF (DRY_RUN par défaut)
+
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "Écrire réellement en base (sinon DRY_RUN)"
+        type: boolean
+        default: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer les navigateurs Playwright
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Importer le calendrier groupe C
+        working-directory: scripts
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+        run: node import-fff-national1-groupec.js
