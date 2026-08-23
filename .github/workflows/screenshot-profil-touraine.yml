@@ -1,0 +1,39 @@
+name: Capture profil joueur Touraine en prod (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      joueur_id:
+        description: "ID du joueur (défaut Enzo Valentim)"
+        required: false
+        type: string
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer les navigateurs Playwright
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Capturer le profil
+        working-directory: scripts
+        env:
+          JOUEUR_ID: ${{ inputs.joueur_id }}
+        run: node screenshot-profil-touraine.js
+
+      - name: Publier la capture en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: profil-touraine-screenshot
+          path: scripts/profil-touraine.png
