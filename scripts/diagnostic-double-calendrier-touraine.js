@@ -26,34 +26,57 @@ async function selectAll(table, colonnes, filtre) {
   return tous;
 }
 
+// Recherche large par nom (pas seulement club Touraine) : détecte un
+// éventuel doublon de PROFIL (deux lignes joueurs pour la même personne,
+// ex. un ancien profil resté actif à un autre club).
+const NOMS_CIBLES_LARGE = (process.env.NOMS_CIBLES || 'popineau,lopez').split(',').map((s) => s.trim());
+for (const nom of NOMS_CIBLES_LARGE) {
+  const profilsLarges = await selectAll('joueurs', 'id, prenom, nom, club, niveau, saison, profil_public, email', (q) => q.ilike('nom', `%${nom}%`));
+  console.log(`\nRecherche large "${nom}" dans TOUTE la table joueurs (tous clubs) : ${profilsLarges.length} résultat(s)`);
+  for (const p of profilsLarges) console.log(`  id=${p.id} — ${p.prenom} ${p.nom} — club="${p.club}" niveau=${p.niveau} saison=${p.saison} profil_public=${p.profil_public} email=${p.email}`);
+}
+
 const joueurs = await selectAll('joueurs', 'id, prenom, nom, club, niveau, saison', (q) => q.ilike('club', '%touraine%'));
 console.log(`Joueurs avec "Touraine" dans le club : ${joueurs.length}`);
 for (const j of joueurs) console.log(`  id=${j.id} — ${j.prenom} ${j.nom} — club="${j.club}" niveau=${j.niveau} saison=${j.saison}`);
 
 if (!joueurs.length) process.exit(0);
 
-const premier = joueurs[0];
-console.log(`\n=== Détail matchs_joueur pour ${premier.prenom} ${premier.nom} (id=${premier.id}) ===`);
-const matchs = await selectAll('matchs_joueur', '*', (q) => q.eq('joueur_id', premier.id));
-console.log(`Total lignes matchs_joueur : ${matchs.length}`);
+const NOMS_CIBLES = (process.env.NOMS_CIBLES || 'popineau,lopez').split(',').map((s) => s.trim().toLowerCase());
+const cibles = joueurs.filter((j) => NOMS_CIBLES.some((n) => (j.nom || '').toLowerCase().includes(n) || (j.prenom || '').toLowerCase().includes(n)));
+const aTraiter = cibles.length ? cibles : joueurs;
+console.log(`\nJoueurs ciblés (${cibles.length ? 'par nom' : 'tous, aucun nom trouvé'}) : ${aTraiter.map((j) => `${j.prenom} ${j.nom}`).join(', ')}`);
 
-const parSaison = {};
-for (const m of matchs) parSaison[m.saison] = (parSaison[m.saison] || 0) + 1;
-console.log(`Répartition par saison : ${JSON.stringify(parSaison)}`);
+for (const joueur of aTraiter) {
+  console.log(`\n=== Détail matchs_joueur pour ${joueur.prenom} ${joueur.nom} (id=${joueur.id}) ===`);
+  const matchs = await selectAll('matchs_joueur', '*', (q) => q.eq('joueur_id', joueur.id));
+  console.log(`Total lignes matchs_joueur : ${matchs.length}`);
 
-const matchs2627 = matchs.filter((m) => m.saison === '2026-2027').sort((a, b) => (a.date_match || '').localeCompare(b.date_match || ''));
-console.log(`\nLignes saison 2026-2027 (${matchs2627.length}) :`);
-for (const m of matchs2627) {
-  console.log(`  id=${m.id} — ${m.date_match} — ${m.domicile ? 'vs' : '@'} ${m.adversaire} — calendrier_officiel_id=${m.calendrier_officiel_id} — competition=${m.competition}`);
+  const parSaison = {};
+  for (const m of matchs) parSaison[m.saison] = (parSaison[m.saison] || 0) + 1;
+  console.log(`Répartition par saison : ${JSON.stringify(parSaison)}`);
+
+  const matchs2627 = matchs.filter((m) => m.saison === '2026-2027').sort((a, b) => (a.date_match || '').localeCompare(b.date_match || ''));
+  console.log(`Lignes saison 2026-2027 (${matchs2627.length}) :`);
+  for (const m of matchs2627) {
+    console.log(`  id=${m.id} — ${m.date_match} — ${m.domicile ? 'vs' : '@'} ${m.adversaire} — calendrier_officiel_id=${m.calendrier_officiel_id} — competition=${m.competition}`);
+  }
+
+  // Détecte les doublons par adversaire (peu importe la date, pour repérer
+  // un même match dupliqué avec une date différente après réconciliation).
+  const parAdversaire = new Map();
+  for (const m of matchs2627) {
+    const cle = m.adversaire || '(vide)';
+    if (!parAdversaire.has(cle)) parAdversaire.set(cle, []);
+    parAdversaire.get(cle).push(m);
+  }
+  const doublonsAdversaire = [...parAdversaire.entries()].filter(([, ms]) => ms.length > 1);
+  console.log(`Adversaires apparaissant plus d'une fois : ${doublonsAdversaire.length}`);
+  for (const [adv, ms] of doublonsAdversaire) {
+    console.log(`  ${adv} -> ${ms.map((m) => `id=${m.id} date=${m.date_match} cal_id=${m.calendrier_officiel_id}`).join(' | ')}`);
+  }
+
+  const stats = await selectAll('stats_saisons', '*', (q) => q.eq('joueur_id', joueur.id));
+  console.log(`Lignes stats_saisons : ${stats.length}`);
+  for (const s of stats) console.log(`  id=${s.id} — club="${s.club}" niveau=${s.niveau} saison=${s.saison}`);
 }
-
-// Détecte les doublons (même date_match, même adversaire).
-const cles = new Map();
-for (const m of matchs2627) {
-  const cle = `${m.date_match}|${m.adversaire}`;
-  if (!cles.has(cle)) cles.set(cle, []);
-  cles.get(cle).push(m.id);
-}
-const doublons = [...cles.entries()].filter(([, ids]) => ids.length > 1);
-console.log(`\nDoublons (même date + adversaire) : ${doublons.length}`);
-for (const [cle, ids] of doublons) console.log(`  ${cle} -> ids ${ids.join(', ')}`);
