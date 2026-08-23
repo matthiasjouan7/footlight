@@ -1,0 +1,26 @@
+name: Diagnostic FFF National 2 — groupe ex-Touraine (lecture seule)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer les navigateurs Playwright
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Inspecter le groupe National 2
+        working-directory: scripts
+        run: node diagnostic-fff-n2-groupe.js
