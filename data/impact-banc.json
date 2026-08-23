@@ -1,8 +1,10 @@
 {
   "saison": "2026-2027",
-  "division": "Ligue 3",
-  "groupe": "Unique",
-  "updated_at": "2026-08-21T09:13:50.932Z",
+  "divisions": [
+    "Ligue 3",
+    "N1"
+  ],
+  "updated_at": "2026-08-23T06:27:41.875Z",
   "joueurs": [
     {
       "id": "12425871-dded-4368-80c7-b6f6f4d5e83c",
