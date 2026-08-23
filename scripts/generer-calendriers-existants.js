@@ -167,10 +167,6 @@ for (const cible of cibles) {
     nbOk++;
     totalAInserer = totalAInserer.concat(aInserer);
   }
-
-  if (/touraine/i.test(cible.club)) {
-    console.log(`[Touraine] ${nomJoueur.get(cible.joueur_id)} (${cible.saison}) : matchsClub=${matchsClub.length} existants=${existants.length} aInserer=${aInserer.length}`);
-  }
 }
 
 console.log(`OK (matchs à générer) : ${nbOk} couple(s) joueur/saison`);
