@@ -7,21 +7,6 @@ on:
     - cron: "50 6 * * *"
   workflow_dispatch:
     inputs:
-      url:
-        description: "URL de la page classement des passeurs (ex: foot-direct.com)"
-        required: true
-        type: string
-        default: "https://www.foot-direct.com/france/ligue-3/classement-passeurs"
-      division:
-        description: "Division FootLight correspondante (ex: Ligue 3)"
-        required: true
-        type: string
-        default: "Ligue 3"
-      saison:
-        description: "Saison (ex: 2026-2027)"
-        required: true
-        type: string
-        default: "2026-2027"
       write:
         description: "Écrire réellement en base (sinon DRY_RUN)"
         required: false
@@ -31,6 +16,14 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - url: "https://www.foot-direct.com/france/ligue-3/classement-passeurs"
+            division: "Ligue 3"
+          - url: "https://www.foot-direct.com/france/national-1/classement-passeurs"
+            division: "N1"
     steps:
       - uses: actions/checkout@v4
 
@@ -45,11 +38,9 @@ jobs:
       - name: Synchroniser le classement des passeurs
         working-directory: scripts
         env:
-          # inputs.* n'est renseigné que pour workflow_dispatch : on retombe
-          # sur les valeurs par défaut pour le déclenchement schedule.
-          TARGET_URL: ${{ inputs.url || 'https://www.foot-direct.com/france/ligue-3/classement-passeurs' }}
-          DIVISION: ${{ inputs.division || 'Ligue 3' }}
-          SAISON: ${{ inputs.saison || '2026-2027' }}
+          TARGET_URL: ${{ matrix.url }}
+          DIVISION: ${{ matrix.division }}
+          SAISON: "2026-2027"
           # Écriture réelle automatique tous les matins ; en déclenchement
           # manuel, DRY_RUN reste la valeur sûre par défaut sauf si "write"
           # est explicitement coché.

@@ -8,26 +8,6 @@ on:
     - cron: "45 6 * * *"
   workflow_dispatch:
     inputs:
-      url:
-        description: "URL de la page de division (liste de matchs)"
-        required: true
-        type: string
-        default: "https://www.foot-direct.com/france/ligue-3/"
-      division:
-        description: "Division FootLight correspondante (ex: Ligue 3)"
-        required: true
-        type: string
-        default: "Ligue 3"
-      groupe:
-        description: "Groupe (ex: Unique)"
-        required: false
-        type: string
-        default: "Unique"
-      saison:
-        description: "Saison (ex: 2026-2027)"
-        required: true
-        type: string
-        default: "2026-2027"
       write:
         description: "Écrire réellement en base (sinon DRY_RUN)"
         required: false
@@ -37,6 +17,22 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - url: "https://www.foot-direct.com/france/ligue-3/"
+            division: "Ligue 3"
+            groupe: "Unique"
+          # foot-direct.com n'a qu'une seule page pour tout le National 1
+          # (pas de page par groupe séparée comme sur lequipe.fr, vérifié via
+          # diagnostic-foot-direct-national1-urls.js) : les 3 groupes sont
+          # passés ensemble à GROUPE (sync-foot-direct-passes.js les
+          # interroge tous via .in('groupe', ...) plutôt qu'une égalité
+          # stricte).
+          - url: "https://www.foot-direct.com/france/national-1/"
+            division: "N1"
+            groupe: "A,B,C"
     steps:
       - uses: actions/checkout@v4
 
@@ -51,12 +47,10 @@ jobs:
       - name: Synchroniser les passes décisives par match
         working-directory: scripts
         env:
-          # inputs.* n'est renseigné que pour workflow_dispatch : on retombe
-          # sur les valeurs par défaut pour le déclenchement schedule.
-          TARGET_URL: ${{ inputs.url || 'https://www.foot-direct.com/france/ligue-3/' }}
-          DIVISION: ${{ inputs.division || 'Ligue 3' }}
-          GROUPE: ${{ inputs.groupe || 'Unique' }}
-          SAISON: ${{ inputs.saison || '2026-2027' }}
+          TARGET_URL: ${{ matrix.url }}
+          DIVISION: ${{ matrix.division }}
+          GROUPE: ${{ matrix.groupe }}
+          SAISON: "2026-2027"
           # Écriture réelle automatique tous les matins ; en déclenchement
           # manuel, DRY_RUN reste la valeur sûre par défaut sauf si "write"
           # est explicitement coché.
