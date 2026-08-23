@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-08-23T06:27:41.875Z",
+  "updated_at": "2026-08-23T07:30:19.239Z",
   "joueurs": [
     {
       "id": "12425871-dded-4368-80c7-b6f6f4d5e83c",
@@ -72,25 +72,6 @@
       ]
     },
     {
-      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
-      "prenom": "Félix",
-      "nom": "Tomi",
-      "club": "SC Bastia",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-20",
-          "adversaire": "FC VERSAILLES",
-          "domicile": true,
-          "situation": "était mené 2 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
       "prenom": "Armand",
       "nom": "Gnanduillet",
@@ -103,6 +84,25 @@
           "date": "2026-08-14",
           "adversaire": "US THIONVILLE LUSITANOS",
           "domicile": false,
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
+      "prenom": "Félix",
+      "nom": "Tomi",
+      "club": "SC Bastia",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-20",
+          "adversaire": "FC VERSAILLES",
+          "domicile": true,
           "situation": "était mené 2 but(s)",
           "resultat": "defaite",
           "points": 1
