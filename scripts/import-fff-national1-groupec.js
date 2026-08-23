@@ -215,12 +215,26 @@ const placeholdersParCalendrierId = new Map();
 for (let i = 0; i < idsExistants.length; i += 100) {
   const lot = idsExistants.slice(i, i + 100);
   if (!lot.length) continue;
-  const { data: refs, error: erreurRefs } = await supabase
-    .from('matchs_joueur')
-    .select(`id, calendrier_officiel_id, ${CHAMPS_STATS.join(', ')}`)
-    .in('calendrier_officiel_id', lot);
-  if (erreurRefs) { console.error('Erreur lecture matchs_joueur :', erreurRefs.message); process.exit(1); }
-  for (const r of refs || []) {
+  // Un même match peut être référencé par des dizaines de lignes matchs_joueur
+  // (une par joueur des deux équipes) — pagine explicitement (limite par
+  // défaut PostgREST à 1000 lignes, déjà rencontrée sur la table joueurs)
+  // pour ne rater aucune référence, sous peine d'échec de suppression
+  // (contrainte de clé étrangère) constaté en pratique sur un premier essai.
+  const TAILLE_PAGE = 1000;
+  let debut = 0;
+  let refsBrutes = [];
+  for (;;) {
+    const { data: page, error: erreurRefs } = await supabase
+      .from('matchs_joueur')
+      .select(`id, calendrier_officiel_id, ${CHAMPS_STATS.join(', ')}`)
+      .in('calendrier_officiel_id', lot)
+      .range(debut, debut + TAILLE_PAGE - 1);
+    if (erreurRefs) { console.error('Erreur lecture matchs_joueur :', erreurRefs.message); process.exit(1); }
+    refsBrutes = refsBrutes.concat(page || []);
+    if (!page || page.length < TAILLE_PAGE) break;
+    debut += TAILLE_PAGE;
+  }
+  for (const r of refsBrutes) {
     const aDesStats = CHAMPS_STATS.some((c) => r[c] != null);
     if (aDesStats) {
       idsAvecStats.add(r.calendrier_officiel_id);
