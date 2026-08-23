@@ -3,7 +3,7 @@ name: Sync stats de match lequipe.fr -> matchs_joueur (automatique)
 on:
   schedule:
     # Chaque jour à 6h30 UTC — 30 min après la synchro du calendrier
-    # (sync-lequipe-scheduled.yml, 6h00 le lundi), pour que les lignes
+    # (sync-lequipe-scheduled.yml, désormais quotidienne à 6h00), pour que les lignes
     # calendrier_officiel soient à jour avant de rapprocher les stats de
     # match. Quotidien (et non hebdomadaire) et sur TOUTES les journées déjà
     # jouées (sync-lequipe-match-stats-auto.js), pas seulement la dernière :

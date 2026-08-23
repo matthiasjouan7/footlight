@@ -2,10 +2,10 @@ name: Sync lequipe.fr -> calendrier_officiel (automatique)
 
 on:
   schedule:
-    # Chaque lundi à 6h UTC — laisse une marge après les matchs du samedi
-    # (et d'éventuels matchs du dimanche) pour être sûr que les résultats
-    # sont bien finalisés avant de synchroniser.
-    - cron: "0 6 * * 1"
+    # Chaque jour à 6h UTC (plutôt qu'hebdomadaire) — les championnats
+    # jouent aussi en semaine (ex: vendredi), un cron du seul lundi laissait
+    # les résultats de milieu de semaine plusieurs jours sans être repris.
+    - cron: "0 6 * * *"
   workflow_dispatch: {}
 
 jobs:

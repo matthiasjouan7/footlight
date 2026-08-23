@@ -15,7 +15,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const targetUrl = process.env.TARGET_URL; // page de division, ex: https://www.foot-direct.com/france/ligue-3/
 const division = process.env.DIVISION || 'Ligue 3';
-const groupe = process.env.GROUPE || 'Unique';
+// GROUPE accepte une liste séparée par des virgules : la page National 1 de
+// foot-direct.com (/france/national-1/) mélange les 3 groupes A/B/C sur une
+// seule page (vérifié via diagnostic-foot-direct-national1-urls.js — pas de
+// page par groupe séparée comme sur lequipe.fr), contrairement à Ligue 3
+// (groupe "Unique").
+const groupes = (process.env.GROUPE || 'Unique').split(',').map((g) => g.trim()).filter(Boolean);
 const saison = process.env.SAISON;
 const dryRun = process.env.DRY_RUN !== 'false';
 const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
@@ -140,9 +145,9 @@ const matchUrls = [...new Set(
 console.log(`${matchUrls.length} page(s) de match trouvée(s) sur la page de division.\n`);
 
 // ---- 2. Calendrier officiel de la division/saison (une seule lecture) ----
-const { data: calRows, error: calErr } = await supabase.from('calendrier_officiel').select('id, equipe_domicile, equipe_exterieur, date_match').eq('division', division).eq('groupe', groupe).eq('saison', saison);
+const { data: calRows, error: calErr } = await supabase.from('calendrier_officiel').select('id, equipe_domicile, equipe_exterieur, date_match').eq('division', division).in('groupe', groupes).eq('saison', saison);
 if (calErr) { console.error('Erreur lecture calendrier_officiel :', calErr.message); process.exit(1); }
-console.log(`${calRows?.length || 0} match(s) dans calendrier_officiel pour ${division} groupe ${groupe} (${saison}).\n`);
+console.log(`${calRows?.length || 0} match(s) dans calendrier_officiel pour ${division} groupe(s) ${groupes.join('/')} (${saison}).\n`);
 
 let totalMatchsTraites = 0, totalMatchsNonRapproches = 0, totalJoueursMaj = 0, totalAmbigus = 0, totalPasseursIgnores = 0;
 

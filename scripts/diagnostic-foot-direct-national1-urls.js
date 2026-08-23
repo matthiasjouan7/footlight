@@ -20,6 +20,10 @@ const CANDIDATS = [
   'https://www.foot-direct.com/france/national-1-b/',
   'https://www.foot-direct.com/france/national-1-c/',
   'https://www.foot-direct.com/france/national/',
+  // Classement des passeurs (sync-classement-passeurs.js) : par analogie
+  // avec Ligue 3 ("/france/ligue-3/classement-passeurs"), à confirmer pour
+  // National 1 avant de câbler le cron.
+  'https://www.foot-direct.com/france/national-1/classement-passeurs',
 ];
 
 for (const url of CANDIDATS) {
@@ -32,7 +36,8 @@ for (const url of CANDIDATS) {
     const nbLiensMatch = new Set(
       $('a[href*="/live/"]').map((i, el) => $(el).attr('href')).get().filter((h) => /\/live\/\d+-/.test(h))
     ).size;
-    console.log(`${url} -> statut ${res.status} | titre: "${titre}" | ${nbLiensMatch} lien(s) de match`);
+    const nbLignesTable = $('table').first().find('tr').length;
+    console.log(`${url} -> statut ${res.status} | titre: "${titre}" | ${nbLiensMatch} lien(s) de match | ${nbLignesTable} ligne(s) de table`);
   } catch (err) {
     console.log(`${url} -> erreur: ${err.message}`);
   }
