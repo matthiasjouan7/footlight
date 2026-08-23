@@ -125,6 +125,41 @@ async function appliquerDeltaSaison(joueurId, joueurSaison, saisonFiche, delta) 
   else await supabase.from('stats_saisons').upsert({ joueur_id: joueurId, saison: saisonFiche, ...maj }, { onConflict: 'joueur_id,saison' });
 }
 
+const attendre = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Le fetch natif n'a pas de timeout par défaut : une requête qui ne répond
+// jamais bloquerait le script indéfiniment.
+async function fetchAvecTimeout(url, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { headers: HEADERS, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// foot-direct.com renvoie 429 (trop de requêtes) au-delà d'une vingtaine de
+// pages visitées rapidement — un délai entre chaque requête, avec une
+// nouvelle tentative après une pause plus longue en cas de 429, permet de
+// couvrir un crawl multi-sauts (jusqu'à plusieurs centaines de pages pour
+// National 1, page unique tous groupes confondus) sans se faire bloquer.
+async function chargerAvecRetry(url, tentative = 1) {
+  await attendre(500);
+  let res;
+  try {
+    res = await fetchAvecTimeout(url);
+  } catch (err) {
+    if (tentative <= 2) return chargerAvecRetry(url, tentative + 1);
+    return { ok: false, status: 0 };
+  }
+  if (res.status === 429 && tentative <= 2) {
+    await attendre(5000 * tentative);
+    return chargerAvecRetry(url, tentative + 1);
+  }
+  return res;
+}
+
 // ---- 1. Page de division : liste des matchs (/live/...) ----
 // La page de division ne liste que les journées récentes/à venir (ex: les
 // matchs de la journée 1 en disparaissent après quelques semaines). Chaque
@@ -133,7 +168,7 @@ async function appliquerDeltaSaison(joueurId, joueurSaison, saisonFiche, delta) 
 // un deuxième niveau (limité à 2 sauts) pour retrouver les journées
 // disparues. Les pages hors Ligue 3 (coupe, autres divisions) rencontrées au
 // passage échouent simplement au rapprochement calendrier_officiel plus bas.
-const resDiv = await fetch(targetUrl, { headers: HEADERS });
+const resDiv = await chargerAvecRetry(targetUrl);
 if (!resDiv.ok) { console.error(`Échec chargement page division : statut ${resDiv.status}`); process.exit(1); }
 const htmlDiv = await resDiv.text();
 const $div = cheerio.load(htmlDiv);
@@ -162,7 +197,7 @@ for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
   for (const matchUrl of lot) {
   if (dejaVus.has(matchUrl)) continue;
   dejaVus.add(matchUrl);
-  const resMatch = await fetch(matchUrl, { headers: HEADERS });
+  const resMatch = await chargerAvecRetry(matchUrl);
   if (!resMatch.ok) { console.log(`${matchUrl} : échec chargement (${resMatch.status}), ignoré.`); continue; }
   const htmlMatch = await resMatch.text();
   const $m = cheerio.load(htmlMatch);
