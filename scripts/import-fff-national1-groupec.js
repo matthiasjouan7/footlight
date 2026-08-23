@@ -197,22 +197,41 @@ const { data: existantes, error: erreurLecture } = await supabase
 if (erreurLecture) { console.error('Erreur lecture existant :', erreurLecture.message); process.exit(1); }
 console.log(`\nLignes existantes (division=${DIVISION}, groupe=${GROUPE}, saison=${SAISON}) : ${existantes?.length || 0}`);
 
-// Repère les lignes existantes protégées par une contrainte de clé
-// étrangère (des stats matchs_joueur ont déjà été synchronisées dessus) —
-// jamais supprimées automatiquement, même si non rapprochées à un match FFF.
+// Repère les lignes existantes référencées par matchs_joueur. Deux cas :
+// - une ligne matchs_joueur avec des stats déjà renseignées (but/carton/
+//   minutes jouées/passe déc.) correspond à un match réellement joué et
+//   synchronisé (généré par lib-sync-lequipe-match-stats.js, qui ne remplit
+//   ces champs qu'après coup) — VRAIMENT protégée, jamais supprimée.
+// - une ligne matchs_joueur sans aucune stat est un simple placeholder créé
+//   par generer-calendriers-existants.js à l'inscription du joueur pour
+//   CHAQUE match à venir de son équipe — sans valeur si le match qu'elle
+//   visait n'existe plus dans le nouveau calendrier (17 équipes). Supprimable
+//   avec la ligne calendrier_officiel qu'elle référence ; regénérée
+//   correctement ensuite via generer-calendriers-existants.js.
 const idsExistants = (existantes || []).map((e) => e.id);
-const idsReferences = new Set();
+const CHAMPS_STATS = ['buts', 'passes_decisives', 'minutes_jouees', 'cartons_jaunes', 'cartons_rouges'];
+const idsAvecStats = new Set();
+const placeholdersParCalendrierId = new Map();
 for (let i = 0; i < idsExistants.length; i += 100) {
   const lot = idsExistants.slice(i, i + 100);
   if (!lot.length) continue;
   const { data: refs, error: erreurRefs } = await supabase
     .from('matchs_joueur')
-    .select('calendrier_officiel_id')
+    .select(`id, calendrier_officiel_id, ${CHAMPS_STATS.join(', ')}`)
     .in('calendrier_officiel_id', lot);
   if (erreurRefs) { console.error('Erreur lecture matchs_joueur :', erreurRefs.message); process.exit(1); }
-  for (const r of refs || []) idsReferences.add(r.calendrier_officiel_id);
+  for (const r of refs || []) {
+    const aDesStats = CHAMPS_STATS.some((c) => r[c] != null);
+    if (aDesStats) {
+      idsAvecStats.add(r.calendrier_officiel_id);
+    } else {
+      if (!placeholdersParCalendrierId.has(r.calendrier_officiel_id)) placeholdersParCalendrierId.set(r.calendrier_officiel_id, []);
+      placeholdersParCalendrierId.get(r.calendrier_officiel_id).push(r.id);
+    }
+  }
 }
-console.log(`Lignes existantes référencées par matchs_joueur (protégées) : ${idsReferences.size}`);
+console.log(`Lignes existantes avec stats réelles déjà synchronisées (vraiment protégées) : ${idsAvecStats.size}`);
+console.log(`Lignes existantes référencées seulement par des placeholders matchs_joueur (supprimables) : ${placeholdersParCalendrierId.size}`);
 
 // Rapprochement : chaque ligne existante non encore utilisée est associée
 // au premier match FFF correspondant (mêmes équipes, même date_match).
@@ -234,14 +253,15 @@ for (const l of lignes) {
   }
 }
 const nonRapprochees = [...existantesRestantes];
-const aSupprimer = nonRapprochees.filter((e) => !idsReferences.has(e.id));
-const nonSupprimables = nonRapprochees.filter((e) => idsReferences.has(e.id));
+const aSupprimer = nonRapprochees.filter((e) => !idsAvecStats.has(e.id));
+const nonSupprimables = nonRapprochees.filter((e) => idsAvecStats.has(e.id));
+const placeholdersASupprimer = aSupprimer.flatMap((e) => placeholdersParCalendrierId.get(e.id) || []);
 
 console.log(`\nPlan de réconciliation :`);
 console.log(`  À mettre à jour (nom/journée corrigés, id conservé) : ${aMettreAJour.length}`);
 console.log(`  À insérer (nouveaux matchs, dont Touraine) : ${aInserer.length}`);
-console.log(`  À supprimer (obsolètes, non référencées) : ${aSupprimer.length}`);
-console.log(`  Non rapprochées MAIS protégées (jamais supprimées automatiquement) : ${nonSupprimables.length}`);
+console.log(`  À supprimer (obsolètes, ${placeholdersASupprimer.length} placeholder(s) matchs_joueur associé(s) supprimé(s) avec) : ${aSupprimer.length}`);
+console.log(`  Non rapprochées MAIS avec stats réelles (jamais supprimées automatiquement) : ${nonSupprimables.length}`);
 if (nonSupprimables.length) {
   console.log('  Détail des lignes protégées non rapprochées (à examiner manuellement) :');
   for (const e of nonSupprimables) console.log(`    id=${e.id} — ${e.date_match} — J${e.journee} — ${e.equipe_domicile} vs ${e.equipe_exterieur}`);
@@ -259,13 +279,22 @@ if (DRY_RUN) {
 
 console.log('\n=== Écriture réelle ===');
 
+let placeholdersSupprimes = 0;
+for (let i = 0; i < placeholdersASupprimer.length; i += 100) {
+  const lot = placeholdersASupprimer.slice(i, i + 100);
+  const { error } = await supabase.from('matchs_joueur').delete().in('id', lot);
+  if (error) { console.error('Erreur suppression placeholders matchs_joueur :', error.message); process.exit(1); }
+  placeholdersSupprimes += lot.length;
+}
+console.log(`Supprimé : ${placeholdersSupprimes} placeholder(s) matchs_joueur (sans stats).`);
+
 let supprimes = 0;
 for (const e of aSupprimer) {
   const { error } = await supabase.from('calendrier_officiel').delete().eq('id', e.id);
   if (error) { console.error(`Erreur suppression id=${e.id} :`, error.message); process.exit(1); }
   supprimes++;
 }
-console.log(`Supprimé : ${supprimes} ligne(s) obsolète(s).`);
+console.log(`Supprimé : ${supprimes} ligne(s) calendrier_officiel obsolète(s).`);
 
 let misesAJour = 0;
 for (const l of aMettreAJour) {
@@ -288,4 +317,7 @@ console.log(`Inséré : ${inseres} ligne(s).`);
 
 if (nonSupprimables.length) {
   console.log(`\nATTENTION : ${nonSupprimables.length} ligne(s) protégée(s) par matchs_joueur n'ont pas pu être rapprochées d'un match FFF et n'ont pas été touchées — à examiner manuellement (voir détail ci-dessus).`);
+}
+if (inseres || placeholdersSupprimes) {
+  console.log('\nÀ faire ensuite : relancer generer-calendriers-existants.js (write) pour régénérer les placeholders matchs_joueur des joueurs du groupe C sur le nouveau calendrier (17 équipes).');
 }
