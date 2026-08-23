@@ -1,10 +1,18 @@
 name: Calcule l'impact banc des remplaçants (rapport, écrit data/impact-banc.json sur "write")
 
 on:
+  schedule:
+    # Chaque jour à 6h55 UTC — après les crons foot-direct.com (passes
+    # décisives 6h45, classement passeurs 6h50), pour disposer des lignes
+    # matchs_joueur/calendrier_officiel à jour avant de calculer l'impact
+    # banc. Écriture réelle automatique (comme les autres crons "chaque
+    # matin"), sur Ligue 3 + National 1 — mêmes divisions que
+    # sync-foot-direct-passes.yml / sync-classement-passeurs.yml.
+    - cron: "55 6 * * *"
   workflow_dispatch:
     inputs:
       url:
-        description: "URL de la page de division (liste de matchs)"
+        description: "URL de la page de division (liste de matchs) — déclenchement manuel, une seule division"
         required: true
         type: string
         default: "https://www.foot-direct.com/france/ligue-3/"
@@ -14,7 +22,7 @@ on:
         type: string
         default: "Ligue 3"
       groupe:
-        description: "Groupe (ex: Unique)"
+        description: "Groupe (ex: Unique, ou \"A,B,C\" pour National 1)"
         required: false
         type: string
         default: "Unique"
@@ -48,16 +56,20 @@ jobs:
       - name: Calculer l'impact banc
         working-directory: scripts
         env:
+          # CIBLES (JSON, Ligue 3 + National 1) uniquement en déclenchement
+          # programmé — en manuel, on retombe sur TARGET_URL/DIVISION/GROUPE
+          # (une seule division à la fois, pour tester).
+          CIBLES: ${{ github.event_name == 'schedule' && '[{"url":"https://www.foot-direct.com/france/ligue-3/","division":"Ligue 3","groupe":"Unique"},{"url":"https://www.foot-direct.com/france/national-1/","division":"N1","groupe":"A,B,C"}]' || '' }}
           TARGET_URL: ${{ inputs.url }}
           DIVISION: ${{ inputs.division }}
           GROUPE: ${{ inputs.groupe }}
-          SAISON: ${{ inputs.saison }}
-          WRITE_JSON: ${{ inputs.write }}
+          SAISON: ${{ inputs.saison || '2026-2027' }}
+          WRITE_JSON: ${{ (github.event_name == 'schedule' || inputs.write == true) && 'true' || 'false' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node calcule-impact-banc.js
 
       - name: Committer data/impact-banc.json sur main
-        if: ${{ inputs.write == true }}
+        if: ${{ github.event_name == 'schedule' || inputs.write == true }}
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"

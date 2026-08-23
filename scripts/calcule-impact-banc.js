@@ -25,9 +25,13 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const targetUrl = process.env.TARGET_URL; // page de division, ex: https://www.foot-direct.com/france/ligue-3/
-const division = process.env.DIVISION || 'Ligue 3';
-const groupe = process.env.GROUPE || 'Unique';
+// CIBLES (JSON) permet de traiter plusieurs divisions en un seul run, dont
+// les résultats sont agrégés dans le même data/impact-banc.json (ex: Ligue 3
+// + National 1) — sans CIBLES, on retombe sur un seul TARGET_URL/DIVISION/
+// GROUPE (déclenchement manuel ad hoc, comme avant).
+const cibles = process.env.CIBLES
+  ? JSON.parse(process.env.CIBLES)
+  : [{ url: process.env.TARGET_URL, division: process.env.DIVISION || 'Ligue 3', groupe: process.env.GROUPE || 'Unique' }];
 const saison = process.env.SAISON;
 // Écrit data/impact-banc.json (classement "super remplaçants" affiché sur
 // footlight-classement.html) en plus du rapport console. Séparé du rapport
@@ -37,7 +41,7 @@ const writeJson = process.env.WRITE_JSON === 'true';
 const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!targetUrl) { console.error('TARGET_URL manquant.'); process.exit(1); }
+if (!cibles.length || cibles.some((c) => !c.url || !c.division)) { console.error('CIBLES invalide, ou TARGET_URL manquant.'); process.exit(1); }
 if (!saison) { console.error('SAISON manquant (ex: 2026-2027).'); process.exit(1); }
 if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); process.exit(1); }
 
@@ -64,11 +68,21 @@ const ALIAS_EQUIPE = {
 function resolverAlias(nom) {
   return ALIAS_EQUIPE[normaliserClub(nom)] || nom;
 }
+// Deux mots se correspondent s'ils sont identiques, ou si l'un est un
+// préfixe de l'autre d'au moins 4 caractères — foot-direct.com tronque
+// parfois un nom de club dans son slug (ex: "st-maur-lusi" pour "US ST
+// MAUR LUSITANOS" en base, découvert sur National 1 via
+// diagnostic-national1-club-mismatch.js).
+function motsCorrespondent(a, b) {
+  if (a === b) return true;
+  const [court, long] = a.length <= b.length ? [a, b] : [b, a];
+  return court.length >= 4 && long.startsWith(court);
+}
 function clubsCorrespondent(a, b) {
-  const wa = new Set(motsClub(resolverAlias(a))), wb = new Set(motsClub(resolverAlias(b)));
-  if (!wa.size || !wb.size) return false;
-  const [small, big] = wa.size <= wb.size ? [wa, wb] : [wb, wa];
-  for (const w of small) if (!big.has(w)) return false;
+  const wa = motsClub(resolverAlias(a)), wb = motsClub(resolverAlias(b));
+  if (!wa.length || !wb.length) return false;
+  const [small, big] = wa.length <= wb.length ? [wa, wb] : [wb, wa];
+  for (const w of small) if (!big.some((w2) => motsCorrespondent(w, w2))) return false;
   return true;
 }
 
@@ -150,32 +164,42 @@ async function chargerAvecRetry(url, tentative = 1) {
   return res;
 }
 
-// ---- 1. Page de division : liste des matchs (/live/...) ----
-const resDiv = await chargerAvecRetry(targetUrl);
-if (!resDiv.ok) { console.error(`Échec chargement page division : statut ${resDiv.status}`); process.exit(1); }
-const htmlDiv = await resDiv.text();
-const $div = cheerio.load(htmlDiv);
-const matchUrls = [...new Set(
-  $div('a[href*="/live/"]').map((i, el) => $div(el).attr('href')).get()
-    .filter((h) => /\/live\/\d+-/.test(h))
-    .map((h) => new URL(h, targetUrl).toString())
-)];
-console.log(`${matchUrls.length} page(s) de match trouvée(s) sur la page de division.\n`);
+// Traite une seule division (page de division -> crawl multi-sauts ->
+// impacts) — appelée une fois par entrée de CIBLES, pour agréger plusieurs
+// divisions (ex: Ligue 3 + National 1) dans le même data/impact-banc.json.
+async function traiterCible({ url: targetUrl, division, groupe }) {
+  // GROUPE peut être une liste séparée par virgules ("A,B,C") : la page
+  // National 1 de foot-direct.com mélange les 3 groupes sur une seule page
+  // (pas de page par groupe séparée comme sur lequipe.fr), contrairement à
+  // Ligue 3 (groupe "Unique").
+  const groupes = groupe.split(',').map((g) => g.trim()).filter(Boolean);
 
-// ---- 2. Calendrier officiel de la division/saison ----
-const { data: calRows, error: calErr } = await supabase.from('calendrier_officiel').select('id, equipe_domicile, equipe_exterieur, date_match').eq('division', division).eq('groupe', groupe).eq('saison', saison);
-if (calErr) { console.error('Erreur lecture calendrier_officiel :', calErr.message); process.exit(1); }
-console.log(`${calRows?.length || 0} match(s) dans calendrier_officiel pour ${division} groupe ${groupe} (${saison}).\n`);
+  // ---- 1. Page de division : liste des matchs (/live/...) ----
+  const resDiv = await chargerAvecRetry(targetUrl);
+  if (!resDiv.ok) { console.error(`Échec chargement page division (${division}) : statut ${resDiv.status}`); return { impacts: [], matchsVisites: 0, totalMatchsAnalyses: 0, totalMatchsNonRapproches: 0, totalMatchsSansEvenement: 0 }; }
+  const htmlDiv = await resDiv.text();
+  const $div = cheerio.load(htmlDiv);
+  const matchUrls = [...new Set(
+    $div('a[href*="/live/"]').map((i, el) => $div(el).attr('href')).get()
+      .filter((h) => /\/live\/\d+-/.test(h))
+      .map((h) => new URL(h, targetUrl).toString())
+  )];
+  console.log(`${matchUrls.length} page(s) de match trouvée(s) sur la page de division (${division}).\n`);
 
-const impacts = []; // { joueur, points, detail }
-let totalMatchsAnalyses = 0, totalMatchsNonRapproches = 0, totalMatchsSansEvenement = 0;
+  // ---- 2. Calendrier officiel de la division/saison ----
+  const { data: calRows, error: calErr } = await supabase.from('calendrier_officiel').select('id, equipe_domicile, equipe_exterieur, date_match').eq('division', division).in('groupe', groupes).eq('saison', saison);
+  if (calErr) { console.error('Erreur lecture calendrier_officiel :', calErr.message); return { impacts: [], matchsVisites: 0, totalMatchsAnalyses: 0, totalMatchsNonRapproches: 0, totalMatchsSansEvenement: 0 }; }
+  console.log(`${calRows?.length || 0} match(s) dans calendrier_officiel pour ${division} groupe(s) ${groupes.join('/')} (${saison}).\n`);
 
-const MAX_SAUTS = 2;
-const dejaVus = new Set();
-const dejaEnFile = new Set(matchUrls);
-let file = [...matchUrls];
+  const impacts = []; // { joueur, points, detail }
+  let totalMatchsAnalyses = 0, totalMatchsNonRapproches = 0, totalMatchsSansEvenement = 0;
 
-for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
+  const MAX_SAUTS = 2;
+  const dejaVus = new Set();
+  const dejaEnFile = new Set(matchUrls);
+  let file = [...matchUrls];
+
+  for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
   const lot = file;
   file = [];
   for (const matchUrl of lot) {
@@ -307,13 +331,29 @@ for (let saut = 1; saut <= MAX_SAUTS && file.length; saut++) {
     });
   }
   }
+  }
+
+  console.log(`\nRésumé (${division}) : ${dejaVus.size} page(s) de match visitée(s), ${totalMatchsAnalyses} avec événements analysés, ${totalMatchsNonRapproches} non rapproché(s) à calendrier_officiel, ${totalMatchsSansEvenement} sans but/entrée détecté(s) (match pas encore joué probablement).`);
+  return { impacts, matchsVisites: dejaVus.size, totalMatchsAnalyses, totalMatchsNonRapproches, totalMatchsSansEvenement };
+}
+
+// ---- Traite chaque cible (une par division) et agrège les résultats ----
+const impacts = [];
+let totalMatchsVisites = 0, totalMatchsAnalyses = 0, totalMatchsNonRapproches = 0, totalMatchsSansEvenement = 0;
+for (const cible of cibles) {
+  const resultat = await traiterCible(cible);
+  impacts.push(...resultat.impacts);
+  totalMatchsVisites += resultat.matchsVisites;
+  totalMatchsAnalyses += resultat.totalMatchsAnalyses;
+  totalMatchsNonRapproches += resultat.totalMatchsNonRapproches;
+  totalMatchsSansEvenement += resultat.totalMatchsSansEvenement;
 }
 
 impacts.sort((a, b) => b.points - a.points);
 console.log(`\n\n=== Classement impact banc (${impacts.length} contribution(s) identifiée(s)) ===`);
 for (const i of impacts) console.log(`  ${i.points} pt(s) — ${i.prenom} ${i.nom} (${i.club}) — ${i.match}`);
 
-console.log(`\nRésumé : ${dejaVus.size} page(s) de match visitée(s), ${totalMatchsAnalyses} avec événements analysés, ${totalMatchsNonRapproches} non rapproché(s) à calendrier_officiel, ${totalMatchsSansEvenement} sans but/entrée détecté(s) (match pas encore joué probablement).`);
+console.log(`\nRésumé global : ${totalMatchsVisites} page(s) de match visitée(s), ${totalMatchsAnalyses} avec événements analysés, ${totalMatchsNonRapproches} non rapproché(s) à calendrier_officiel, ${totalMatchsSansEvenement} sans but/entrée détecté(s) (match pas encore joué probablement).`);
 
 // ---- 4. data/impact-banc.json (classement "Super remplaçants" du site) ----
 // Un joueur peut cumuler plusieurs contributions sur la saison (ex: Sory
@@ -335,7 +375,7 @@ if (writeJson) {
   }
   const classement = [...parJoueur.values()].sort((a, b) => b.points - a.points);
 
-  const sortie = { saison, division, groupe, updated_at: new Date().toISOString(), joueurs: classement };
+  const sortie = { saison, divisions: cibles.map((c) => c.division), updated_at: new Date().toISOString(), joueurs: classement };
   const outPath = path.join(repoRoot, 'data', 'impact-banc.json');
   await mkdir(path.dirname(outPath), { recursive: true });
   await writeFile(outPath, JSON.stringify(sortie, null, 2) + '\n');
