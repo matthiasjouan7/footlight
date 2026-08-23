@@ -1,0 +1,26 @@
+name: FFF National 1 groupe C — inspecter un match complet (lecture seule)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer les navigateurs Playwright
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Inspecter un match complet
+        working-directory: scripts
+        run: node fff-national1-groupec-inspect-match.js
