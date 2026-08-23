@@ -36,6 +36,11 @@ on:
         required: false
         type: boolean
         default: false
+      cibles:
+        description: "Optionnel : CIBLES (JSON, plusieurs divisions) — remplace url/division/groupe si renseigné, pour tester le run combiné manuellement"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   calcule:
@@ -56,10 +61,11 @@ jobs:
       - name: Calculer l'impact banc
         working-directory: scripts
         env:
-          # CIBLES (JSON, Ligue 3 + National 1) uniquement en déclenchement
-          # programmé — en manuel, on retombe sur TARGET_URL/DIVISION/GROUPE
-          # (une seule division à la fois, pour tester).
-          CIBLES: ${{ github.event_name == 'schedule' && '[{"url":"https://www.foot-direct.com/france/ligue-3/","division":"Ligue 3","groupe":"Unique"},{"url":"https://www.foot-direct.com/france/national-1/","division":"N1","groupe":"A,B,C"}]' || '' }}
+          # CIBLES (JSON, Ligue 3 + National 1) en déclenchement programmé,
+          # ou via l'input "cibles" pour tester le run combiné manuellement —
+          # sinon on retombe sur TARGET_URL/DIVISION/GROUPE (une seule
+          # division à la fois).
+          CIBLES: ${{ github.event_name == 'schedule' && '[{"url":"https://www.foot-direct.com/france/ligue-3/","division":"Ligue 3","groupe":"Unique"},{"url":"https://www.foot-direct.com/france/national-1/","division":"N1","groupe":"A,B,C"}]' || inputs.cibles }}
           TARGET_URL: ${{ inputs.url }}
           DIVISION: ${{ inputs.division }}
           GROUPE: ${{ inputs.groupe }}
