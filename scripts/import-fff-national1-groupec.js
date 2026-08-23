@@ -1,13 +1,34 @@
-// Remplace intégralement calendrier_officiel pour National 1 / groupe C /
-// saison 2026-2027 par les données officielles FFF (epreuves.fff.fr),
-// suite au repêchage d'Union Foot de Touraine (poule passée à 17 équipes).
+// Réconcilie calendrier_officiel pour National 1 / groupe C / saison
+// 2026-2027 avec les données officielles FFF (epreuves.fff.fr), suite au
+// repêchage d'Union Foot de Touraine (poule passée à 17 équipes).
 //
 // Les données actuelles en base sont obsolètes : encore calées sur l'ancienne
 // poule à 16 équipes (30 journées, pas de Touraine), avec des doublons de
 // noms de club sous deux graphies différentes (ex: "ISTRES FC" / "Istres",
 // "NIMES OL" / "Nîmes") et une journée 1 comptant 20 lignes au lieu de ~8.
 // Confirmé par check-touraine-calendrier.js. Remplacement complet choisi
-// par l'utilisateur plutôt qu'une fusion, vu l'état des doublons existants.
+// par l'utilisateur — mais un premier essai de suppression en bloc a
+// échoué : "matchs_joueur_calendrier_officiel_id_fkey" bloque la
+// suppression de toute ligne calendrier_officiel déjà référencée par une
+// ligne matchs_joueur (stats déjà synchronisées pour les matchs déjà
+// joués, ex: journée 1 du 21-22/08). Un remplacement en bloc détruirait
+// donc soit ces stats soit échouerait complètement.
+//
+// Stratégie de réconciliation à la place d'un delete-then-insert :
+// 1. Rapproche chaque match FFF à une ligne existante (mêmes équipes via
+//    clubsCorrespondent, même date) — si trouvée, MET À JOUR cette ligne
+//    (id conservé, donc les matchs_joueur liées restent valides) plutôt
+//    que de la recréer.
+// 2. Les matchs FFF sans ligne correspondante sont INSÉRÉS (nouveaux
+//    matchs, notamment tous ceux impliquant Union Foot Touraine).
+// 3. Les lignes existantes non rapprochées à un match FFF sont
+//    supprimées SEULEMENT si aucune ligne matchs_joueur ne les référence
+//    (doublons/anciennes lignes de l'ère 16 équipes, sans conséquence).
+// 4. Les lignes existantes non rapprochées MAIS référencées par
+//    matchs_joueur ne sont jamais touchées automatiquement — juste
+//    signalées, pour décision manuelle (ne devrait pas arriver en
+//    pratique, mais on ne supprime jamais une stat déjà saisie sans
+//    confirmation explicite).
 //
 // Découvertes des diagnostics précédents (API JSON epreuves.fff.fr) :
 // - cpNo=452036, phNo=1, gpNo=3 identifient National 1 / phase 1 / groupe C.
@@ -25,6 +46,29 @@
 //   partagées, en cherchant le groupe "POULE C" (gpNo=3).
 import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
+
+// Rapprochement de noms de club — même logique que sync-foot-direct-passes.js
+// (mots génériques ignorés, tolérance de préfixe 4 caractères minimum).
+function normaliserClub(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'vf', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
+function motsClub(s) {
+  const mots = normaliserClub(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
+  return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
+}
+function motsCorrespondent(a, b) {
+  if (a === b) return true;
+  const [court, long] = a.length <= b.length ? [a, b] : [b, a];
+  return court.length >= 4 && long.startsWith(court);
+}
+function clubsCorrespondent(a, b) {
+  const wa = motsClub(a), wb = motsClub(b);
+  if (!wa.length || !wb.length) return false;
+  const [small, big] = wa.length <= wb.length ? [wa, wb] : [wb, wa];
+  for (const w of small) if (!big.some((w2) => motsCorrespondent(w, w2))) return false;
+  return true;
+}
 
 const DRY_RUN = process.env.DRY_RUN !== 'false';
 const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
@@ -146,39 +190,102 @@ console.log(`\nMatchs par journée : ${JSON.stringify(parJournee)}`);
 
 const { data: existantes, error: erreurLecture } = await supabase
   .from('calendrier_officiel')
-  .select('id')
+  .select('id, equipe_domicile, equipe_exterieur, date_match, journee')
   .eq('division', DIVISION)
   .eq('groupe', GROUPE)
   .eq('saison', SAISON);
 if (erreurLecture) { console.error('Erreur lecture existant :', erreurLecture.message); process.exit(1); }
-console.log(`\nLignes existantes à supprimer (division=${DIVISION}, groupe=${GROUPE}, saison=${SAISON}) : ${existantes?.length || 0}`);
+console.log(`\nLignes existantes (division=${DIVISION}, groupe=${GROUPE}, saison=${SAISON}) : ${existantes?.length || 0}`);
 
-console.log('\n5 premières lignes à insérer (aperçu) :');
-for (const l of lignes.slice(0, 5)) {
-  console.log(`  ${l.date_match} — J${l.journee} — ${l.equipe_domicile} vs ${l.equipe_exterieur}`);
+// Repère les lignes existantes protégées par une contrainte de clé
+// étrangère (des stats matchs_joueur ont déjà été synchronisées dessus) —
+// jamais supprimées automatiquement, même si non rapprochées à un match FFF.
+const idsExistants = (existantes || []).map((e) => e.id);
+const idsReferences = new Set();
+for (let i = 0; i < idsExistants.length; i += 100) {
+  const lot = idsExistants.slice(i, i + 100);
+  if (!lot.length) continue;
+  const { data: refs, error: erreurRefs } = await supabase
+    .from('matchs_joueur')
+    .select('calendrier_officiel_id')
+    .in('calendrier_officiel_id', lot);
+  if (erreurRefs) { console.error('Erreur lecture matchs_joueur :', erreurRefs.message); process.exit(1); }
+  for (const r of refs || []) idsReferences.add(r.calendrier_officiel_id);
+}
+console.log(`Lignes existantes référencées par matchs_joueur (protégées) : ${idsReferences.size}`);
+
+// Rapprochement : chaque ligne existante non encore utilisée est associée
+// au premier match FFF correspondant (mêmes équipes, même date_match).
+const existantesRestantes = new Set(existantes || []);
+const aMettreAJour = [];
+const aInserer = [];
+for (const l of lignes) {
+  const correspondance = [...existantesRestantes].find(
+    (e) => e.date_match === l.date_match && clubsCorrespondent(e.equipe_domicile, l.equipe_domicile) && clubsCorrespondent(e.equipe_exterieur, l.equipe_exterieur)
+  );
+  if (correspondance) {
+    existantesRestantes.delete(correspondance);
+    const inchange = correspondance.equipe_domicile === l.equipe_domicile
+      && correspondance.equipe_exterieur === l.equipe_exterieur
+      && correspondance.journee === l.journee;
+    if (!inchange) aMettreAJour.push({ id: correspondance.id, ...l });
+  } else {
+    aInserer.push(l);
+  }
+}
+const nonRapprochees = [...existantesRestantes];
+const aSupprimer = nonRapprochees.filter((e) => !idsReferences.has(e.id));
+const nonSupprimables = nonRapprochees.filter((e) => idsReferences.has(e.id));
+
+console.log(`\nPlan de réconciliation :`);
+console.log(`  À mettre à jour (nom/journée corrigés, id conservé) : ${aMettreAJour.length}`);
+console.log(`  À insérer (nouveaux matchs, dont Touraine) : ${aInserer.length}`);
+console.log(`  À supprimer (obsolètes, non référencées) : ${aSupprimer.length}`);
+console.log(`  Non rapprochées MAIS protégées (jamais supprimées automatiquement) : ${nonSupprimables.length}`);
+if (nonSupprimables.length) {
+  console.log('  Détail des lignes protégées non rapprochées (à examiner manuellement) :');
+  for (const e of nonSupprimables) console.log(`    id=${e.id} — ${e.date_match} — J${e.journee} — ${e.equipe_domicile} vs ${e.equipe_exterieur}`);
 }
 
+console.log('\n5 premiers exemples à insérer :');
+for (const l of aInserer.slice(0, 5)) console.log(`  ${l.date_match} — J${l.journee} — ${l.equipe_domicile} vs ${l.equipe_exterieur}`);
+console.log('\n5 premiers exemples à mettre à jour :');
+for (const l of aMettreAJour.slice(0, 5)) console.log(`  id=${l.id} -> ${l.date_match} — J${l.journee} — ${l.equipe_domicile} vs ${l.equipe_exterieur}`);
+
 if (DRY_RUN) {
-  console.log('\nDRY_RUN : aucune suppression ni insertion effectuée.');
+  console.log('\nDRY_RUN : aucune suppression, mise à jour ni insertion effectuée.');
   process.exit(0);
 }
 
 console.log('\n=== Écriture réelle ===');
-const { error: erreurSuppression } = await supabase
-  .from('calendrier_officiel')
-  .delete()
-  .eq('division', DIVISION)
-  .eq('groupe', GROUPE)
-  .eq('saison', SAISON);
-if (erreurSuppression) { console.error('Erreur suppression :', erreurSuppression.message); process.exit(1); }
-console.log(`Supprimé : ${existantes?.length || 0} ligne(s) existante(s).`);
+
+let supprimes = 0;
+for (const e of aSupprimer) {
+  const { error } = await supabase.from('calendrier_officiel').delete().eq('id', e.id);
+  if (error) { console.error(`Erreur suppression id=${e.id} :`, error.message); process.exit(1); }
+  supprimes++;
+}
+console.log(`Supprimé : ${supprimes} ligne(s) obsolète(s).`);
+
+let misesAJour = 0;
+for (const l of aMettreAJour) {
+  const { id, ...champs } = l;
+  const { error } = await supabase.from('calendrier_officiel').update(champs).eq('id', id);
+  if (error) { console.error(`Erreur mise à jour id=${id} :`, error.message); process.exit(1); }
+  misesAJour++;
+}
+console.log(`Mis à jour : ${misesAJour} ligne(s).`);
 
 const TAILLE_LOT = 100;
 let inseres = 0;
-for (let i = 0; i < lignes.length; i += TAILLE_LOT) {
-  const lot = lignes.slice(i, i + TAILLE_LOT);
-  const { error: erreurInsertion } = await supabase.from('calendrier_officiel').insert(lot);
-  if (erreurInsertion) { console.error(`Erreur insertion lot ${i} :`, erreurInsertion.message); process.exit(1); }
+for (let i = 0; i < aInserer.length; i += TAILLE_LOT) {
+  const lot = aInserer.slice(i, i + TAILLE_LOT);
+  const { error } = await supabase.from('calendrier_officiel').insert(lot);
+  if (error) { console.error(`Erreur insertion lot ${i} :`, error.message); process.exit(1); }
   inseres += lot.length;
 }
 console.log(`Inséré : ${inseres} ligne(s).`);
+
+if (nonSupprimables.length) {
+  console.log(`\nATTENTION : ${nonSupprimables.length} ligne(s) protégée(s) par matchs_joueur n'ont pas pu être rapprochées d'un match FFF et n'ont pas été touchées — à examiner manuellement (voir détail ci-dessus).`);
+}
