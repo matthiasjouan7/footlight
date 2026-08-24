@@ -191,6 +191,13 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
   <div class="sidebar">
     <div class="sidebar-title">Filtres</div>
 
+    <div class="filter-group" id="shortlist-filter-group" style="display:none;">
+      <span class="filter-label">Shortlist</span>
+      <div class="chips" id="f-shortlist">
+        <div class="chip" data-val="1" onclick="toggleShortlistFilter(this)">★ Ma shortlist uniquement</div>
+      </div>
+    </div>
+
     <div class="filter-group">
       <span class="filter-label">Niveau</span>
       <div class="chips" id="f-niveau">
@@ -307,6 +314,8 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let isConnected = false;
 let viewerRole = 'anonyme';
+let viewerRecruteurId = null;
+let shortlist = new Set();
 
 const POSTE_DISPLAY = {
   'gardien':'Gardien','defenseur_central':'Défenseur',
@@ -450,7 +459,7 @@ let bancPtsParJoueur = new Map();
 // niveaux: [] = aucun filtre actif, tous les niveaux sont inclus par défaut
 // (le classement s'affiche dès le chargement, sans qu'aucun choix ne soit
 // imposé au recruteur).
-let state = { niveaux: [], poste: 'tous', indic: 'buts', viewerPlan: 'free' };
+let state = { niveaux: [], poste: 'tous', indic: 'buts', viewerPlan: 'free', shortlistOnly: false };
 
 function fmtScore(indic, value) { return indic.decimals ? value.toFixed(indic.decimals) : value; }
 function ratioOf(p) { return (n(p.buts) + n(p.passes_decisives)) / p.matchs_joues; }
@@ -493,6 +502,12 @@ function toggleNiveau(val, el) {
   render();
 }
 
+function toggleShortlistFilter(el) {
+  el.classList.toggle('active');
+  state.shortlistOnly = el.classList.contains('active');
+  render();
+}
+
 function setPoste(val, el) {
   document.querySelectorAll('#f-poste .chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
@@ -525,6 +540,7 @@ function render() {
     ? allPlayers.filter(p => state.niveaux.includes(p.niveau || 'N2'))
     : allPlayers.slice();
   if (state.poste !== 'tous') players = players.filter(p => POSTE_DISPLAY[p.poste || 'autre'] === state.poste);
+  if (state.shortlistOnly) players = players.filter(p => shortlist.has(p.id));
 
   players = players.map(p => ({ ...p, score: indic.fn(p) })).filter(p => Number.isFinite(p.score));
   players.sort((a, b) => indic.dir === 'asc' ? a.score - b.score : b.score - a.score);
@@ -713,6 +729,12 @@ async function loadBanc() {
   }
 }
 
+async function loadShortlist() {
+  if (!viewerRecruteurId) return;
+  const { data } = await db.from('shortlist').select('joueur_id').eq('recruteur_id', viewerRecruteurId);
+  (data || []).forEach(row => shortlist.add(row.joueur_id));
+}
+
 async function checkSession() {
   try {
     const { data: { user } } = await db.auth.getUser();
@@ -722,6 +744,12 @@ async function checkSession() {
       viewerRole = recruteur ? 'recruteur' : 'nouveau';
       state.viewerPlan = (recruteur && recruteur.plan) || 'free';
       state.indic = firstUnlockedKey(groupsFor(state.poste));
+      if (recruteur) {
+        viewerRecruteurId = recruteur.id;
+        await loadShortlist();
+        const shortlistFilterGroup = document.getElementById('shortlist-filter-group');
+        if (shortlistFilterGroup) shortlistFilterGroup.style.display = 'block';
+      }
       document.querySelectorAll('.nav-links a').forEach(a => {
         if (a.href && a.href.includes('footlight-connexion')) {
           a.textContent = 'Mon espace';
