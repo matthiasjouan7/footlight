@@ -29,14 +29,38 @@ const CLUB_MOTS_REMPLACEMENT = {
   st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert',
   virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc',
 };
+const CLUB_SYNONYMES_COMPLETS = {
+  qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
+  astdv: { mots: ['touques', 'deauville', 'trouville', 'villers'], elargi: true },
+  alencon: { mots: ['alenconnaise', '61'], elargi: true },
+  'anne sainte vertou': { mots: ['ussa'], elargi: true },
+  'sables vf': { mots: ['sable', 'vendee'], elargi: false },
+  'sable vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'sables vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'bourgoin j': { mots: ['jallieu'], elargi: true },
+  'romorantin so': { mots: ['sologne'], elargi: true },
+};
 function clubWords(s) {
   const mots = normalizeClub(s).split(' ').filter(Boolean);
   const remplaces = mots.map((w) => CLUB_MOTS_REMPLACEMENT[w] || w);
   const sansGeneriques = remplaces.filter((w) => !CLUB_MOTS_GENERIQUES.has(w));
   return sansGeneriques.length ? sansGeneriques : remplaces;
 }
+function clubIdentitySignature(s) {
+  const cle = clubWords(s).slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? synonyme.mots.slice().sort().join(' ') : cle;
+}
+function clubWordsElargi(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
+}
 function clubWordsMatch(a, b) {
-  const wa = clubWords(a), wb = clubWords(b);
+  const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
+  if (sigA && sigB && sigA === sigB) return true;
+  const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
   if (!wa.length || !wb.length) return false;
   const setA = new Set(wa), setB = new Set(wb);
   const small = wa.length <= wb.length ? setA : setB;
