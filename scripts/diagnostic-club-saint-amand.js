@@ -11,7 +11,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const { data, error } = await supabase
   .from('calendrier_officiel')
   .select('equipe_domicile, equipe_exterieur')
-  .eq('niveau', 'N2');
+  .eq('division', 'N2')
+  .eq('saison', '2026-2027');
 if (error) { console.error('Erreur lecture calendrier_officiel :', error.message); process.exit(1); }
 
 const noms = new Set();
