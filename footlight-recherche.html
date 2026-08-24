@@ -198,6 +198,13 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
     </div>
 
     <div class="filter-group">
+      <span class="filter-label">Club</span>
+      <input type="text" id="f-club" placeholder="Nom du club..."
+        oninput="clubQuery=this.value;applyFilters()"
+        style="width:100%;padding:9px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;"/>
+    </div>
+
+    <div class="filter-group">
       <span class="filter-label">Poste</span>
       <select class="sort-select" id="f-poste" style="width:100%;" onchange="filters.poste=this.value;applyFilters()">
         <option value="tous">Tous les postes</option>
@@ -260,13 +267,6 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
           <div class="range-row"><span>0</span><span id="matchs-val">0</span></div>
           <input type="range" min="0" max="40" value="0" step="1" oninput="document.getElementById('matchs-val').textContent=this.value;minMatchs=parseInt(this.value);applyFilters()"/>
         </div>
-      </div>
-
-      <div class="filter-group">
-        <span class="filter-label">Club</span>
-        <input type="text" id="f-club" placeholder="Nom du club..."
-          oninput="clubQuery=this.value;applyFilters()"
-          style="width:100%;padding:9px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;outline:none;"/>
       </div>
 
       <div id="custom-criteria"></div>
