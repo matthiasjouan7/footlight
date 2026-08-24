@@ -1,0 +1,31 @@
+name: Met à jour le club des joueurs prêtés à Cestas (DRY_RUN par défaut)
+
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "Écrire réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  maj:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Mettre à jour le club des joueurs prêtés
+        working-directory: scripts
+        env:
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node maj-club-pret-cestas.js
