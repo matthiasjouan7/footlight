@@ -7,6 +7,25 @@
 //   déjà jouées)
 import * as cheerio from 'cheerio';
 
+const HEADERS_LEQUIPE = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept-Language': 'fr-FR,fr;q=0.9',
+};
+
+// lequipe.fr peut occasionnellement ne jamais répondre à une requête ;
+// fetch() n'a pas de timeout par défaut, ce qui bloquerait tout le script
+// (et le job GitHub Actions) indéfiniment — déjà rencontré sur
+// foot-direct.com (voir calcule-impact-banc.js, même correctif).
+async function fetchAvecTimeout(url, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { headers: HEADERS_LEQUIPE, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const MOIS_FR = {
   janvier: 1, février: 2, mars: 3, avril: 4, mai: 5, juin: 6,
   juillet: 7, août: 8, septembre: 9, octobre: 10, novembre: 11, décembre: 12,
@@ -53,12 +72,13 @@ export function ordinalJournee(n) {
 }
 
 export async function detecterCompetition(baseUrl) {
-  const res = await fetch(baseUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Accept-Language': 'fr-FR,fr;q=0.9',
-    },
-  });
+  let res;
+  try {
+    res = await fetchAvecTimeout(baseUrl);
+  } catch (err) {
+    console.error(`Échec chargement ${baseUrl} : ${err.name === 'AbortError' ? 'timeout' : err.message}`);
+    return null;
+  }
   if (!res.ok) return null;
   const html = await res.text();
   const $ = cheerio.load(html);
@@ -164,12 +184,13 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
   }
 
   // ---- 1. Page calendrier : liste des rencontres + lien vers chaque match ----
-  const resCal = await fetch(targetUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Accept-Language': 'fr-FR,fr;q=0.9',
-    },
-  });
+  let resCal;
+  try {
+    resCal = await fetchAvecTimeout(targetUrl);
+  } catch (err) {
+    console.error(`Échec chargement calendrier : ${err.name === 'AbortError' ? 'timeout' : err.message}`);
+    return null;
+  }
   if (!resCal.ok) {
     console.error(`Échec chargement calendrier : statut ${resCal.status}`);
     return null;
@@ -260,12 +281,13 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
     const joueursById = new Map((joueursData || []).map((j) => [j.id, j]));
 
     // ---- 4. Buts/cartons du match ----
-    const resMatch = await fetch(r.matchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept-Language': 'fr-FR,fr;q=0.9',
-      },
-    });
+    let resMatch;
+    try {
+      resMatch = await fetchAvecTimeout(r.matchUrl);
+    } catch (err) {
+      console.log(`  Échec chargement page match (${err.name === 'AbortError' ? 'timeout' : err.message}), ignoré.`);
+      continue;
+    }
     if (!resMatch.ok) { console.log(`  Échec chargement page match (${resMatch.status}), ignoré.`); continue; }
     const htmlMatch = await resMatch.text();
     const decoded = htmlMatch
