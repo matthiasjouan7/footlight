@@ -13,13 +13,19 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const AUJOURDHUI = '2026-08-25';
 
-const { data: joueurs, error } = await supabase
+// ilike('%nimes%') rate "Nîmes" (î accentué) — on élargit sur "mes" (sous-
+// chaîne non accentuée commune) puis on filtre en JS en ignorant les accents.
+function sansAccents(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+const { data: candidats, error } = await supabase
   .from('joueurs')
   .select('id, prenom, nom, club, niveau, saison')
-  .ilike('club', '%nimes%')
+  .ilike('club', '%mes%')
   .eq('saison', '2026-2027');
 if (error) { console.error('Erreur joueurs :', error.message); process.exit(1); }
-console.log(`${joueurs.length} joueur(s) trouvé(s) avec club contenant "nimes".`);
+const joueurs = (candidats || []).filter((j) => sansAccents(j.club).includes('nimes'));
+console.log(`${joueurs.length} joueur(s) trouvé(s) avec club contenant "nimes" (sur ${candidats.length} candidat(s) "%mes%").`);
 
 for (const j of joueurs.slice(0, 5)) {
   const { data: matchs, error: errM } = await supabase
