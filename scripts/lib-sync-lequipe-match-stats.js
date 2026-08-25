@@ -113,7 +113,11 @@ function abregeAttendu(prenom, nom) {
 function normaliserClub(str) {
   return (str || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .toLowerCase().replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim();
+    .toLowerCase().replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim()
+    // Suffixe d'équipe réserve : le nom officiel (calendrier_officiel) le
+    // note en chiffre ("FC Lorient 2"), lequipe.fr en lettre ("Lorient B")
+    // — sans ce retrait les deux ne partagent plus aucun mot en commun.
+    .replace(/\s(\d{1,2}|[bc])$/, '');
 }
 const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
 function motsClub(s) {
