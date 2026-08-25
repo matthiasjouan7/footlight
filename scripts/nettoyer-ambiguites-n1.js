@@ -165,11 +165,13 @@ for (const [a, b] of paires) {
   }
 
   const tousIds = [...orphIds, ...refIds];
-  const { data: matchs, error } = await supabase
+  console.log(`  DEBUG tousIds (${tousIds.length}) : ${JSON.stringify(tousIds)} | typeof premier=${typeof tousIds[0]}`);
+  const { data: matchs, error, count } = await supabase
     .from('matchs_joueur')
-    .select('id, joueur_id, calendrier_officiel_id')
+    .select('id, joueur_id, calendrier_officiel_id', { count: 'exact' })
     .in('calendrier_officiel_id', tousIds);
   if (error) { console.error('Erreur lecture matchs_joueur :', error.message); process.exit(1); }
+  console.log(`  DEBUG matchs.length=${matchs.length} count=${count}`);
 
   const joueursParRef = new Map(refIds.map((id) => [id, new Set(matchs.filter((m) => m.calendrier_officiel_id === id).map((m) => m.joueur_id))]));
 
