@@ -20,7 +20,7 @@ for (const l of lignesCal) console.log(`id=${l.id} | ${l.equipe_domicile} vs ${l
 
 const { data: matchs, error } = await supabase
   .from('matchs_joueur')
-  .select('id, joueur_id, calendrier_officiel_id, buts, minutes_jouees, note, created_at')
+  .select('id, joueur_id, calendrier_officiel_id, saison, date_match, adversaire, domicile, verifie, created_at')
   .in('calendrier_officiel_id', [ID_A, ID_B]);
 if (error) { console.error('Erreur lecture matchs_joueur :', error.message); process.exit(1); }
 
@@ -34,10 +34,10 @@ const parLigne = { [ID_A]: [], [ID_B]: [] };
 for (const m of matchs) parLigne[m.calendrier_officiel_id].push(m);
 
 console.log(`\n=== Ligne ${ID_A} (${parLigne[ID_A].length} joueur(s)) ===`);
-for (const m of parLigne[ID_A]) console.log(`  ${nomJoueur.get(m.joueur_id) || m.joueur_id} : buts=${m.buts}, minutes=${m.minutes_jouees}, note=${m.note}`);
+for (const m of parLigne[ID_A]) console.log(`  ${nomJoueur.get(m.joueur_id) || m.joueur_id} : adversaire=${m.adversaire}, domicile=${m.domicile}, date=${m.date_match}, créé=${m.created_at}`);
 
 console.log(`\n=== Ligne ${ID_B} (${parLigne[ID_B].length} joueur(s)) ===`);
-for (const m of parLigne[ID_B]) console.log(`  ${nomJoueur.get(m.joueur_id) || m.joueur_id} : buts=${m.buts}, minutes=${m.minutes_jouees}, note=${m.note}`);
+for (const m of parLigne[ID_B]) console.log(`  ${nomJoueur.get(m.joueur_id) || m.joueur_id} : adversaire=${m.adversaire}, domicile=${m.domicile}, date=${m.date_match}, créé=${m.created_at}`);
 
 const joueursA = new Set(parLigne[ID_A].map((m) => m.joueur_id));
 const joueursB = new Set(parLigne[ID_B].map((m) => m.joueur_id));
