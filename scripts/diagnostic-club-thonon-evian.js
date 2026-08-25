@@ -22,7 +22,10 @@ for (const m of data || []) {
 }
 const candidats = [...noms].filter((n) => (n || '').toLowerCase().includes('thonon') || (n || '').toLowerCase().includes('evian') || (n || '').toLowerCase().includes('évian'));
 console.log(`Candidat(s) contenant "thonon"/"evian" : ${candidats.length}`);
-for (const c of candidats) console.log(`  "${c}"`);
+for (const c of candidats) {
+  const occurrences = (data || []).filter((m) => m.equipe_domicile === c || m.equipe_exterieur === c).length;
+  console.log(`  "${c}" (${occurrences} match(s) dans le calendrier)`);
+}
 
 const { data: joueurs, error: errJ } = await supabase
   .from('joueurs')
