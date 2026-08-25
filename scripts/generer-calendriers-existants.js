@@ -50,6 +50,18 @@ const CLUB_SYNONYMES_COMPLETS = {
   'bourgoin j': { mots: ['jallieu'], elargi: true },
   'romorantin so': { mots: ['sologne'], elargi: true },
 };
+// Paires de clubs réels distincts dont les signatures se recoupent par
+// sous-ensemble (un des deux, réduit à son seul nom de ville, devient un
+// sous-ensemble strict de l'autre) et que clubWordsMatch confondrait à
+// tort sans cette exclusion explicite. Clés : les deux signatures
+// (clubIdentitySignature) triées et jointes par "|".
+const CLUB_PAIRES_DISTINCTES = new Set([
+  // "Metz Apm Fc" (APM Metz) et "Fc Metz 2" (réserve du FC Metz pro) :
+  // deux clubs réels différents qui se rencontrent même en championnat.
+  ['apm metz', 'metz'].sort().join('|'),
+  // "Dijon Fco" (réserve) et "Asptt Dijon" : deux clubs réels différents.
+  ['asptt dijon', 'dijon'].sort().join('|'),
+]);
 function clubWords(s) {
   const mots = normalizeClub(s).split(' ').filter(Boolean);
   const remplaces = mots.map((w) => CLUB_MOTS_REMPLACEMENT[w] || w);
@@ -70,6 +82,7 @@ function clubWordsElargi(s) {
 function clubWordsMatch(a, b) {
   const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
   if (sigA && sigB && sigA === sigB) return true;
+  if (sigA && sigB && CLUB_PAIRES_DISTINCTES.has([sigA, sigB].sort().join('|'))) return false;
   const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
   if (!wa.length || !wb.length) return false;
   const setA = new Set(wa), setB = new Set(wb);

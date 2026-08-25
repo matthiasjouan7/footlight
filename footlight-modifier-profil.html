@@ -653,6 +653,18 @@ const CLUB_SYNONYMES_COMPLETS = {
   'bourgoin j': { mots: ['jallieu'], elargi: true },
   'romorantin so': { mots: ['sologne'], elargi: true },
 };
+// Paires de clubs r\u00e9els distincts dont les signatures se recoupent par
+// sous-ensemble (un des deux, r\u00e9duit \u00e0 son seul nom de ville, devient un
+// sous-ensemble strict de l'autre) et que clubWordsMatch confondrait \u00e0
+// tort sans cette exclusion explicite. Cl\u00e9s : les deux signatures
+// (clubIdentitySignature) tri\u00e9es et jointes par "|".
+const CLUB_PAIRES_DISTINCTES = new Set([
+  // "Metz Apm Fc" (APM Metz) et "Fc Metz 2" (r\u00e9serve du FC Metz pro) :
+  // deux clubs r\u00e9els diff\u00e9rents qui se rencontrent m\u00eame en championnat.
+  ['apm metz', 'metz'].sort().join('|'),
+  // "Dijon Fco" (r\u00e9serve) et "Asptt Dijon" : deux clubs r\u00e9els diff\u00e9rents.
+  ['asptt dijon', 'dijon'].sort().join('|'),
+]);
 
 // D\u00e9coupe un nom de club normalis\u00e9 en mots, pour un rapprochement tol\u00e9rant
 // \u00e0 l'ordre des mots, aux mots manquants (ex: "Pontivy", "GSI Pontivy" et
@@ -685,6 +697,7 @@ function clubWordsElargi(s) {
 function clubWordsMatch(a, b) {
   const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
   if (sigA && sigB && sigA === sigB) return true;
+  if (sigA && sigB && CLUB_PAIRES_DISTINCTES.has([sigA, sigB].sort().join('|'))) return false;
   const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
   if (!wa.length || !wb.length) return false;
   const setA = new Set(wa), setB = new Set(wb);
