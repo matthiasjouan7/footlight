@@ -164,14 +164,21 @@ for (const [a, b] of paires) {
     else console.log(`  Ligne id=${idOrph} (${ligneOrph.date_match}) : AUCUNE ligne de référence proche (±3j) trouvée — ignorée par sécurité.`);
   }
 
-  const tousIds = [...orphIds, ...refIds];
-  console.log(`  DEBUG tousIds (${tousIds.length}) : ${JSON.stringify(tousIds)} | typeof premier=${typeof tousIds[0]}`);
-  const { data: matchs, error, count } = await supabase
+  // IMPORTANT : ne PAS interroger matchs_joueur pour les 30-32 ids de la
+  // ligne de référence en entier — un club complet sur la saison peut
+  // avoir 1000+ lignes matchs_joueur (20-45 joueurs × 30 matchs), ce qui
+  // dépasse la limite par défaut de 1000 lignes de PostgREST et tronque
+  // silencieusement le résultat (observé : matchs.length plafonné à 1000
+  // alors que count réel atteignait 1490). On ne requête que les ids
+  // réellement utiles : les orphelines + UNIQUEMENT les références qui
+  // leur correspondent exactement (pas toute la saison de la référence).
+  const refIdsUtiles = [...new Set(correspondance.values())];
+  const idsUtiles = [...orphIds, ...refIdsUtiles];
+  const { data: matchs, error } = await supabase
     .from('matchs_joueur')
-    .select('id, joueur_id, calendrier_officiel_id', { count: 'exact' })
-    .in('calendrier_officiel_id', tousIds);
+    .select('id, joueur_id, calendrier_officiel_id')
+    .in('calendrier_officiel_id', idsUtiles);
   if (error) { console.error('Erreur lecture matchs_joueur :', error.message); process.exit(1); }
-  console.log(`  DEBUG matchs.length=${matchs.length} count=${count}`);
 
   const joueursParRef = new Map(refIds.map((id) => [id, new Set(matchs.filter((m) => m.calendrier_officiel_id === id).map((m) => m.joueur_id))]));
 
