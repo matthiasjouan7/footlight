@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-08-23T07:30:19.239Z",
+  "updated_at": "2026-08-25T07:42:07.173Z",
   "joueurs": [
     {
       "id": "12425871-dded-4368-80c7-b6f6f4d5e83c",
@@ -129,25 +129,6 @@
       ]
     },
     {
-      "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
-      "prenom": "George",
-      "nom": "Morgan",
-      "club": "AS Cannes",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-14",
-          "adversaire": "FC FLEURY 91",
-          "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "a7b216af-f55e-4e8c-809a-a7096bc29538",
       "prenom": "Alexis",
       "nom": "Gouletquer",
@@ -181,6 +162,25 @@
           "domicile": false,
           "situation": "menait de 1 but",
           "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
+      "prenom": "George",
+      "nom": "Morgan",
+      "club": "AS Cannes",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "FC FLEURY 91",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
+          "resultat": "nul",
           "points": 1
         }
       ]
