@@ -102,14 +102,20 @@ async function selectAll(table, columns, filtre) {
 const calendrier = await selectAll('calendrier_officiel', 'id, equipe_domicile, equipe_exterieur, division, saison, date_match', (q) => q.eq('division', DIVISION).eq('saison', SAISON));
 console.log(`${calendrier.length} ligne(s) calendrier_officiel ${DIVISION} ${SAISON}.\n`);
 
-const lignesParId = new Map(calendrier.map((r) => [r.id, r]));
+// IMPORTANT : calendrier_officiel.id peut revenir en string (bigint) côté
+// supabase-js alors que matchs_joueur.calendrier_officiel_id revient en
+// number — on force Number() partout pour que les comparaisons ===/Set
+// fonctionnent (sinon matchsOrph reste silencieusement vide et la
+// suppression de la ligne calendrier échoue par contrainte de clé
+// étrangère, avec des matchs_joueur jamais migrés).
+const lignesParId = new Map(calendrier.map((r) => [Number(r.id), r]));
 const equipes = new Map(); // nom -> { count, ids: Set }
 for (const r of calendrier) {
   for (const eq of [r.equipe_domicile, r.equipe_exterieur]) {
     if (!eq) continue;
     if (!equipes.has(eq)) equipes.set(eq, { count: 0, ids: new Set() });
     equipes.get(eq).count++;
-    equipes.get(eq).ids.add(r.id);
+    equipes.get(eq).ids.add(Number(r.id));
   }
 }
 function joursEcart(d1, d2) {
