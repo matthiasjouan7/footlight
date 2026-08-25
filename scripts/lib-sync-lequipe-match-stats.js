@@ -157,33 +157,37 @@ function contributionMatch(m) {
     clean_sheets: joue && !!m.clean_sheet ? 1 : 0,
   };
 }
-function deltaContributionMatch(ancien, nouveau) {
-  const a = contributionMatch(ancien), n = contributionMatch(nouveau);
-  const delta = {};
-  Object.keys(n).forEach((c) => { delta[c] = n[c] - a[c]; });
-  return delta;
-}
-
 export async function syncMatchStats(targetUrl, supabase, dryRun) {
   // joueurSaison : saison en cours du joueur (joueurs.saison), pour choisir
   // entre joueurs (saison en cours) et stats_saisons (saison passée), comme
   // côté client.
-  async function appliquerDeltaSaison(joueurId, joueurSaison, saisonFiche, delta) {
-    const champs = Object.keys(delta).filter((c) => delta[c] !== 0);
-    if (!champs.length) return;
+  //
+  // Recalcule le total de saison à partir de TOUTES les lignes matchs_joueur
+  // du joueur pour cette saison (plutôt que d'ajouter un delta au-dessus
+  // d'une valeur lue séparément) : un lecture-puis-écriture en delta n'est
+  // pas atomique et double-compte si deux exécutions de synchro se
+  // chevauchent (constaté en pratique le 25/08 — plusieurs joueurs de N1
+  // avec matchs_joues=2 pour 1 seul match réellement joué, alors qu'une
+  // seule ligne matchs_joueur existait). Un recalcul complet est lui
+  // idempotent : deux exécutions concurrentes lisent le même état réel de
+  // matchs_joueur et écrivent le même résultat, sans jamais s'additionner.
+  async function recalculerAgregatsSaison(joueurId, joueurSaison, saisonFiche) {
+    const { data: matchs, error: errMatchs } = await supabase
+      .from('matchs_joueur')
+      .select('minutes_jouees, titulaire, buts, passes_decisives, cartons_jaunes, cartons_rouges, buts_encaisses_avec, clean_sheet')
+      .eq('joueur_id', joueurId)
+      .eq('saison', saisonFiche);
+    if (errMatchs) return;
+    const totaux = (matchs || []).reduce((acc, m) => {
+      const c = contributionMatch(m);
+      Object.keys(c).forEach((k) => { acc[k] = (acc[k] || 0) + c[k]; });
+      return acc;
+    }, {});
     const isCurrentSeason = saisonFiche === (joueurSaison || '2026-2027');
-    let current;
     if (isCurrentSeason) {
-      ({ data: current } = await supabase.from('joueurs').select(champs.join(',')).eq('id', joueurId).single());
+      await supabase.from('joueurs').update(totaux).eq('id', joueurId);
     } else {
-      ({ data: current } = await supabase.from('stats_saisons').select(champs.join(',')).eq('joueur_id', joueurId).eq('saison', saisonFiche).single());
-    }
-    const maj = {};
-    champs.forEach((c) => { maj[c] = (current && current[c] != null ? current[c] : 0) + delta[c]; });
-    if (isCurrentSeason) {
-      await supabase.from('joueurs').update(maj).eq('id', joueurId);
-    } else {
-      await supabase.from('stats_saisons').upsert({ joueur_id: joueurId, saison: saisonFiche, ...maj }, { onConflict: 'joueur_id,saison' });
+      await supabase.from('stats_saisons').upsert({ joueur_id: joueurId, saison: saisonFiche, ...totaux }, { onConflict: 'joueur_id,saison' });
     }
   }
 
@@ -449,13 +453,12 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
 
       if (Object.keys(maj).length) {
         totalMaj++;
-        const delta = deltaContributionMatch(row, { ...row, ...maj });
         if (!dryRun) {
           const { error: updErr } = await supabase.from('matchs_joueur').update(maj).eq('id', row.id);
           if (updErr) { console.log(`    Erreur écriture : ${updErr.message}`); continue; }
-          await appliquerDeltaSaison(row.joueur_id, joueur.saison, row.saison, delta);
+          await recalculerAgregatsSaison(row.joueur_id, joueur.saison, row.saison);
         } else {
-          console.log(`    Total de saison (proposé) : ${JSON.stringify(delta)}`);
+          console.log(`    Total de saison : recalculé après écriture (dry run : pas de calcul détaillé).`);
         }
       }
     }

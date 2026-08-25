@@ -1,0 +1,30 @@
+name: Réparation agrégats matchs_joues
+
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "Écrire réellement en base (sinon dry run)"
+        type: boolean
+        default: false
+
+jobs:
+  reparation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Réparation
+        working-directory: scripts
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+        run: node reparation-agregats-matchs-joues.js
