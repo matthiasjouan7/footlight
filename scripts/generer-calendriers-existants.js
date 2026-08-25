@@ -65,7 +65,13 @@ const CLUB_PAIRES_DISTINCTES = new Set([
 function clubWords(s) {
   const mots = normalizeClub(s).split(' ').filter(Boolean);
   const remplaces = mots.map((w) => CLUB_MOTS_REMPLACEMENT[w] || w);
-  const sansGeneriques = remplaces.filter((w) => !CLUB_MOTS_GENERIQUES.has(w));
+  let sansGeneriques = remplaces.filter((w) => !CLUB_MOTS_GENERIQUES.has(w));
+  // "Hyères 83 FC" : certains joueurs incluent le département dans le nom
+  // de club, absent du nom officiel ("HYERES F.C.") — retire ce token
+  // précis pour ce club seulement (uniquement si "hyeres" est déjà
+  // présent), pour ne pas risquer de supprimer un numéro de département
+  // qui distinguerait deux clubs réels différents ailleurs.
+  if (sansGeneriques.includes('hyeres')) sansGeneriques = sansGeneriques.filter((w) => w !== '83');
   return sansGeneriques.length ? sansGeneriques : remplaces;
 }
 function clubIdentitySignature(s) {
