@@ -203,19 +203,28 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
     .get()
     .find((j) => j && j['@type'] === 'BreadcrumbList')
     ?.itemListElement?.at(-1)?.item?.name || null;
-  const dateCaption = $cal('.caption.caption--small')
+  // Une journée peut être étalée sur plusieurs jours (ex: vendredi +
+  // samedi) : la page affiche alors PLUSIEURS légendes de date, une par
+  // groupe de matchs. Ne garder que la première ratait les matchs des
+  // jours suivants (leur ligne calendrier_officiel n'était jamais
+  // retrouvée) — on calcule donc une date min/max couvrant toute la
+  // journée plutôt qu'une égalité stricte sur une seule date.
+  const datesCaptions = $cal('.caption.caption--small')
     .filter((i, el) => /lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche/i.test($cal(el).text()))
-    .first().text().trim() || null;
+    .map((i, el) => $cal(el).text().trim())
+    .get();
   const pageTitleCal = $cal('title').text().trim();
   const saisonMatch = pageTitleCal.match(/(\d{4})-(\d{4})/);
   const saison = saisonMatch ? `${saisonMatch[1]}-${saisonMatch[2]}` : null;
   const division = mapDivision(competitionLabel);
   const groupe = extraireGroupe(competitionLabel);
-  const dateMatchJournee = calculerDateMatch(dateCaption, saison);
+  const datesMatchJournee = [...new Set(datesCaptions.map((d) => calculerDateMatch(d, saison)).filter(Boolean))].sort();
+  const dateMatchJourneeMin = datesMatchJournee[0] || null;
+  const dateMatchJourneeMax = datesMatchJournee[datesMatchJournee.length - 1] || null;
 
-  console.log(`Compétition : ${competitionLabel} -> ${division} groupe ${groupe}, saison ${saison}, date ${dateMatchJournee}`);
+  console.log(`Compétition : ${competitionLabel} -> ${division} groupe ${groupe}, saison ${saison}, date(s) ${datesMatchJournee.join(', ') || '(aucune)'}`);
 
-  if (!division || !saison || !dateMatchJournee) {
+  if (!division || !saison || !dateMatchJourneeMin) {
     console.error('Impossible de déterminer division/saison/date — abandon pour cette URL.');
     return null;
   }
@@ -250,7 +259,8 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
     .eq('division', division)
     .eq('groupe', groupe)
     .eq('saison', saison)
-    .eq('date_match', dateMatchJournee);
+    .gte('date_match', dateMatchJourneeMin)
+    .lte('date_match', dateMatchJourneeMax);
   if (calErrJournee) {
     console.error(`Erreur lecture calendrier_officiel : ${calErrJournee.message}`);
     return null;
