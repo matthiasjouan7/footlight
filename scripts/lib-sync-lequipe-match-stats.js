@@ -136,6 +136,7 @@ const MOTS_REMPLACEMENT_CLUB = {
 const CLUB_SYNONYMES_COMPLETS_STATS = {
   fcldsd: { mots: ['limonest'], elargi: false },
   goal: { mots: ['grand', 'ouest', 'associat'], elargi: false },
+  'poire vendee': { mots: ['poire', 'vie'], elargi: false },
 };
 function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean);
