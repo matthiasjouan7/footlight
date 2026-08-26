@@ -1,19 +1,14 @@
-// Le diagnostic précédent (diagnostic-doublon-3042.js) a montré que le
-// doublon calendrier_officiel id=3042 ("Orléans vs La Roche-sur-Yon",
-// 2026-08-27, créé par le bug connu de sync-lequipe-to-calendrier.js —
-// nom court lequipe.fr, mauvaise date pour une journée à dates multiples)
-// n'est PAS orphelin : 41 lignes matchs_joueur (joueurs des deux clubs,
-// dont Kamil Bensoula) y sont déjà rattachées, en plus des 23 lignes déjà
-// correctement rattachées au vrai match officiel id=1966 ("US ORLEANS vs
-// VENDEE FC LA ROCHE/YON", 2026-08-29, journée 4). Contrairement au
-// nettoyage N1 précédent (qui ne supprimait que des doublons SANS aucun
-// joueur lié), il faut ici migrer les 41 lignes vers id=1966 avant de
-// supprimer le doublon, pour ne perdre aucune donnée.
+// Le diagnostic du doublon calendrier_officiel id=3042 (VFC La Roche-sur-Yon,
+// créé par le bug connu de sync-lequipe-to-calendrier.js) a montré que 41
+// lignes matchs_joueur y sont rattachées à tort, dont 20 pour des joueurs
+// qui ont AUSSI déjà une ligne sur le vrai match officiel id=1966 (double
+// ligne pour le même match réel, risque de double comptage). Pour ces 20 :
+// garde la ligne avec le plus de champs de stats renseignés (à égalité,
+// garde celle du match officiel) et supprime l'autre. Pour les 21 restants
+// (aucun conflit) : migre simplement leur ligne vers id=1966. Termine en
+// supprimant la ligne doublon id=3042 (désormais vide).
 //
-// Sécurité : vérifie qu'aucun joueur n'est déjà lié aux DEUX lignes
-// (même joueur_id sur 1966 et 3042) avant de migrer quoi que ce soit —
-// un conflit annulerait toute l'opération plutôt que d'écraser des
-// données. DRY_RUN=true par défaut.
+// DRY_RUN=true par défaut.
 import { createClient } from '@supabase/supabase-js';
 
 const dryRun = process.env.DRY_RUN !== 'false';
@@ -25,41 +20,43 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const DOUBLON_ID = 3042;
 const OFFICIEL_ID = 1966;
+const CHAMPS_STATS = ['score_pour', 'score_contre', 'buts', 'passes_decisives', 'cartons_jaunes', 'cartons_rouges', 'minutes_jouees'];
+const nbRenseignes = (row) => CHAMPS_STATS.filter((c) => row[c] !== null && row[c] !== undefined).length;
 
-const { data: versDoublon, error: errD } = await supabase
-  .from('matchs_joueur')
-  .select('id, joueur_id')
-  .eq('calendrier_officiel_id', DOUBLON_ID);
+const { data: versDoublon, error: errD } = await supabase.from('matchs_joueur').select('*').eq('calendrier_officiel_id', DOUBLON_ID);
 if (errD) { console.error('Erreur lecture doublon :', errD.message); process.exit(1); }
-
-const { data: versOfficiel, error: errO } = await supabase
-  .from('matchs_joueur')
-  .select('id, joueur_id')
-  .eq('calendrier_officiel_id', OFFICIEL_ID);
+const { data: versOfficiel, error: errO } = await supabase.from('matchs_joueur').select('*').eq('calendrier_officiel_id', OFFICIEL_ID);
 if (errO) { console.error('Erreur lecture officiel :', errO.message); process.exit(1); }
 
-console.log(`${versDoublon.length} ligne(s) à migrer depuis le doublon id=${DOUBLON_ID} vers id=${OFFICIEL_ID} (qui a déjà ${versOfficiel.length} ligne(s)).`);
+const parJoueurOfficiel = new Map(versOfficiel.map((m) => [m.joueur_id, m]));
+const conflits = versDoublon.filter((m) => parJoueurOfficiel.has(m.joueur_id));
+const sansConflit = versDoublon.filter((m) => !parJoueurOfficiel.has(m.joueur_id));
+console.log(`${versDoublon.length} ligne(s) sur le doublon : ${sansConflit.length} à migrer sans conflit, ${conflits.length} en double avec l'officiel (id=${OFFICIEL_ID}).`);
 
-const joueursDejaOfficiel = new Set(versOfficiel.map((m) => m.joueur_id));
-const conflits = versDoublon.filter((m) => joueursDejaOfficiel.has(m.joueur_id));
-if (conflits.length) {
-  console.error(`Erreur : ${conflits.length} joueur(s) déjà lié(s) aux DEUX lignes — migration annulée pour éviter toute perte : ${conflits.map((c) => c.joueur_id).join(', ')}`);
-  process.exit(1);
+let aSupprimer = [];
+for (const d of conflits) {
+  const o = parJoueurOfficiel.get(d.joueur_id);
+  const garderOfficiel = nbRenseignes(o) >= nbRenseignes(d);
+  const garde = garderOfficiel ? o : d;
+  const supprime = garderOfficiel ? d : o;
+  console.log(`  joueur_id=${d.joueur_id} : garde ligne id=${garde.id} (${nbRenseignes(garde)} champ(s) renseigné(s)), supprime id=${supprime.id} (${nbRenseignes(supprime)} champ(s))`);
+  aSupprimer.push(supprime.id);
 }
-console.log('Aucun conflit : les deux ensembles de joueurs sont bien disjoints.');
 
 if (!dryRun) {
-  const ids = versDoublon.map((m) => m.id);
-  const { error: errMaj } = await supabase
-    .from('matchs_joueur')
-    .update({ calendrier_officiel_id: OFFICIEL_ID })
-    .in('id', ids);
-  if (errMaj) { console.error('Erreur migration matchs_joueur :', errMaj.message); process.exit(1); }
-  console.log(`${ids.length} ligne(s) matchs_joueur migrée(s).`);
-
+  if (aSupprimer.length) {
+    const { error: errDelConf } = await supabase.from('matchs_joueur').delete().in('id', aSupprimer);
+    if (errDelConf) { console.error('Erreur suppression conflits :', errDelConf.message); process.exit(1); }
+    console.log(`${aSupprimer.length} ligne(s) en double supprimée(s).`);
+  }
+  if (sansConflit.length) {
+    const { error: errMaj } = await supabase.from('matchs_joueur').update({ calendrier_officiel_id: OFFICIEL_ID }).in('id', sansConflit.map((m) => m.id));
+    if (errMaj) { console.error('Erreur migration matchs_joueur :', errMaj.message); process.exit(1); }
+    console.log(`${sansConflit.length} ligne(s) migrée(s) vers id=${OFFICIEL_ID}.`);
+  }
   const { error: errDel } = await supabase.from('calendrier_officiel').delete().eq('id', DOUBLON_ID);
   if (errDel) { console.error('Erreur suppression doublon :', errDel.message); process.exit(1); }
   console.log(`Ligne doublon id=${DOUBLON_ID} supprimée.`);
 } else {
-  console.log('\nDRY RUN : rien n\'a été écrit. Relancer avec DRY_RUN=false pour appliquer la migration et supprimer le doublon.');
+  console.log(`\nDRY RUN : ${aSupprimer.length} suppression(s) de doublon-conflit + ${sansConflit.length} migration(s) + suppression de la ligne id=${DOUBLON_ID} à faire. Relancer avec DRY_RUN=false pour appliquer.`);
 }
