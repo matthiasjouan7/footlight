@@ -10,20 +10,37 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); process.exit(1); }
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const AUJOURDHUI = '2026-08-25';
+const AUJOURDHUI = '2026-08-26';
 
 function sansAccents(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
-async function inspecter(motCle) {
+// select() est plafonné à 1000 lignes par PostgREST par défaut : sans
+// pagination, une table joueurs plus grande que ça tronque silencieusement
+// le résultat (déjà rencontré, cause probable du "0 joueur(s) trouvé(s)"
+// pour Hyères au premier passage).
+async function fetchTousJoueurs() {
+  const tous = [];
+  let from = 0;
+  const page = 1000;
+  for (;;) {
+    const { data, error } = await supabase
+      .from('joueurs')
+      .select('id, prenom, nom, club, saison, matchs_joues')
+      .eq('saison', '2026-2027')
+      .not('club', 'is', null)
+      .range(from, from + page - 1);
+    if (error) { console.error('Erreur joueurs :', error.message); return tous; }
+    tous.push(...(data || []));
+    if (!data || data.length < page) break;
+    from += page;
+  }
+  return tous;
+}
+
+async function inspecter(motCle, candidats) {
   console.log(`\n=== "${motCle}" ===`);
-  const { data: candidats, error } = await supabase
-    .from('joueurs')
-    .select('id, prenom, nom, club, saison, matchs_joues')
-    .eq('saison', '2026-2027')
-    .not('club', 'is', null);
-  if (error) { console.error('Erreur joueurs :', error.message); return; }
   const joueurs = candidats.filter((j) => sansAccents(j.club).includes(motCle));
   console.log(`${joueurs.length} joueur(s) trouvé(s).`);
   const clubs = [...new Set(joueurs.map((j) => j.club))];
@@ -40,6 +57,7 @@ async function inspecter(motCle) {
     for (const m of matchs || []) console.log(`  id=${m.id} | ${m.date_match} vs ${m.adversaire} | score=${m.score_pour}-${m.score_contre} | minutes_jouees=${m.minutes_jouees} | cal_id=${m.calendrier_officiel_id}`);
   }
 
+  if (!clubs.length) return;
   const { data: cal, error: errC } = await supabase
     .from('calendrier_officiel')
     .select('id, equipe_domicile, equipe_exterieur, division, groupe, journee, date_match, saison')
@@ -54,5 +72,7 @@ async function inspecter(motCle) {
   }
 }
 
-await inspecter('hyeres');
-await inspecter('briochin');
+const tousJoueurs = await fetchTousJoueurs();
+console.log(`${tousJoueurs.length} joueur(s) 2026-2027 au total (après pagination).`);
+await inspecter('hyeres', tousJoueurs);
+await inspecter('briochin', tousJoueurs);
