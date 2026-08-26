@@ -17,7 +17,7 @@ async function fetchAvecTimeout(url, timeoutMs = 20000) {
   finally { clearTimeout(timer); }
 }
 
-const targetUrl = 'https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats/1';
+const targetUrl = 'https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats/1re-journee';
 console.log(`Chargement ${targetUrl} ...`);
 const resCal = await fetchAvecTimeout(targetUrl);
 if (!resCal.ok) { console.error(`Échec chargement page groupe : ${resCal.status}`); process.exit(1); }
