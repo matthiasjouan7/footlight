@@ -34,7 +34,7 @@ async function fetchTousJoueurs() {
 
 const tousJoueurs = await fetchTousJoueurs();
 
-for (const motCle of ['hyeres', 'limonest', 'epinal', 'colmar']) {
+for (const motCle of ['hyeres', 'limonest', 'epinal', 'colmar', 'racing']) {
   console.log(`\n=== "${motCle}" ===`);
   const joueurs = tousJoueurs.filter((j) => sansAccents(j.club).includes(motCle));
   console.log(`${joueurs.length} joueur(s), clubs distincts : ${[...new Set(joueurs.map((j) => j.club))].join(' | ')}`);
