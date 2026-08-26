@@ -67,16 +67,27 @@ console.log(`${clubsConnus.length} club(s) distinct(s) connus dans calendrier_of
 const joueurs = await selectAll('joueurs', 'id, prenom, nom, club, niveau, matchs_joues', (q) => q.eq('saison', '2026-2027'));
 console.log(`${joueurs.length} joueur(s) (saison 2026-2027) à vérifier.\n`);
 
+// IMPORTANT : un club déclaré (ex "FC Versailles 78", "US Orléans",
+// "Paris 13 Atletico") peut correspondre par clubWordsMatch à PLUSIEURS
+// clubs connus distincts (ex : le vrai club Ligue 3 "FC VERSAILLES" ET la
+// réserve N2 "Versailles 78 Fc 2", qui partagent le mot "versailles" une
+// fois les mots génériques retirés). Prendre seulement le PREMIER club
+// trouvé (bug de la version précédente, via .find()) ratait la bonne
+// division si le mauvais candidat apparaissait en premier dans la liste —
+// ça a produit ~70 faux positifs (Versailles/Orléans/Paris13/Lyonnais)
+// pour des joueurs déjà correctement classés. Union de TOUTES les
+// divisions correspondantes avant de comparer au niveau déclaré.
 console.log('=== Joueurs avec niveau probablement erroné (club connu dans une AUTRE division) ===');
 let nbSuspects = 0;
 for (const j of joueurs) {
   if (!j.club) continue;
-  const match = clubsConnus.find((c) => clubWordsMatch(c.nom, j.club));
-  if (!match) continue;
-  const diviseurs = [...match.divisions].map((d) => d.split('|')[0]);
+  const matches = clubsConnus.filter((c) => clubWordsMatch(c.nom, j.club));
+  if (!matches.length) continue;
+  const diviseurs = matches.flatMap((m) => [...m.divisions].map((d) => d.split('|')[0]));
   const diviseursUniques = [...new Set(diviseurs)];
   if (diviseursUniques.includes(j.niveau)) continue; // niveau déjà cohérent avec au moins une des divisions trouvées
-  console.log(`  ${j.prenom} ${j.nom} — club="${j.club}" (~ "${match.nom}") niveau déclaré="${j.niveau}" niveau(x) réel(s)="${diviseursUniques.join(', ')}" matchs_joues=${j.matchs_joues}`);
+  const nomsMatches = [...new Set(matches.map((m) => m.nom))];
+  console.log(`  ${j.prenom} ${j.nom} — club="${j.club}" (~ ${nomsMatches.map((n) => `"${n}"`).join(', ')}) niveau déclaré="${j.niveau}" niveau(x) réel(s)="${diviseursUniques.join(', ')}" matchs_joues=${j.matchs_joues}`);
   nbSuspects++;
 }
 console.log(`\n${nbSuspects} joueur(s) suspect(s) trouvé(s) (toutes divisions confondues).`);
