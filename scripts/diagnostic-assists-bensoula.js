@@ -42,10 +42,17 @@ for (const { adversaire, url } of URLS) {
   const htmlCal = await resCal.text();
   const $ = cheerio.load(htmlCal);
   let matchUrl = null;
-  $('a[href*="/match-"], a[href*="/direct/"]').each((_, el) => {
-    const texte = $(el).text().toLowerCase();
-    if ((texte.includes('roche') || texte.includes('vfc')) && !matchUrl) {
-      matchUrl = new URL($(el).attr('href'), url).toString();
+  $('.TeamScore').each((_, el) => {
+    const $el = $(el);
+    const home = $el.find('.TeamScore__team--home').first().text().trim() || '';
+    const away = $el.find('.TeamScore__team').filter((j, t) => !$(t).hasClass('TeamScore__team--home')).first().text().trim() || '';
+    if (!/roche|vfc/i.test(home) && !/roche|vfc/i.test(away)) return;
+    let $ancestor = $el;
+    for (let depth = 0; depth < 6 && !matchUrl; depth++) {
+      $ancestor = $ancestor.parent();
+      if (!$ancestor.length) break;
+      const $link = $ancestor.is('a[href*="match-direct"]') ? $ancestor : $ancestor.find('a[href*="match-direct"]').first();
+      if ($link.length) matchUrl = new URL($link.attr('href'), url).toString();
     }
   });
   if (!matchUrl) { console.log('  Lien du match introuvable sur la page calendrier.'); continue; }
