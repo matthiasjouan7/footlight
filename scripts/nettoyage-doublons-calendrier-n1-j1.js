@@ -45,6 +45,7 @@ const CLUB_SYNONYMES_COMPLETS_STATS = {
   fcldsd: { mots: ['limonest'], elargi: false },
   goal: { mots: ['grand', 'ouest', 'associat'], elargi: false },
   'poire vendee': { mots: ['poire', 'vie'], elargi: false },
+  france: { mots: ['cf'], elargi: false },
 };
 function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean);
@@ -76,6 +77,7 @@ function clubsCorrespondent(a, b) {
 // ── Fin de la copie ──
 
 const CIBLES = [
+  { division: 'N1', groupe: 'A', journee: 1 },
   { division: 'N1', groupe: 'B', journee: 1 },
   { division: 'N1', groupe: 'C', journee: 1 },
 ];
