@@ -127,7 +127,7 @@ function normaliserClub(str) {
 const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'sas', 'sr', 'ol', 'om', 'rc', 'fco', 'osc', 'sco', 'ent', 'entente', 'athletic', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
 const MOTS_REMPLACEMENT_CLUB = {
   st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert',
-  virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee',
+  virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee', sbfc: 'beaucairois',
 };
 // Sigles/noms d'usage sans aucun mot en commun avec le nom officiel
 // correspondant, même après remplacement — repérés en pratique (les
