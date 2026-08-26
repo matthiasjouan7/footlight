@@ -1,0 +1,30 @@
+name: Nettoyage doublons calendrier N1 groupes B/C journée 1
+
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "Supprimer réellement (sinon dry run)"
+        type: boolean
+        default: false
+
+jobs:
+  nettoyage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Nettoyage
+        working-directory: scripts
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+        run: node nettoyage-doublons-calendrier-n1-j1.js
