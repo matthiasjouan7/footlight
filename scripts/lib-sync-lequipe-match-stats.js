@@ -106,10 +106,15 @@ function abregeAttendu(prenom, nom) {
   return normaliser(`${prenom[0]}. ${nom}`);
 }
 
-// Rapprochement flou des noms de club : la page calendrier-resultats de
-// lequipe.fr affiche des noms courts ("Caen") alors que calendrier_officiel
-// stocke souvent des noms officiels longs ("SM CAEN") — une égalité stricte
-// ne matche jamais.
+// Rapprochement flou des noms de club — même logique que clubWordsMatch()
+// dans generer-calendriers-existants.js / footlight-modifier-profil.html /
+// footlight-inscription-joueur.html (à garder synchronisée avec ces
+// copies) : la page calendrier-resultats de lequipe.fr affiche des noms
+// courts ou d'usage ("Caen", "Saint-Brieuc", "Limonest") alors que
+// calendrier_officiel stocke souvent des noms officiels longs, des
+// adjectifs démonymes ou des sigles ("SM CAEN", "Stade Briochin",
+// "FCLDSD") — une simple égalité stricte, voire un recoupement de mots
+// naïf, rate ces cas faute de mot commun.
 function normaliserClub(str) {
   return (str || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -119,15 +124,43 @@ function normaliserClub(str) {
     // — sans ce retrait les deux ne partagent plus aucun mot en commun.
     .replace(/\s(\d{1,2}|[bc])$/, '');
 }
-const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
+const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'ol', 'om', 'rc', 'fco', 'osc', 'sco', 'ent', 'entente', 'athletic', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
+const MOTS_REMPLACEMENT_CLUB = {
+  st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert',
+  virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc',
+};
+// Sigles/noms d'usage sans aucun mot en commun avec le nom officiel
+// correspondant, même après remplacement — repérés en pratique (les
+// joueurs de ces clubs n'avaient jamais de score synchronisé, la synchro
+// ne retrouvant jamais la bonne ligne calendrier_officiel).
+const CLUB_SYNONYMES_COMPLETS_STATS = {
+  fcldsd: { mots: ['limonest'], elargi: false },
+  goal: { mots: ['grand', 'ouest', 'associat'], elargi: false },
+};
 function motsClub(s) {
-  const mots = normaliserClub(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
-  return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
+  const mots = normaliserClub(s).split(' ').filter(Boolean);
+  const remplaces = mots.map((w) => MOTS_REMPLACEMENT_CLUB[w] || w);
+  const sansGeneriques = remplaces.filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
+  return sansGeneriques.length ? sansGeneriques : remplaces;
+}
+function signatureClub(s) {
+  const cle = motsClub(s).slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS_STATS[cle];
+  return synonyme ? synonyme.mots.slice().sort().join(' ') : cle;
+}
+function motsClubElargi(s) {
+  const mots = motsClub(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS_STATS[cle];
+  return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
 }
 function clubsCorrespondent(a, b) {
-  const wa = new Set(motsClub(a)), wb = new Set(motsClub(b));
-  if (!wa.size || !wb.size) return false;
-  const [small, big] = wa.size <= wb.size ? [wa, wb] : [wb, wa];
+  const sigA = signatureClub(a), sigB = signatureClub(b);
+  if (sigA && sigB && sigA === sigB) return true;
+  const wa = motsClubElargi(a), wb = motsClubElargi(b);
+  if (!wa.length || !wb.length) return false;
+  const setA = new Set(wa), setB = new Set(wb);
+  const [small, big] = wa.length <= wb.length ? [setA, setB] : [setB, setA];
   for (const w of small) if (!big.has(w)) return false;
   return true;
 }
