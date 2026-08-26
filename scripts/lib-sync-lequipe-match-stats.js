@@ -137,6 +137,10 @@ const CLUB_SYNONYMES_COMPLETS_STATS = {
   fcldsd: { mots: ['limonest'], elargi: false },
   goal: { mots: ['grand', 'ouest', 'associat'], elargi: false },
   'poire vendee': { mots: ['poire', 'vie'], elargi: false },
+  // "Racing Club France" -> "racing"/"club" génériques, ne reste que
+  // "france" ; lequipe.fr affiche "Racing CF", qui ne reste réduit qu'à
+  // "cf" (non générique) — aucun mot commun sans ce synonyme.
+  france: { mots: ['cf'], elargi: false },
 };
 function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean);
