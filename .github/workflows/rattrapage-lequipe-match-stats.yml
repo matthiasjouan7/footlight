@@ -12,6 +12,7 @@ on:
           - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-g/page-calendrier-resultats"
       journees:
         description: 'Journée(s) à rattraper (ex: "3", "1-5", "1,2,7-9")'
         required: true
