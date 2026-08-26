@@ -39,10 +39,16 @@ const { data: joueurs, error: errJ } = await supabase.from('joueurs').select('id
 if (errJ) { console.error('Erreur joueurs :', errJ.message); process.exit(1); }
 console.log(`${joueurs.length} joueur(s) trouvé(s) pour ${CLUB}.`);
 
+// Filtre sur le groupe G (comme diagnostic-om-b-n2.js) : sans lui, la
+// requête récupère TOUTES les lignes N2 (tous groupes confondus, largement
+// plus de 1000 lignes), et se fait tronquer par le plafond PostgREST avant
+// même d'atteindre les lignes du groupe G — bug déjà rencontré cette
+// session (voir diagnostic-groupe-hyeres-2800.js et consorts).
 const { data: calendrier, error: errC } = await supabase
   .from('calendrier_officiel')
   .select('id, equipe_domicile, equipe_exterieur, date_match')
   .eq('division', NIVEAU)
+  .eq('groupe', 'G')
   .eq('saison', SAISON);
 if (errC) { console.error('Erreur calendrier :', errC.message); process.exit(1); }
 const matchsClub = calendrier.filter((row) => clubWordsMatch(row.equipe_domicile, CLUB) || clubWordsMatch(row.equipe_exterieur, CLUB));
