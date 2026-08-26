@@ -1,0 +1,49 @@
+name: Synchronise les passes décisives (foot-direct.com)
+
+on:
+  workflow_dispatch:
+    inputs:
+      classement_url:
+        description: "URL du classement des passeurs foot-direct.com"
+        required: false
+        type: string
+        default: "https://www.foot-direct.com/france/ligue-3/classement-passeurs"
+      niveau:
+        description: "Niveau FootLight correspondant"
+        required: false
+        type: string
+        default: "Ligue 3"
+      saison:
+        description: "Saison"
+        required: false
+        type: string
+        default: "2026-2027"
+      write:
+        description: "Appliquer réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Synchroniser
+        working-directory: scripts
+        env:
+          CLASSEMENT_URL: ${{ inputs.classement_url }}
+          NIVEAU: ${{ inputs.niveau }}
+          SAISON: ${{ inputs.saison }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node sync-passes-decisives-foot-direct.js
