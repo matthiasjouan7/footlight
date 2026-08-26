@@ -369,11 +369,48 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
       return null;
     }
 
+    // Repli score seul : certains matchs (couverture éditoriale minimale
+    // côté lequipe.fr) n'ont jamais de bloc "specifics" JSON exploitable
+    // (buts/cartons/minutes par joueur indisponibles), mais le score final
+    // reste, lui, toujours affiché dans le DOM (.TeamScore__score--ended).
+    // Plutôt que d'ignorer tout le match, applique au moins ce score à
+    // toutes les lignes matchs_joueur liées.
+    async function appliquerScoreDepuisDom() {
+      const $m = cheerio.load(decoded);
+      const texteScore = $m('.TeamScore__score--ended').first().text().trim();
+      const mScore = texteScore.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (!mScore) return false;
+      const butsDom = parseInt(mScore[1], 10);
+      const butsExt = parseInt(mScore[2], 10);
+      for (const row of mj) {
+        const joueur = joueursById.get(row.joueur_id);
+        if (!joueur || row.score_pour != null || row.score_contre != null) continue;
+        const scorePour = row.domicile ? butsDom : butsExt;
+        const scoreContre = row.domicile ? butsExt : butsDom;
+        console.log(`  ${joueur.prenom} ${joueur.nom} : score (repli DOM): ${scorePour}-${scoreContre}`);
+        totalMaj++;
+        if (!dryRun) {
+          const { error: updErr } = await supabase.from('matchs_joueur').update({ score_pour: scorePour, score_contre: scoreContre }).eq('id', row.id);
+          if (updErr) { console.log(`    Erreur écriture : ${updErr.message}`); continue; }
+          await recalculerAgregatsSaison(row.joueur_id, joueur.saison, row.saison);
+        }
+      }
+      return true;
+    }
+
     const specificsRaw = extractBalancedObject(decoded, /"specifics"\s*:\s*\{/);
-    if (!specificsRaw) { console.log('  Objet "specifics" introuvable, ignoré.'); continue; }
+    if (!specificsRaw) {
+      console.log('  Objet "specifics" introuvable.');
+      if (!(await appliquerScoreDepuisDom())) console.log('  Score DOM introuvable non plus, ignoré.');
+      continue;
+    }
     let specifics;
     try { specifics = JSON.parse(specificsRaw); }
-    catch (e) { console.log(`  Échec JSON.parse : ${e.message}, ignoré.`); continue; }
+    catch (e) {
+      console.log(`  Échec JSON.parse : ${e.message}.`);
+      if (!(await appliquerScoreDepuisDom())) console.log('  Score DOM introuvable non plus, ignoré.');
+      continue;
+    }
 
     const finMatch = specifics.prolongation ? 120 : 90;
 
