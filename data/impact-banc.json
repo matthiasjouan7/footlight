@@ -4,27 +4,8 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-08-25T07:42:07.173Z",
+  "updated_at": "2026-08-27T18:04:48.525Z",
   "joueurs": [
-    {
-      "id": "12425871-dded-4368-80c7-b6f6f4d5e83c",
-      "prenom": "Diabé",
-      "nom": "Kanouté",
-      "club": "SM Caen",
-      "niveau": "Ligue 3",
-      "poste": "milieu_central",
-      "points": 3,
-      "contributions": [
-        {
-          "date": "2026-08-20",
-          "adversaire": "SC AUBAGNE AIR BEL",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        }
-      ]
-    },
     {
       "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
       "prenom": "Fadel",
@@ -68,6 +49,60 @@
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
+        }
+      ]
+    },
+    {
+      "id": "4b7e96db-8f77-4552-a70f-868f8a905b27",
+      "prenom": "Alexy",
+      "nom": "Sénac",
+      "club": "Angoulême Charente FC",
+      "niveau": "N1",
+      "poste": "attaquant",
+      "points": 2,
+      "contributions": [
+        {
+          "date": "2026-08-22",
+          "adversaire": "DINAN LEHON FC",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        },
+        {
+          "date": "2026-08-22",
+          "adversaire": "DINAN LEHON FC",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
+      "prenom": "Morgan",
+      "nom": "Barbier",
+      "club": "FC Montlouis",
+      "niveau": "N1",
+      "poste": "attaquant",
+      "points": 2,
+      "contributions": [
+        {
+          "date": "2026-08-22",
+          "adversaire": "US CHANTILLY",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "nul",
+          "points": 1
+        },
+        {
+          "date": "2026-08-22",
+          "adversaire": "US CHANTILLY",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "nul",
+          "points": 1
         }
       ]
     },
@@ -182,6 +217,33 @@
           "situation": "était mené 1 but(s)",
           "resultat": "nul",
           "points": 1
+        }
+      ]
+    },
+    {
+      "id": "3a8cf382-e216-49d0-86d8-875adb70ae18",
+      "prenom": "Noah",
+      "nom": "Adekalom",
+      "club": "US Avranches",
+      "niveau": "N1",
+      "poste": "ailier_gauche",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-08-22",
+          "adversaire": "VOLT. CHATEAUBRIANT",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        },
+        {
+          "date": "2026-08-22",
+          "adversaire": "VOLT. CHATEAUBRIANT",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
         }
       ]
     }
