@@ -128,6 +128,7 @@ const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'cs
 const MOTS_REMPLACEMENT_CLUB = {
   st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert',
   virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee', sbfc: 'beaucairois',
+  alenconnaise: 'alencon',
 };
 // Sigles/noms d'usage sans aucun mot en commun avec le nom officiel
 // correspondant, même après remplacement — repérés en pratique (les
