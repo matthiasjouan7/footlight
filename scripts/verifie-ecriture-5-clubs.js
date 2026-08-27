@@ -12,11 +12,11 @@ const NIVEAU = 'N2';
 const SAISON = '2026-2027';
 
 const CLUBS = [
-  { nom: 'Onet-le-Château Football', attendu: 26 },
-  { nom: 'AS Trouville-Deauville-Villers', attendu: 26 },
-  { nom: 'Les Sables Vendée Football', attendu: 26 },
-  { nom: 'US Sainte-Anne de Vertou', attendu: 26 },
-  { nom: 'FC Bourgoin-Jallieu', attendu: 26 },
+  { nom: 'Onet Le Chat. 1', attendu: 26 },
+  { nom: 'Astdv 1', attendu: 26 },
+  { nom: 'Les Sables Vf 1', attendu: 26 },
+  { nom: 'Vertou Ussa 1', attendu: 26 },
+  { nom: 'Bourgoin J. Fc 1', attendu: 26 },
 ];
 
 for (const c of CLUBS) {
