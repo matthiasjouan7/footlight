@@ -15,14 +15,23 @@ jobs:
       fail-fast: false
       matrix:
         url:
-          # National 2 volontairement exclu pour l'instant : pas encore à
-          # jour vers le nouveau format à 8 groupes, on attend avant de
-          # l'automatiser (voir aussi les Actions manuelles de test/découverte
-          # dédiées à vérifier cette mise à jour).
           - "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats"
+          # National 2, format à 8 groupes (A-H) confirmé à jour sur
+          # lequipe.fr par des tests DRY_RUN manuels sur les 8 groupes
+          # (division + groupe correctement détectés, nombre de matchs
+          # cohérent avec l'effectif de chaque groupe, y compris le groupe H
+          # à 13 clubs qui a 6 matchs/journée au lieu de 7).
+          - "https://www.lequipe.fr/Football/national-2-groupe-a/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-b/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-c/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-d/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-e/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-f/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-g/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-h/page-calendrier-resultats"
     steps:
       - uses: actions/checkout@v4
 
