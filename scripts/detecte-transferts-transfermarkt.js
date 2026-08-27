@@ -66,9 +66,18 @@ const transferts = await page.evaluate(() => {
 });
 console.log(`${transferts.length} transfert(s) trouvé(s) sur la page.\n`);
 
-const { data: joueurs, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau').eq('niveau', division).eq('saison', saison);
-if (jErr) { console.error('Erreur lecture joueurs :', jErr.message); await browser.close(); process.exit(1); }
-console.log(`${joueurs?.length || 0} joueur(s) FootLight en ${division} (${saison}).\n`);
+// PostgREST plafonne les requêtes sans .range() à 1000 lignes : sans cette
+// pagination, une division de plus de 1000 joueurs (ex: National 2, ~2442
+// joueurs) ne serait vérifiée qu'à moitié, faussant silencieusement le
+// résultat (bug déjà rencontré et corrigé plusieurs fois dans ce dépôt).
+const joueurs = [];
+for (let offset = 0; ; offset += 1000) {
+  const { data: page, error: jErr } = await supabase.from('joueurs').select('id, prenom, nom, club, niveau').eq('niveau', division).eq('saison', saison).range(offset, offset + 999);
+  if (jErr) { console.error('Erreur lecture joueurs :', jErr.message); await browser.close(); process.exit(1); }
+  joueurs.push(...page);
+  if (page.length < 1000) break;
+}
+console.log(`${joueurs.length} joueur(s) FootLight en ${division} (${saison}).\n`);
 
 let totalEcarts = 0;
 for (const t of transferts) {
