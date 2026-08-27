@@ -41,9 +41,10 @@ if (errC) { console.error('Erreur calendrier :', errC.message); process.exit(1);
 const matchsClub = calendrier.filter((row) => clubWordsMatch(row.equipe_domicile, CLUB) || clubWordsMatch(row.equipe_exterieur, CLUB));
 const idsReels = new Set(matchsClub.map((m) => m.id));
 
-const { data: joueur, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom').eq('club', CLUB).eq('niveau', NIVEAU).eq('saison', SAISON).eq('nom', 'Fiquet');
+const { data: candidats, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom, club').eq('niveau', NIVEAU).eq('saison', SAISON).eq('nom', 'Fiquet');
 if (errJ) { console.error('Erreur recherche joueur :', errJ.message); process.exit(1); }
-console.log(`${joueur.length} joueur(s) trouvé(s) pour "Fiquet" (attendu 1).`);
+const joueur = candidats.filter((j) => clubWordsMatch(j.club, CLUB));
+console.log(`${joueur.length} joueur(s) trouvé(s) pour "Fiquet" au club "${CLUB}" (attendu 1, sur ${candidats.length} candidat(s) nom="Fiquet" toutes équipes confondues).`);
 
 for (const j of joueur) {
   const { data: mj, error: errMj } = await supabase.from('matchs_joueur').select('id, calendrier_officiel_id, adversaire').eq('joueur_id', j.id);
