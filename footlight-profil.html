@@ -1095,8 +1095,8 @@ async function renderProfil(j, isOwner) {
       <div style="flex:1">
         <div class="profile-name">${j.prenom} ${j.nom}</div>
         <div class="profile-tags">
-          <span class="tag blue">${poste_raw.replace(/_/g,' ')}</span>
           <span class="tag">${j.club||'—'}</span>
+          <span class="tag blue">${poste_raw.replace(/_/g,' ')}</span>
           <span class="tag">${j.niveau||'—'}</span>
           ${j.pied_fort ? `<span class="tag">Pied ${j.pied_fort}</span>` : ''}
           <span class="tag ${j.badge==='elite'?'gold':j.badge==='video'||j.badge==='gps'?'green':''}">${BADGES[j.badge]||'⚪ Déclaratif'}</span>
