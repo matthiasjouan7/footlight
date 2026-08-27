@@ -1,0 +1,70 @@
+name: Sync classement des passeurs transfermarkt.fr -> stats_officielles
+
+on:
+  schedule:
+    # Chaque jour à 6h55 UTC — après sync-classement-passeurs.yml (6h50),
+    # source complémentaire (transfermarkt.fr) pour les passes décisives.
+    - cron: "55 6 * * *"
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "Écrire réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - url: "https://www.transfermarkt.fr/championnat-national/assistliste/wettbewerb/FR3/saison_id/2026"
+            division: "Ligue 3"
+          - url: "https://www.transfermarkt.fr/championnat-national-2-groupe-a/assistliste/wettbewerb/FR4A/saison_id/2026"
+            division: "N1"
+          - url: "https://www.transfermarkt.fr/championnat-national-2-groupe-b/assistliste/wettbewerb/FR4B/saison_id/2026"
+            division: "N1"
+          - url: "https://www.transfermarkt.fr/championnat-national-2-groupe-c/assistliste/wettbewerb/FR4C/saison_id/2026"
+            division: "N1"
+          - url: "https://www.transfermarkt.fr/championnat-national-3-occitanie/assistliste/wettbewerb/FR5A/saison_id/2026"
+            division: "N2"
+          - url: "https://www.transfermarkt.fr/championnat-national-3-pays-de-la-loire/assistliste/wettbewerb/FR5B/saison_id/2026"
+            division: "N2"
+          - url: "https://www.transfermarkt.fr/championnat-national-3-normandie/assistliste/wettbewerb/FR5C/saison_id/2026"
+            division: "N2"
+          - url: "https://www.transfermarkt.fr/championnat-national-3-nouvelle-aquitaine/assistliste/wettbewerb/FR5D/saison_id/2026"
+            division: "N2"
+          - url: "https://www.transfermarkt.fr/championnat-national-3-bretagne/assistliste/wettbewerb/FR5E/saison_id/2026"
+            division: "N2"
+          - url: "https://www.transfermarkt.fr/championnat-national-3-normandie/assistliste/wettbewerb/FR5F/saison_id/2026"
+            division: "N2"
+          - url: "https://www.transfermarkt.fr/championnat-national-3-hauts-de-france/assistliste/wettbewerb/FR5G/saison_id/2026"
+            division: "N2"
+          - url: "https://www.transfermarkt.fr/championnat-national-3-paris-ile-de-france/assistliste/wettbewerb/FR5H/saison_id/2026"
+            division: "N2"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Synchroniser le classement des passeurs (transfermarkt.fr)
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ matrix.url }}
+          DIVISION: ${{ matrix.division }}
+          SAISON: "2026-2027"
+          DRY_RUN: ${{ (github.event_name == 'schedule' || inputs.write == true) && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node sync-passeurs-transfermarkt.js
