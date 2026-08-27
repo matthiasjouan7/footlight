@@ -24,6 +24,12 @@ jobs:
             division: "Ligue 3"
           - url: "https://www.foot-direct.com/france/national-1/classement-passeurs"
             division: "N1"
+          # Page combinée pour les 8 groupes, comme National 1 (confirmé via
+          # diagnostic-foot-direct-n2-passeurs.js : statut 200, bon <title>,
+          # "Aucune stat disponible" pour l'instant car saison qui démarre —
+          # géré proprement par sync-classement-passeurs.js, pas une erreur).
+          - url: "https://www.foot-direct.com/france/national-2/classement-passeurs"
+            division: "N2"
     steps:
       - uses: actions/checkout@v4
 
