@@ -20,15 +20,17 @@ for (const code of CODES) {
   await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
   console.log(`Titre : "${await page.title()}"`);
 
-  // Liens de menu/sous-page (onglets "Vainqueurs", "Buteurs", "Passeurs"...).
-  const liensMenu = await page.evaluate(() => {
-    const anchors = [...document.querySelectorAll('a')];
-    return anchors
-      .filter((a) => /passeur|vorlage|assist/i.test(a.textContent) || /passeur|vorlage|assist/i.test(a.getAttribute('href') || ''))
-      .map((a) => ({ texte: a.textContent.trim(), href: a.getAttribute('href') }));
-  });
-  console.log(`Lien(s) "passeurs"/"assists" trouvé(s) : ${liensMenu.length}`);
-  liensMenu.forEach((l) => console.log(`  "${l.texte}" -> ${l.href}`));
+  // Tout le menu de sous-pages de la compétition (onglets "Vainqueurs",
+  // "Buteurs", "Passeurs"...), identifié par un lien vers /wettbewerb/{code}
+  // avec un segment différent de "startseite".
+  const menuComp = await page.evaluate((code) => {
+    const anchors = [...document.querySelectorAll(`a[href*="/wettbewerb/${code}"]`)];
+    return anchors.map((a) => ({ texte: a.textContent.trim(), href: a.getAttribute('href') })).filter((l) => l.texte);
+  }, code);
+  const vusMenu = new Set();
+  const menuUnique = menuComp.filter((l) => { const c = `${l.texte}|${l.href}`; if (vusMenu.has(c)) return false; vusMenu.add(c); return true; });
+  console.log(`Lien(s) de menu compétition trouvé(s) : ${menuUnique.length}`);
+  menuUnique.forEach((l) => console.log(`  "${l.texte}" -> ${l.href}`));
 
   // Clubs listés sur la page (table des clubs de la compétition).
   const clubs = await page.evaluate(() => {
