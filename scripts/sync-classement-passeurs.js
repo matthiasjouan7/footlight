@@ -49,7 +49,20 @@ const html = await res.text();
 const $ = cheerio.load(html);
 
 const $table = $('table').first();
-if (!$table.length) { console.error('Aucune table trouvée sur la page.'); process.exit(1); }
+if (!$table.length) {
+  // Cas normal en début de saison (constaté sur National 1, 27/08/2026) :
+  // foot-direct.com affiche "Aucune stat disponible" tant qu'aucune passe
+  // décisive n'a encore été enregistrée pour la division — ce n'est pas une
+  // erreur de scraping (statut HTTP 200, page valide), donc on sort proprement
+  // plutôt que de faire échouer le job (repris par diagnostic-foot-direct-
+  // national1-passeurs.js).
+  if (/aucune stat disponible/i.test($('body').text())) {
+    console.log('Aucune statistique disponible sur la page pour le moment (championnat probablement en tout début de saison) — rien à faire.');
+    process.exit(0);
+  }
+  console.error('Aucune table trouvée sur la page.');
+  process.exit(1);
+}
 
 const passeurs = [];
 $table.find('tr').each((i, tr) => {
