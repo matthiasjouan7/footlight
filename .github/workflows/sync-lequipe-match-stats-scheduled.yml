@@ -20,12 +20,19 @@ jobs:
       fail-fast: false
       matrix:
         url:
-          # Mêmes compétitions que sync-lequipe-scheduled.yml (National 2
-          # volontairement exclu, voir ce fichier).
+          # Mêmes compétitions que sync-lequipe-scheduled.yml.
           - "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
           - "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-a/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-b/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-c/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-d/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-e/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-f/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-g/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-h/page-calendrier-resultats"
     steps:
       - uses: actions/checkout@v4
 
