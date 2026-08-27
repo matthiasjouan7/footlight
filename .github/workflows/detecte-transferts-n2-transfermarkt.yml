@@ -1,0 +1,51 @@
+name: Détecte les transferts non répercutés N2 (transfermarkt.fr, lecture seule)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  detecter:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - groupe: A
+            url: "https://www.transfermarkt.fr/championnat-national-3-occitanie/letztetransfers/wettbewerb/FR5A"
+          - groupe: B
+            url: "https://www.transfermarkt.fr/championnat-national-3-pays-de-la-loire/letztetransfers/wettbewerb/FR5B"
+          - groupe: C
+            url: "https://www.transfermarkt.fr/championnat-national-3-normandie/letztetransfers/wettbewerb/FR5C"
+          - groupe: D
+            url: "https://www.transfermarkt.fr/championnat-national-3-nouvelle-aquitaine/letztetransfers/wettbewerb/FR5D"
+          - groupe: E
+            url: "https://www.transfermarkt.fr/championnat-national-3-bretagne/letztetransfers/wettbewerb/FR5E"
+          - groupe: F
+            url: "https://www.transfermarkt.fr/championnat-national-3-normandie/letztetransfers/wettbewerb/FR5F"
+          - groupe: G
+            url: "https://www.transfermarkt.fr/championnat-national-3-hauts-de-france/letztetransfers/wettbewerb/FR5G"
+          - groupe: H
+            url: "https://www.transfermarkt.fr/championnat-national-3-paris-ile-de-france/letztetransfers/wettbewerb/FR5H"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: "Détecter (groupe ${{ matrix.groupe }})"
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ matrix.url }}
+          DIVISION: "N2"
+          SAISON: "2026-2027"
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node detecte-transferts-transfermarkt.js
