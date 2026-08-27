@@ -384,6 +384,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#0d1117ee;backdro
         <div id="matchs-list"></div>
         <button type="button" class="btn outline" id="btn-generer-calendrier" onclick="genererCalendrier()" style="width:100%;margin-top:8px;">📅 Générer mon calendrier depuis le calendrier officiel FFF</button>
         <div id="generer-calendrier-hint" style="font-size:0.7rem;color:var(--muted);margin-top:6px;">Disponible pour National 1, National 2 et Ligue 3 : remplit automatiquement dates et adversaires de la saison à partir de ton club, il ne te reste plus qu'à ajouter le score et tes stats après chaque match.</div>
+        <button type="button" class="btn outline" id="btn-vider-calendrier" onclick="viderCalendrier()" style="width:100%;margin-top:8px;color:var(--red);">🗑️ Vider mon calendrier de cette saison</button>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;">Supprime en une fois tous les matchs de cette saison — utile après un changement de club, plutôt que de les supprimer un par un, avant de régénérer le calendrier avec le bouton ci-dessus.</div>
         <button type="button" class="btn outline" id="btn-add-match" onclick="showMatchForm()" style="width:100%;margin-top:8px;">+ Ajouter un match</button>
 
         <div id="match-form-panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--bg4);">
@@ -1851,6 +1853,41 @@ async function deleteMatch(id) {
   if (error) { alert('Erreur : ' + error.message); return; }
   if (m) await appliquerDeltaSaison(m.saison, deltaContributionMatch(m, null));
   await loadMatchsForSeason(getSelectedSaisonText());
+}
+
+// Vide en une fois tout le calendrier de la saison affichée (au lieu de
+// supprimer chaque match un par un), typiquement après un changement de
+// club : les anciennes fiches ne correspondent plus au nouveau club, et
+// "Générer mon calendrier" permet ensuite de repartir sur le bon calendrier.
+async function viderCalendrier() {
+  const saison = getSelectedSaisonText();
+  if (!saison) { alert('Choisis une saison avant de vider le calendrier.'); return; }
+  if (!currentMatchsList.length) { alert('Aucun match à supprimer pour cette saison.'); return; }
+
+  const confirme = confirm(`Supprimer les ${currentMatchsList.length} match${currentMatchsList.length > 1 ? 's' : ''} de la saison ${saison} ? Cette action est irréversible.`);
+  if (!confirme) return;
+
+  const btn = document.getElementById('btn-vider-calendrier');
+  btn.disabled = true;
+  btn.textContent = 'Suppression...';
+
+  const aSupprimer = currentMatchsList;
+  const { error } = await db.from('matchs_joueur').delete().in('id', aSupprimer.map((m) => m.id));
+
+  btn.disabled = false;
+  btn.textContent = '🗑️ Vider mon calendrier de cette saison';
+
+  if (error) { alert('Erreur : ' + error.message); return; }
+
+  const deltaTotal = {};
+  aSupprimer.forEach((m) => {
+    const d = deltaContributionMatch(m, null);
+    Object.keys(d).forEach((c) => { deltaTotal[c] = (deltaTotal[c] || 0) + d[c]; });
+  });
+  await appliquerDeltaSaison(saison, deltaTotal);
+
+  await loadMatchsForSeason(saison);
+  alert(`${aSupprimer.length} match${aSupprimer.length > 1 ? 's' : ''} supprimé${aSupprimer.length > 1 ? 's' : ''}.`);
 }
 
 // ── HISTORIQUE DES BLESSURES (indépendant de la saison sélectionnée) ──
