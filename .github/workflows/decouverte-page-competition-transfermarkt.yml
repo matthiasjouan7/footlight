@@ -1,0 +1,34 @@
+name: Découverte page compétition transfermarkt.fr (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      codes:
+        description: "Codes compétition transfermarkt séparés par des virgules (ex: FR3,FR4A,FR5B)"
+        required: true
+        type: string
+        default: "FR3,FR4A,FR5B"
+
+jobs:
+  decouverte:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Découvrir
+        working-directory: scripts
+        env:
+          CODES: ${{ inputs.codes }}
+        run: node decouverte-page-competition-transfermarkt.js
