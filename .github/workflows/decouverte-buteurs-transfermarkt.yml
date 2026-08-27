@@ -1,0 +1,34 @@
+name: Découverte page buteurs transfermarkt.fr (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL transfermarkt.fr torschuetzenliste"
+        required: false
+        type: string
+        default: "https://www.transfermarkt.fr/championnat-national/torschuetzenliste/wettbewerb/FR3/saison_id/2026"
+
+jobs:
+  decouverte:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Découvrir
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+        run: node decouverte-buteurs-transfermarkt.js
