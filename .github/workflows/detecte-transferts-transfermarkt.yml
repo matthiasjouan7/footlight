@@ -1,0 +1,42 @@
+name: Détecte les transferts non répercutés (transfermarkt.fr, lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL transfermarkt.fr letztetransfers d'une compétition"
+        required: true
+        type: string
+        default: "https://www.transfermarkt.fr/championnat-national-2-groupe-a/letztetransfers/wettbewerb/FR4A"
+      division:
+        description: "Niveau FootLight correspondant (ex: Ligue 3, N1, N2)"
+        required: true
+        type: string
+        default: "N1"
+
+jobs:
+  detecter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Détecter
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+          DIVISION: ${{ inputs.division }}
+          SAISON: "2026-2027"
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node detecte-transferts-transfermarkt.js
