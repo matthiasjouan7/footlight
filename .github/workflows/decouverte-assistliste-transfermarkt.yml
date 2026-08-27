@@ -1,0 +1,34 @@
+name: Découverte page assistliste transfermarkt.fr (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "URLs assistliste transfermarkt.fr séparées par des virgules"
+        required: true
+        type: string
+        default: "https://www.transfermarkt.fr/championnat-national/assistliste/wettbewerb/FR3/saison_id/2026,https://www.transfermarkt.fr/championnat-national-2-groupe-a/assistliste/wettbewerb/FR4A/saison_id/2026,https://www.transfermarkt.fr/championnat-national-3-occitanie/assistliste/wettbewerb/FR5A/saison_id/2026"
+
+jobs:
+  decouverte:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Découvrir
+        working-directory: scripts
+        env:
+          URLS: ${{ inputs.urls }}
+        run: node decouverte-assistliste-transfermarkt.js
