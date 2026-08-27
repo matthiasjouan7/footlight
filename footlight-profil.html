@@ -247,6 +247,12 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
     </div>
 
     <div class="filter-group">
+      <span class="filter-label">Club</span>
+      <input type="text" id="sb-club" class="filter-input" placeholder="Nom du club..."
+        oninput="sbClubQuery=this.value;sbApplyFilters()"/>
+    </div>
+
+    <div class="filter-group">
       <span class="filter-label">Poste</span>
       <select class="filter-select" id="sb-poste" onchange="sbGoToRecherche('poste', this.value)">
         <option value="tous">Tous les postes</option>
@@ -307,12 +313,6 @@ hr.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
           <div class="range-row"><span>0</span><span id="sb-matchs-val">0</span></div>
           <input type="range" min="0" max="40" value="0" step="1" oninput="document.getElementById('sb-matchs-val').textContent=this.value;sbMinMatchs=parseInt(this.value);sbApplyFilters()"/>
         </div>
-      </div>
-
-      <div class="filter-group">
-        <span class="filter-label">Club</span>
-        <input type="text" id="sb-club" class="filter-input" placeholder="Nom du club..."
-          oninput="sbClubQuery=this.value;sbApplyFilters()"/>
       </div>
 
       <div id="sb-custom-criteria"></div>
