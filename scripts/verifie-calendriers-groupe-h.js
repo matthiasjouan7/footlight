@@ -64,9 +64,14 @@ for (const [cle, rows] of Object.entries(parPaire)) {
 console.log(`  ${nbPairesSuspectes} paire(s) suspecte(s) sur ${Object.keys(parPaire).length} paire(s) au total.`);
 
 console.log('\n--- 2. Vérification par club (effectif + calendrier) ---');
-const { data: joueursN2, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom, club').eq('niveau', NIVEAU).eq('saison', SAISON);
-if (errJ) { console.error('Erreur joueurs :', errJ.message); process.exit(1); }
-console.log(`  (${joueursN2.length} joueur(s) N2 ${SAISON} au total, tous groupes confondus — ${joueursN2.length === 1000 ? 'ATTENTION : exactement 1000, possible troncature PostgREST !' : 'pas de troncature suspectée'})`);
+const joueursN2 = [];
+for (let offset = 0; ; offset += 1000) {
+  const { data: page, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom, club').eq('niveau', NIVEAU).eq('saison', SAISON).range(offset, offset + 999);
+  if (errJ) { console.error('Erreur joueurs :', errJ.message); process.exit(1); }
+  joueursN2.push(...page);
+  if (page.length < 1000) break;
+}
+console.log(`  (${joueursN2.length} joueur(s) N2 ${SAISON} au total, tous groupes confondus, récupérés par pagination complète)`);
 
 let totalJoueursVerifies = 0;
 let totalProblemes = 0;
