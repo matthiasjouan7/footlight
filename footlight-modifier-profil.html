@@ -1070,7 +1070,7 @@ async function init() {
     isRecruiterEditing = true;
     joueur = target;
     document.getElementById('account-section').style.display = 'none';
-    document.getElementById('page-title').textContent = `Compléter le profil de ${target.prenom} ${target.nom}`;
+    document.getElementById('page-title').textContent = `Modifier le profil de ${target.prenom} ${target.nom}`;
     document.getElementById('page-sub').textContent = 'Aide ce joueur à avoir un profil complet en renseignant club, niveau et stats manquantes.';
     document.getElementById('recruteur-banner').style.display = 'block';
     document.getElementById('recruteur-banner').textContent = `✏️ Tu modifies cette fiche en tant que recruteur — utile si ${target.prenom} n'a pas encore mis à jour son profil lui-même.`;
@@ -1407,7 +1407,7 @@ async function changeIdentite() {
 
   joueur.prenom = newPrenom;
   joueur.nom = newNom;
-  document.getElementById('page-title').textContent = `Compléter le profil de ${newPrenom} ${newNom}`;
+  document.getElementById('page-title').textContent = `Modifier le profil de ${newPrenom} ${newNom}`;
   msg.classList.add('success');
   msg.textContent = 'Prénom et nom mis à jour.';
 }
