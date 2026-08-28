@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-08-27T18:04:48.525Z",
+  "updated_at": "2026-08-28T19:15:22.484Z",
   "joueurs": [
     {
       "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
@@ -107,6 +107,25 @@
       ]
     },
     {
+      "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
+      "prenom": "George",
+      "nom": "Morgan",
+      "club": "AS Cannes",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "FC FLEURY 91",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
+          "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
       "prenom": "Armand",
       "nom": "Gnanduillet",
@@ -121,44 +140,6 @@
           "domicile": false,
           "situation": "était mené 2 but(s)",
           "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
-      "prenom": "Félix",
-      "nom": "Tomi",
-      "club": "SC Bastia",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-20",
-          "adversaire": "FC VERSAILLES",
-          "domicile": true,
-          "situation": "était mené 2 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
-      "prenom": "Marvin",
-      "nom": "Emmanuel",
-      "club": "Le Puy-en-Velay FC",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-07",
-          "adversaire": "SC BASTIA",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
           "points": 1
         }
       ]
@@ -202,20 +183,39 @@
       ]
     },
     {
-      "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
-      "prenom": "George",
-      "nom": "Morgan",
-      "club": "AS Cannes",
+      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
+      "prenom": "Marvin",
+      "nom": "Emmanuel",
+      "club": "Le Puy-en-Velay FC",
       "niveau": "Ligue 3",
       "poste": "attaquant",
       "points": 1,
       "contributions": [
         {
-          "date": "2026-08-14",
-          "adversaire": "FC FLEURY 91",
+          "date": "2026-08-07",
+          "adversaire": "SC BASTIA",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
+      "prenom": "Félix",
+      "nom": "Tomi",
+      "club": "SC Bastia",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-20",
+          "adversaire": "FC VERSAILLES",
           "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "nul",
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
