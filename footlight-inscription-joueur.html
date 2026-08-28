@@ -1104,7 +1104,23 @@ async function genererCalendrierAuto(joueurId, club, niveau, saison) {
     });
     if (rencontres.size > 1) return;
 
-    const aInserer = matchsClub.map(row => {
+    // Déduplique par date_match : si le calendrier officiel contient (ou a
+    // contenu, avant nettoyage) deux lignes pour la même journée qui
+    // matchent toutes les deux le club du joueur sans que ça remonte comme
+    // ambigu (ex: "US Granville" et "Granville" partagent la même
+    // signature une fois "US" retiré comme mot générique, alors que ce
+    // sont deux lignes distinctes du calendrier officiel), le contrôle
+    // rencontres.size ci-dessus ne suffit pas à empêcher un doublon de
+    // journée — génère 31 matchs au lieu de 30 pour un joueur sans
+    // historique préalable.
+    const datesVues = new Set();
+    const matchsClubDedup = matchsClub.filter((row) => {
+      if (!row.date_match || datesVues.has(row.date_match)) return false;
+      datesVues.add(row.date_match);
+      return true;
+    });
+
+    const aInserer = matchsClubDedup.map(row => {
       const domicile = clubWordsMatch(row.equipe_domicile, club);
       return {
         joueur_id: joueurId,

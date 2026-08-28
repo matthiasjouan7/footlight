@@ -902,10 +902,27 @@ async function chercherMatchsCalendrier(saison, club, niveau) {
   return { matchsClub, rencontres, diviserParNiveau };
 }
 
+// Déduplique par date_match AVANT de filtrer sur l'historique existant : si
+// le calendrier officiel contient (ou a contenu, avant nettoyage) deux
+// lignes pour la même journée qui matchent toutes les deux le club du
+// joueur (ex: une ligne "Aviron Bayonnais FC" et une ligne orpheline
+// "Bayonne" pour le même match), sans cette déduplication les deux étaient
+// insérées d'un coup pour un joueur sans historique préalable — le filtre
+// sur currentMatchsList (déjà existant) ne protège que contre les
+// générations successives, jamais contre un doublon présent dans le même
+// lot fraîchement récupéré.
+function dedupParDate(matchsClub) {
+  const vus = new Set();
+  return matchsClub.filter((row) => {
+    if (!row.date_match || vus.has(row.date_match)) return false;
+    vus.add(row.date_match);
+    return true;
+  });
+}
 function matchsAInserer(matchsClub, club, saison) {
   const idsExistants = new Set(currentMatchsList.filter(m => m.calendrier_officiel_id).map(m => String(m.calendrier_officiel_id)));
   const datesExistantes = new Set(currentMatchsList.filter(m => m.date_match).map(m => m.date_match));
-  return matchsClub.filter(row => !idsExistants.has(String(row.id)) && !datesExistantes.has(row.date_match)).map(row => {
+  return dedupParDate(matchsClub).filter(row => !idsExistants.has(String(row.id)) && !datesExistantes.has(row.date_match)).map(row => {
     const domicile = clubWordsMatch(row.equipe_domicile, club);
     return {
       joueur_id: joueur.id,
