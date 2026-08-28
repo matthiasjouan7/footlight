@@ -1,8 +1,12 @@
-// Nettoie en masse les 24 paires ambiguës détectées par
-// scan-ambiguites-calendrier.js en N1 2026-2027 : dans chaque cas, une
-// ligne "orpheline" au nom raccourci (1-2 matchs) duplique le même match
-// qu'une ligne "officielle" complète (30-32 matchs) — exactement le même
-// bug que Lorient B / Saint-Brieuc / Bayonne / Les Herbiers déjà corrigés.
+// Nettoie en masse les paires ambiguës détectées par
+// scan-ambiguites-calendrier.js pour une division (DIVISION, "N1" par
+// défaut) : dans chaque cas, une ligne "orpheline" au nom raccourci (1-2
+// matchs) duplique le même match qu'une ligne "officielle" complète (24-34
+// matchs) — exactement le même bug que Lorient B / Saint-Brieuc / Bayonne /
+// Les Herbiers / Locminé déjà corrigés en N1. Généralisé à toutes les
+// divisions (N1, N2, Ligue 3) une fois confirmé que le bug provenait de
+// sync-lequipe-to-calendrier.js (rapprochement club trop faible), qui
+// touchait les 3 de la même façon.
 //
 // Pour chaque paire, la ligne avec le MOINS de matchs (parmi les deux
 // candidats) est traitée comme orpheline à absorber dans celle qui en a le
@@ -21,8 +25,8 @@ if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); proces
 console.log(`Mode : ${dryRun ? 'DRY RUN (aucune écriture)' : 'ÉCRITURE RÉELLE'}`);
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const DIVISION = 'N1';
-const SAISON = '2026-2027';
+const DIVISION = process.env.DIVISION || 'N1';
+const SAISON = process.env.SAISON || '2026-2027';
 const RATIO_MIN_SURETE = 5; // n'agit que si la référence a ≥ 5x plus de matchs que l'orpheline
 
 // ── Copie fidèle de generer-calendriers-existants.js ──

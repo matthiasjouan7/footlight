@@ -1,4 +1,4 @@
-name: Nettoie les ambiguïtés calendrier N1 en masse (DRY_RUN par défaut)
+name: Nettoie les ambiguïtés calendrier en masse (DRY_RUN par défaut)
 
 on:
   workflow_dispatch:
@@ -12,6 +12,10 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        division: ["N1", "N2", "Ligue 3"]
     steps:
       - uses: actions/checkout@v4
 
@@ -23,9 +27,10 @@ jobs:
         working-directory: scripts
         run: npm install
 
-      - name: Nettoyer les ambiguïtés
+      - name: "Nettoyer les ambiguïtés (${{ matrix.division }})"
         working-directory: scripts
         env:
+          DIVISION: ${{ matrix.division }}
           DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node nettoyer-ambiguites-n1.js

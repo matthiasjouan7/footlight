@@ -80,25 +80,78 @@ function extraireGroupe(competitionLabel) {
 // l'origine avec des noms officiels longs "US CHANTILLY", alors que
 // lequipe.fr affiche des noms courts "Chantilly") : constaté en pratique,
 // ça provoquait une réinsertion en double à chaque exécution du cron.
-function normaliser(str) {
-  return (str || '')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .toLowerCase().replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim();
+//
+// Copie fidèle de la logique canonique (footlight-modifier-profil.html et
+// al.) — la version précédente de ce fichier utilisait un rapprochement
+// bien plus simple (mots génériques + sous-ensemble strict, sans les
+// remplacements st/ste/briochin/bayonnais/vfc/sbfc... ni les synonymes
+// complets QRM/ASTDV/Alençon...), ce qui la rendait bien plus permissive à
+// rater un match déjà présent sous un nom différent ("Stade Briochin" vs
+// "Saint-Brieuc", "Aviron Bayonnais FC" vs "Bayonne", etc.) : constaté en
+// pratique, ça faisait réinsérer une ligne "orpheline" à chaque exécution
+// du cron dès que lequipe.fr affichait un nom court non couvert par cette
+// version simplifiée, créant les mêmes ambiguïtés que
+// nettoyer-ambiguites-n1.js corrige après coup pour National 1.
+function normalizeName(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
 }
-// Inclut aussi les connecteurs géographiques ("sur", "en"...) car le
-// calendrier officiel abrège parfois "sur" en "/" (ex: "LA ROCHE/YON" pour
-// "La Roche-sur-Yon") — sans ce mot dans la liste, le rapprochement échoue
-// selon la source qui a inséré la ligne existante, et ce script réinsère un
-// doublon à chaque exécution du cron (constaté en pratique sur ce club).
-const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'efc', 'srfa', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
-function motsClub(s) {
-  const mots = normaliser(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
-  return mots.length ? mots : normaliser(s).split(' ').filter(Boolean);
+function normalizeClub(s) {
+  return normalizeName(s).replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim().replace(/\s\d{1,2}$/, '');
+}
+const CLUB_MOTS_GENERIQUES = new Set([
+  'fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sa', 'sas',
+  'sr', 'srfa', 'ol', 'om', 'rc',
+  'fco', 'osc', 'sco', 'ent', 'entente', 'athletic', 'olympique', 'football', 'club',
+  'sporting', 'racing', 'stade',
+  'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des',
+]);
+const CLUB_MOTS_REMPLACEMENT = {
+  st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert',
+  virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee', sbfc: 'beaucairois',
+  alenconnaise: 'alencon',
+};
+const CLUB_SYNONYMES_COMPLETS = {
+  qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
+  astdv: { mots: ['touques', 'deauville', 'trouville', 'villers'], elargi: true },
+  alencon: { mots: ['alenconnaise', '61'], elargi: true },
+  'anne sainte vertou': { mots: ['ussa'], elargi: true },
+  'sables vf': { mots: ['sable', 'vendee'], elargi: false },
+  'sable vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'sables vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'bourgoin j': { mots: ['jallieu'], elargi: true },
+  'romorantin so': { mots: ['sologne'], elargi: true },
+};
+const CLUB_PAIRES_DISTINCTES = new Set([
+  ['apm metz', 'metz'].sort().join('|'),
+  ['asptt dijon', 'dijon'].sort().join('|'),
+]);
+function clubWords(s) {
+  const mots = normalizeClub(s).split(' ').filter(Boolean);
+  const remplaces = mots.map((w) => CLUB_MOTS_REMPLACEMENT[w] || w);
+  let sansGeneriques = remplaces.filter((w) => !CLUB_MOTS_GENERIQUES.has(w));
+  if (sansGeneriques.includes('hyeres')) sansGeneriques = sansGeneriques.filter((w) => w !== '83');
+  return sansGeneriques.length ? sansGeneriques : remplaces;
+}
+function clubIdentitySignature(s) {
+  const cle = clubWords(s).slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? synonyme.mots.slice().sort().join(' ') : cle;
+}
+function clubWordsElargi(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
 }
 function clubsCorrespondent(a, b) {
-  const wa = new Set(motsClub(a)), wb = new Set(motsClub(b));
-  if (!wa.size || !wb.size) return false;
-  const [small, big] = wa.size <= wb.size ? [wa, wb] : [wb, wa];
+  const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
+  if (sigA && sigB && sigA === sigB) return true;
+  if (sigA && sigB && CLUB_PAIRES_DISTINCTES.has([sigA, sigB].sort().join('|'))) return false;
+  const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
+  if (!wa.length || !wb.length) return false;
+  const setA = new Set(wa), setB = new Set(wb);
+  const small = wa.length <= wb.length ? setA : setB;
+  const big = wa.length <= wb.length ? setB : setA;
   for (const w of small) if (!big.has(w)) return false;
   return true;
 }
