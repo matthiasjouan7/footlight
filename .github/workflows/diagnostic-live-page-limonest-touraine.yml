@@ -1,0 +1,22 @@
+name: Diagnostic page live lequipe.fr Limonest/UF Touraine (lecture seule)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Diagnostiquer
+        working-directory: scripts
+        run: node diagnostic-live-page-limonest-touraine.js
