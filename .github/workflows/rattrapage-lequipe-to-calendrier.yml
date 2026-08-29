@@ -1,0 +1,54 @@
+name: Rattrapage calendrier lequipe.fr (journées passées, à la demande)
+
+on:
+  workflow_dispatch:
+    inputs:
+      competition_url:
+        description: "URL calendrier-resultats de la compétition (sans suffixe de journée)"
+        required: true
+        type: choice
+        options:
+          - "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-a/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-b/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-c/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-d/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-e/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-f/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-g/page-calendrier-resultats"
+          - "https://www.lequipe.fr/Football/national-2-groupe-h/page-calendrier-resultats"
+      journees:
+        description: 'Journée(s) à rattraper (ex: "3", "1-5", "1,2,7-9")'
+        required: true
+        type: string
+      write:
+        description: "Appliquer réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  rattrapage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Rattraper
+        working-directory: scripts
+        env:
+          COMPETITION_URL: ${{ inputs.competition_url }}
+          JOURNEES: ${{ inputs.journees }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node rattrapage-lequipe-to-calendrier.js
