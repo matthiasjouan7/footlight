@@ -1,0 +1,30 @@
+name: Diagnostic format date journée lequipe.fr (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL calendrier-resultats/Xe-journee lequipe.fr"
+        required: true
+        type: string
+        default: "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats/5e-journee"
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Diagnostiquer
+        working-directory: scripts
+        env:
+          TARGET_URL: ${{ inputs.url }}
+        run: node diagnostic-format-date-journee.js
