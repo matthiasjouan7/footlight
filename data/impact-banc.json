@@ -4,27 +4,8 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-08-28T19:15:22.484Z",
+  "updated_at": "2026-08-29T12:59:17.940Z",
   "joueurs": [
-    {
-      "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
-      "prenom": "Fadel",
-      "nom": "Gobitaka",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
-      "points": 3,
-      "contributions": [
-        {
-          "date": "2026-08-14",
-          "adversaire": "SM CAEN",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        }
-      ]
-    },
     {
       "id": "5aa0139d-fb4e-4dc4-9054-aca4a213752a",
       "prenom": "Sory",
@@ -53,29 +34,21 @@
       ]
     },
     {
-      "id": "4b7e96db-8f77-4552-a70f-868f8a905b27",
-      "prenom": "Alexy",
-      "nom": "Sénac",
-      "club": "Angoulême Charente FC",
-      "niveau": "N1",
-      "poste": "attaquant",
-      "points": 2,
+      "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
+      "prenom": "Fadel",
+      "nom": "Gobitaka",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "ailier_gauche",
+      "points": 3,
       "contributions": [
         {
-          "date": "2026-08-22",
-          "adversaire": "DINAN LEHON FC",
+          "date": "2026-08-14",
+          "adversaire": "SM CAEN",
           "domicile": true,
-          "situation": "menait de 1 but",
+          "situation": "à égalité",
           "resultat": "victoire",
-          "points": 1
-        },
-        {
-          "date": "2026-08-22",
-          "adversaire": "DINAN LEHON FC",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
+          "points": 3
         }
       ]
     },
@@ -107,6 +80,52 @@
       ]
     },
     {
+      "id": "4b7e96db-8f77-4552-a70f-868f8a905b27",
+      "prenom": "Alexy",
+      "nom": "Sénac",
+      "club": "Angoulême Charente FC",
+      "niveau": "N1",
+      "poste": "attaquant",
+      "points": 2,
+      "contributions": [
+        {
+          "date": "2026-08-22",
+          "adversaire": "DINAN LEHON FC",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        },
+        {
+          "date": "2026-08-22",
+          "adversaire": "DINAN LEHON FC",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
+      "prenom": "Félix",
+      "nom": "Tomi",
+      "club": "SC Bastia",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-20",
+          "adversaire": "FC VERSAILLES",
+          "domicile": true,
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
       "prenom": "George",
       "nom": "Morgan",
@@ -126,20 +145,20 @@
       ]
     },
     {
-      "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
-      "prenom": "Armand",
-      "nom": "Gnanduillet",
-      "club": "SM Caen",
+      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
+      "prenom": "Marvin",
+      "nom": "Emmanuel",
+      "club": "Le Puy-en-Velay FC",
       "niveau": "Ligue 3",
       "poste": "attaquant",
       "points": 1,
       "contributions": [
         {
-          "date": "2026-08-14",
-          "adversaire": "US THIONVILLE LUSITANOS",
+          "date": "2026-08-07",
+          "adversaire": "SC BASTIA",
           "domicile": false,
-          "situation": "était mené 2 but(s)",
-          "resultat": "defaite",
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
           "points": 1
         }
       ]
@@ -183,37 +202,18 @@
       ]
     },
     {
-      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
-      "prenom": "Marvin",
-      "nom": "Emmanuel",
-      "club": "Le Puy-en-Velay FC",
+      "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
+      "prenom": "Armand",
+      "nom": "Gnanduillet",
+      "club": "SM Caen",
       "niveau": "Ligue 3",
       "poste": "attaquant",
       "points": 1,
       "contributions": [
         {
-          "date": "2026-08-07",
-          "adversaire": "SC BASTIA",
+          "date": "2026-08-14",
+          "adversaire": "US THIONVILLE LUSITANOS",
           "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
-      "prenom": "Félix",
-      "nom": "Tomi",
-      "club": "SC Bastia",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-20",
-          "adversaire": "FC VERSAILLES",
-          "domicile": true,
           "situation": "était mené 2 but(s)",
           "resultat": "defaite",
           "points": 1
