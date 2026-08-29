@@ -52,9 +52,23 @@ function ordinalJournee(n) {
   return n === 1 ? '1re-journee' : `${n}e-journee`;
 }
 
+// Les journées éloignées de la date du jour affichent le mois abrégé
+// ("samedi 19 sept.") plutôt qu'en toutes lettres — sans ces clés
+// abrégées, calculerDateMatch échoue et la journée entière est ignorée
+// (constaté : 23 journées sur 34 échouaient ainsi lors du rattrapage).
 const MOIS_FR = {
-  janvier: 1, février: 2, mars: 3, avril: 4, mai: 5, juin: 6,
-  juillet: 7, août: 8, septembre: 9, octobre: 10, novembre: 11, décembre: 12,
+  janvier: 1, janv: 1,
+  février: 2, fevr: 2, févr: 2,
+  mars: 3,
+  avril: 4, avr: 4,
+  mai: 5,
+  juin: 6,
+  juillet: 7, juil: 7,
+  août: 8, aout: 8,
+  septembre: 9, sept: 9,
+  octobre: 10, oct: 10,
+  novembre: 11, nov: 11,
+  décembre: 12, decembre: 12, dec: 12, déc: 12,
 };
 function calculerDateMatch(dateTexte, saison) {
   if (!dateTexte || !saison) return null;
