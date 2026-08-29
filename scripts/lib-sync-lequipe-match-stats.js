@@ -365,6 +365,32 @@ export async function syncMatchStats(targetUrl, supabase, dryRun) {
     const decoded = htmlMatch
       .replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
+    // lequipe.fr n'expose un lien match-direct propre que pour UN SEUL match
+    // "vedette" par page de journée — la remontée d'ancêtres qui a produit
+    // r.matchUrl retombe alors sur ce même lien pour tous les autres matchs
+    // de la page (constaté en pratique : National 1 groupe C, 8 matchs sur
+    // la page, un seul lien réel dans le HTML, y compris après rendu JS
+    // complet). Sans cette vérification, tous les matchs sauf le "vedette"
+    // récupèrent à tort le score/les stats de celui-ci (ex: Limonest vs UF
+    // Touraine s'est vu attribuer le score de Châteauroux-Hyères). Vérifie
+    // donc que la page réellement chargée correspond bien aux deux équipes
+    // de cette rencontre avant d'en exploiter le contenu.
+    const $pageMatch = cheerio.load(decoded);
+    const titrePageMatch = $pageMatch('title').text().trim();
+    const mTitreAvecScore = titrePageMatch.match(/^(.*?)\s+\d+\s*-\s*\d+\s+(.*?),/);
+    const mTitreSansScore = titrePageMatch.match(/^(.*?)\s+-\s+(.*?),/);
+    const [equipeATitre, equipeBTitre] = mTitreAvecScore
+      ? [mTitreAvecScore[1].trim(), mTitreAvecScore[2].trim()]
+      : mTitreSansScore
+        ? [mTitreSansScore[1].trim(), mTitreSansScore[2].trim()]
+        : [null, null];
+    const lienCorrespondAuMatch = equipeATitre && equipeBTitre
+      && clubsCorrespondent(equipeATitre, r.equipe_domicile) && clubsCorrespondent(equipeBTitre, r.equipe_exterieur);
+    if (!lienCorrespondAuMatch) {
+      console.log(`  Lien match-direct ne correspond pas à ce match (page réellement chargée : "${titrePageMatch}"), ignoré par sécurité.`);
+      continue;
+    }
+
     function extractBalancedObject(text, keyPattern) {
       const m = text.match(keyPattern);
       if (!m) return null;
