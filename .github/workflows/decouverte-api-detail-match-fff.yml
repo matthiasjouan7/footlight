@@ -1,0 +1,26 @@
+name: Découverte API détail match FFF (lecture seule)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  decouverte:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Explorer
+        working-directory: scripts
+        run: node decouverte-api-detail-match-fff.js
