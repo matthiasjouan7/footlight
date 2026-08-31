@@ -1,0 +1,53 @@
+name: Génère le calendrier manquant pour un club (DRY_RUN par défaut)
+
+on:
+  workflow_dispatch:
+    inputs:
+      club:
+        description: "Nom exact du club (colonne joueurs.club)"
+        required: true
+        type: string
+      niveau:
+        description: "Niveau (N1, N2, Ligue 3...)"
+        required: false
+        type: string
+        default: "N1"
+      groupe:
+        description: "Groupe (laisser vide pour détection automatique)"
+        required: false
+        type: string
+      saison:
+        description: "Saison"
+        required: false
+        type: string
+        default: "2026-2027"
+      write:
+        description: "Appliquer réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  generer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Générer
+        working-directory: scripts
+        env:
+          CLUB: ${{ inputs.club }}
+          NIVEAU: ${{ inputs.niveau }}
+          GROUPE: ${{ inputs.groupe }}
+          SAISON: ${{ inputs.saison }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node genere-calendrier-club.js
