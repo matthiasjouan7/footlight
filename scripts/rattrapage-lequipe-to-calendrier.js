@@ -125,6 +125,15 @@ const CLUB_SYNONYMES_COMPLETS = {
   'sables vendee': { mots: ['sable', 'vendee'], elargi: false },
   'bourgoin j': { mots: ['jallieu'], elargi: true },
   'romorantin so': { mots: ['sologne'], elargi: true },
+  // Locminé/Angoulême/Tarbes/Chateaubriant/Grand Ouest Lyonnais : calendrier_officiel
+  // utilise des abréviations non reconnues par CLUB_MOTS_REMPLACEMENT pour ces
+  // clubs précis (constaté en pratique : joueurs bloqués à 1-3 matchs alors que
+  // le calendrier complet existe sous ce nom abrégé).
+  'co locmine saint': { mots: ['colomban', 'locmine', 'saint'], elargi: false },
+  'angouleme chte': { mots: ['angouleme', 'charente'], elargi: false },
+  'pf tarbes': { mots: ['pyrenees', 'tarbes'], elargi: false },
+  'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
+  'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
 };
 const CLUB_PAIRES_DISTINCTES = new Set([
   ['apm metz', 'metz'].sort().join('|'),
