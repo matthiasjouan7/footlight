@@ -48,8 +48,21 @@ async function main() {
   console.log(`${zero.length} joueur(s) à matchs_joues=0 (${Math.round((zero.length / joueurs.length) * 100)}%).`);
 
   const idsZero = zero.map((j) => j.id);
-  const mj = await fetchToutesPages('matchs_joueur', 'joueur_id, calendrier_officiel_id, date_match, minutes_jouees', (q) => q.in('joueur_id', idsZero.slice(0, 1000)).lte('date_match', AUJOURD_HUI));
-  console.log(`\nParmi un échantillon de ${Math.min(idsZero.length, 1000)} joueurs à 0, ${mj.length} ligne(s) matchs_joueur avec une date déjà passée (${AUJOURD_HUI}) trouvée(s).`);
+  const ECHANTILLON = 150;
+  const idsEchantillon = idsZero.slice(0, ECHANTILLON);
+  let mj = [];
+  const TAILLE_LOT = 50;
+  for (let i = 0; i < idsEchantillon.length; i += TAILLE_LOT) {
+    const lot = idsEchantillon.slice(i, i + TAILLE_LOT);
+    const { data, error } = await supabase
+      .from('matchs_joueur')
+      .select('joueur_id, calendrier_officiel_id, date_match, minutes_jouees')
+      .in('joueur_id', lot)
+      .lte('date_match', AUJOURD_HUI);
+    if (error) { console.error('Erreur matchs_joueur :', error.message); process.exitCode = 1; return; }
+    mj = mj.concat(data);
+  }
+  console.log(`\nParmi un échantillon de ${idsEchantillon.length} joueurs à 0, ${mj.length} ligne(s) matchs_joueur avec une date déjà passée (${AUJOURD_HUI}) trouvée(s).`);
   const avecCalendrierMaisPasJoue = mj.filter((m) => m.calendrier_officiel_id != null && m.minutes_jouees == null);
   console.log(`${avecCalendrierMaisPasJoue.length} ligne(s) : calendrier généré (calendrier_officiel_id renseigné) pour un match déjà passé, mais minutes_jouees toujours null.`);
 
