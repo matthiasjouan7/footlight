@@ -32,16 +32,52 @@ function normalizeName(s) { return (s || '').normalize('NFD').replace(/[̀-ͯ]/g
 function normalizeClub(s) { return normalizeName(s).replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim().replace(/\s\d{1,2}$/, ''); }
 const CLUB_MOTS_GENERIQUES = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sa', 'sas', 'sr', 'srfa', 'ol', 'om', 'rc', 'fco', 'osc', 'sco', 'ent', 'entente', 'athletic', 'olympique', 'football', 'club', 'sporting', 'racing', 'stade', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
 const CLUB_MOTS_REMPLACEMENT = { st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert', virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee', sbfc: 'beaucairois', alenconnaise: 'alencon' };
+// Sigles/noms d'usage sans aucun mot en commun avec le nom officiel
+// correspondant, même après remplacement — repérés en pratique (les
+// joueurs de ces clubs restaient bloqués à 1-3 matchs alors que le
+// calendrier complet existait sous ce nom abrégé côté calendrier_officiel).
+const CLUB_SYNONYMES_COMPLETS = {
+  qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
+  astdv: { mots: ['touques', 'deauville', 'trouville', 'villers'], elargi: true },
+  alencon: { mots: ['alenconnaise', '61'], elargi: true },
+  'anne sainte vertou': { mots: ['ussa'], elargi: true },
+  'sables vf': { mots: ['sable', 'vendee'], elargi: false },
+  'sable vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'sables vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'bourgoin j': { mots: ['jallieu'], elargi: true },
+  'romorantin so': { mots: ['sologne'], elargi: true },
+  'co locmine saint': { mots: ['colomban', 'locmine', 'saint'], elargi: false },
+  'angouleme chte': { mots: ['angouleme', 'charente'], elargi: false },
+  'pf tarbes': { mots: ['pyrenees', 'tarbes'], elargi: false },
+  'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
+  'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
+};
+const CLUB_PAIRES_DISTINCTES = new Set([
+  ['apm metz', 'metz'].sort().join('|'),
+  ['asptt dijon', 'dijon'].sort().join('|'),
+]);
 function clubWords(s) {
   const mots = normalizeClub(s).split(' ').filter(Boolean).map((w) => CLUB_MOTS_REMPLACEMENT[w] || w);
   let sansGeneriques = mots.filter((w) => !CLUB_MOTS_GENERIQUES.has(w));
   if (sansGeneriques.includes('hyeres')) sansGeneriques = sansGeneriques.filter((w) => w !== '83');
   return sansGeneriques.length ? sansGeneriques : mots;
 }
-function clubIdentitySignature(s) { return clubWords(s).slice().sort().join(' '); }
-function clubWordsMatch(a, b) {
-  if (clubIdentitySignature(a) === clubIdentitySignature(b)) return true;
-  const wa = clubWords(a), wb = clubWords(b);
+function clubIdentitySignature(s) {
+  const cle = clubWords(s).slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? synonyme.mots.slice().sort().join(' ') : cle;
+}
+function clubWordsElargi(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
+}
+function clubsCorrespondent(a, b) {
+  const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
+  if (sigA && sigB && sigA === sigB) return true;
+  if (sigA && sigB && CLUB_PAIRES_DISTINCTES.has([sigA, sigB].sort().join('|'))) return false;
+  const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
   if (!wa.length || !wb.length) return false;
   const setA = new Set(wa), setB = new Set(wb);
   const small = wa.length <= wb.length ? setA : setB;
@@ -56,7 +92,7 @@ if (!GROUPE) {
   const groupesUniques = [...new Set(tousGroupes.map((r) => r.groupe))];
   for (const g of groupesUniques) {
     const { data: lignes } = await supabase.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur').eq('division', NIVEAU).eq('groupe', g).eq('saison', SAISON);
-    if ((lignes || []).some((r) => clubWordsMatch(r.equipe_domicile, CLUB) || clubWordsMatch(r.equipe_exterieur, CLUB))) { GROUPE = g; break; }
+    if ((lignes || []).some((r) => clubsCorrespondent(r.equipe_domicile, CLUB) || clubsCorrespondent(r.equipe_exterieur, CLUB))) { GROUPE = g; break; }
   }
   if (!GROUPE) { console.error(`Aucun groupe ${NIVEAU} ne contient "${CLUB}".`); process.exit(1); }
   console.log(`Groupe détecté automatiquement : ${GROUPE}`);
@@ -64,7 +100,18 @@ if (!GROUPE) {
 
 const { data: calendrier, error: errC } = await supabase.from('calendrier_officiel').select('id, equipe_domicile, equipe_exterieur, date_match').eq('division', NIVEAU).eq('groupe', GROUPE).eq('saison', SAISON);
 if (errC) { console.error('Erreur calendrier :', errC.message); process.exit(1); }
-const matchsClub = calendrier.filter((row) => clubWordsMatch(row.equipe_domicile, CLUB) || clubWordsMatch(row.equipe_exterieur, CLUB));
+const matchsClubBruts = calendrier.filter((row) => clubsCorrespondent(row.equipe_domicile, CLUB) || clubsCorrespondent(row.equipe_exterieur, CLUB));
+// Déduplication par date_match : deux lignes calendrier peuvent désigner le
+// même match sous deux orthographes différentes (ex. héritage d'anciennes
+// synchros) — ne garder qu'une ligne par date pour ne pas insérer deux fois
+// la même journée pour chaque joueur.
+const vues = new Set();
+const matchsClub = [];
+for (const row of matchsClubBruts) {
+  if (vues.has(row.date_match)) { console.log(`  Doublon de date ignoré : ${row.date_match} (id=${row.id}, "${row.equipe_domicile}" vs "${row.equipe_exterieur}")`); continue; }
+  vues.add(row.date_match);
+  matchsClub.push(row);
+}
 console.log(`${matchsClub.length} ligne(s) calendrier trouvée(s) pour "${CLUB}" (${NIVEAU} groupe ${GROUPE}).`);
 
 const { data: joueurs, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom').eq('club', CLUB).eq('niveau', NIVEAU).eq('saison', SAISON);
@@ -81,7 +128,7 @@ for (const j of joueurs) {
   if (!manquants.length) continue;
 
   const aInserer = manquants.map((row) => {
-    const domicile = clubWordsMatch(row.equipe_domicile, CLUB);
+    const domicile = clubsCorrespondent(row.equipe_domicile, CLUB);
     return { joueur_id: j.id, saison: SAISON, date_match: row.date_match, adversaire: domicile ? row.equipe_exterieur : row.equipe_domicile, competition: 'championnat', domicile, verifie: true, calendrier_officiel_id: row.id };
   });
   totalAjoutes += aInserer.length;
