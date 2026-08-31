@@ -1,0 +1,36 @@
+name: Diagnostic recherche nom de club (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      substr:
+        description: "Fragment de nom à rechercher (ex: angoul)"
+        required: true
+        type: string
+      saison:
+        description: "Saison"
+        required: false
+        type: string
+        default: "2026-2027"
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Diagnostiquer
+        working-directory: scripts
+        env:
+          SUBSTR: ${{ inputs.substr }}
+          SAISON: ${{ inputs.saison }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node diagnostic-recherche-nom-club.js
