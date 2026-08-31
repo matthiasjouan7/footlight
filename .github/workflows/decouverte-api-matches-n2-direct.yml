@@ -1,0 +1,22 @@
+name: Découverte API matches FFF N2 direct (lecture seule)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  decouverte:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Explorer
+        working-directory: scripts
+        run: node decouverte-api-matches-n2-direct.js
