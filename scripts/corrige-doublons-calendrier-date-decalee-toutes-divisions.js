@@ -38,7 +38,7 @@ const TAILLE_LOT = 50;
 function normalizeName(s) { return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim().replace(/\s+/g, ' '); }
 function normalizeClub(s) { return normalizeName(s).replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim().replace(/\s\d{1,2}$/, ''); }
 const CLUB_MOTS_GENERIQUES = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sa', 'sas', 'sr', 'srfa', 'ol', 'om', 'rc', 'fco', 'osc', 'sco', 'ent', 'entente', 'athletic', 'olympique', 'football', 'club', 'sporting', 'racing', 'stade', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
-const CLUB_MOTS_REMPLACEMENT = { st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert', virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee', sbfc: 'beaucairois', alenconnaise: 'alencon' };
+const CLUB_MOTS_REMPLACEMENT = { st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert', virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee', sbfc: 'beaucairois', alenconnaise: 'alencon', raph: 'raphael' };
 const CLUB_SYNONYMES_COMPLETS = {
   qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
   astdv: { mots: ['touques', 'deauville', 'trouville', 'villers'], elargi: true },
@@ -138,21 +138,21 @@ async function traiterCombo(division, groupe, calendrier) {
   const canonique = calendrier.filter((r) => !ligneLegacy(r));
   if (!legacy.length || !canonique.length) return { paires: 0, rattaches: 0, supprimesMj: 0, ignores: 0, calendrierSupprimes: 0 };
 
-  // N'apparie que les lignes legacy qui n'ont PAS déjà une ligne canonique
-  // à la même date exacte (déjà traitées par le script précédent) — donc
-  // ici uniquement les cas à date décalée.
-  const parDateCanon = new Map();
-  for (const c of canonique) { if (!parDateCanon.has(c.date_match)) parDateCanon.set(c.date_match, []); parDateCanon.get(c.date_match).push(c); }
-
+  // Une ligne legacy déjà fusionnée avec succès par le script à date exacte
+  // (corrige-doublons-calendrier-toutes-divisions.js) n'existe plus en base
+  // (supprimée) : inutile de la ré-exclure ici. Il ne faut PAS exclure une
+  // ligne legacy simplement parce qu'une ligne canonique quelconque (pour
+  // d'autres équipes) partage sa date exacte par coïncidence — bug constaté
+  // en pratique : la paire Fréjus/Saint-Priest (id 2244) était ignorée à
+  // tort car une autre rencontre canonique tombait sur la même date.
   const paires = new Map(); // legacyId -> canoniqueId
   const ambigus = [];
   for (const l of legacy) {
-    if (parDateCanon.has(l.date_match)) continue; // déjà couvert par la fusion à date exacte
     const candidats = canonique.filter((c) => joursEcart(c.date_match, l.date_match) <= TOLERANCE_JOURS && equipesCorrespondent(l, c));
     if (candidats.length === 1) paires.set(Number(l.id), Number(candidats[0].id));
     else if (candidats.length > 1) ambigus.push({ legacy: l, candidats });
   }
-  if (!paires.size) return { paires: 0, rattaches: 0, supprimesMj: 0, ignores: 0, calendrierSupprimes: 0 };
+  if (!paires.size && !ambigus.length) return { paires: 0, rattaches: 0, supprimesMj: 0, ignores: 0, calendrierSupprimes: 0 };
 
   console.log(`\n=== ${division} groupe ${groupe} : ${paires.size} paire(s) legacy/canonique à date décalée ===`);
   for (const [legacyId, canonId] of paires) {
@@ -162,7 +162,7 @@ async function traiterCombo(division, groupe, calendrier) {
   }
   if (ambigus.length) {
     console.log(`  ${ambigus.length} ligne(s) legacy ignorée(s) par sécurité (plusieurs candidats canoniques) :`);
-    for (const a of ambigus.slice(0, 10)) console.log(`    id=${a.legacy.id} (${a.legacy.date_match}) "${a.legacy.equipe_domicile}" vs "${a.legacy.equipe_exterieur}" -> ${a.candidats.length} candidat(s)`);
+    for (const a of ambigus) console.log(`    id=${a.legacy.id} (${a.legacy.date_match}) "${a.legacy.equipe_domicile}" vs "${a.legacy.equipe_exterieur}" -> ${a.candidats.length} candidat(s) : ${a.candidats.map((c) => `id=${c.id}(${c.date_match})"${c.equipe_domicile}"vs"${c.equipe_exterieur}"`).join(', ')}`);
   }
 
   const legacyIds = [...paires.keys()];
