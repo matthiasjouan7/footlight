@@ -463,6 +463,14 @@ function clubWords(s) {
   const sansGeneriques = remplaces.filter(w => !CLUB_MOTS_GENERIQUES.has(w));
   return sansGeneriques.length ? sansGeneriques : remplaces;
 }
+// Signature d'identité d'un club (mots triés, sigle résolu vers son nom
+// complet). Deux clubs avec la même signature sont considérés comme le
+// même club — utilisée pour dédupliquer la liste de suggestions ci-dessous.
+function clubIdentitySignature(s) {
+  const cle = clubWords(s).slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? synonyme.mots.slice().sort().join(' ') : cle;
+}
 function clubWordsPourSuggestion(s) {
   const mots = clubWords(s);
   const cle = mots.slice().sort().join(' ');
@@ -482,18 +490,35 @@ async function fetchToutesLesLignes(construireRequete) {
   }
   return { data: toutes, error: null };
 }
+// Un même club réel apparaît souvent sous plusieurs orthographes dans
+// calendrier_officiel (doublons calendrier régulièrement réintroduits par
+// la synchro quotidienne) — ne garder qu'un seul nom par identité de club
+// évite de proposer deux fois le même club dans les suggestions (voir même
+// correctif dans footlight-inscription-joueur.html/footlight-modifier-profil.html).
+function estMajuscule(s) {
+  return typeof s === 'string' && s.length > 0 && s === s.toUpperCase() && s !== s.toLowerCase();
+}
+function meilleurNomClub(a, b) {
+  const majA = estMajuscule(a), majB = estMajuscule(b);
+  if (majA !== majB) return majA ? b : a;
+  return a.length >= b.length ? a : b;
+}
 let clubsCalendrierCache = null;
 async function loadClubsCalendrier() {
   if (clubsCalendrierCache) return clubsCalendrierCache;
   const { data } = await fetchToutesLesLignes(() =>
     db.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur')
   );
-  const set = new Set();
-  (data || []).forEach(r => {
-    if (r.equipe_domicile) set.add(r.equipe_domicile);
-    if (r.equipe_exterieur) set.add(r.equipe_exterieur);
-  });
-  clubsCalendrierCache = [...set].sort();
+  const parSignature = new Map();
+  const noter = (nom) => {
+    if (!nom) return;
+    const sig = clubIdentitySignature(nom);
+    if (!sig) return;
+    const actuel = parSignature.get(sig);
+    parSignature.set(sig, actuel ? meilleurNomClub(actuel, nom) : nom);
+  };
+  (data || []).forEach(r => { noter(r.equipe_domicile); noter(r.equipe_exterieur); });
+  clubsCalendrierCache = [...parSignature.values()].sort();
   return clubsCalendrierCache;
 }
 function suggestClubs(inputValue, clubs) {

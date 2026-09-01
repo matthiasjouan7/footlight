@@ -1163,18 +1163,40 @@ async function fetchToutesLesLignes(construireRequete) {
   }
   return { data: toutes, error: null };
 }
+// Un même club réel apparaît souvent sous plusieurs orthographes dans
+// calendrier_officiel (nom complet, sigle legacy tout-capitales, variante
+// lequipe.fr...) — ces doublons calendrier sont régulièrement réintroduits
+// par la synchro quotidienne malgré les fusions ponctuelles côté serveur.
+// Sans déduplication ici, l'auto-complétion proposait les deux orthographes
+// comme deux clubs différents (ex: "Stade Briochin" et une variante
+// "Brieuc"), poussant les joueurs à se répartir au hasard entre les deux et
+// perpétuant indéfiniment le problème côté agrégats. On ne garde qu'un seul
+// nom par identité de club (clubIdentitySignature), en préférant un nom
+// normalement casé (pas tout-capitales) et, à égalité, le plus long/complet.
+function estMajuscule(s) {
+  return typeof s === 'string' && s.length > 0 && s === s.toUpperCase() && s !== s.toLowerCase();
+}
+function meilleurNomClub(a, b) {
+  const majA = estMajuscule(a), majB = estMajuscule(b);
+  if (majA !== majB) return majA ? b : a;
+  return a.length >= b.length ? a : b;
+}
 let clubsCalendrierCache = null;
 async function loadClubsCalendrier() {
   if (clubsCalendrierCache) return clubsCalendrierCache;
   const { data } = await fetchToutesLesLignes(() =>
     db.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur')
   );
-  const set = new Set();
-  (data || []).forEach(r => {
-    if (r.equipe_domicile) set.add(r.equipe_domicile);
-    if (r.equipe_exterieur) set.add(r.equipe_exterieur);
-  });
-  clubsCalendrierCache = [...set].sort();
+  const parSignature = new Map();
+  const noter = (nom) => {
+    if (!nom) return;
+    const sig = clubIdentitySignature(nom);
+    if (!sig) return;
+    const actuel = parSignature.get(sig);
+    parSignature.set(sig, actuel ? meilleurNomClub(actuel, nom) : nom);
+  };
+  (data || []).forEach(r => { noter(r.equipe_domicile); noter(r.equipe_exterieur); });
+  clubsCalendrierCache = [...parSignature.values()].sort();
   return clubsCalendrierCache;
 }
 function suggestClubs(inputValue, clubs) {
