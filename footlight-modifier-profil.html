@@ -673,6 +673,10 @@ const CLUB_SYNONYMES_COMPLETS = {
   'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
   'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
   'berri chateauroux': { mots: ['lb', 'chateauroux'], elargi: false },
+  'gfa rv': { mots: ['rumilly', 'vallieres'], elargi: false },
+  'lyon duchere': { mots: ['lyon', 'duchere'], elargi: false },
+  'touraine uf': { mots: ['union', 'foot', 'touraine'], elargi: false },
+  fcldsd: { mots: ['limonest'], elargi: false },
 };
 // Paires de clubs r\u00e9els distincts dont les signatures se recoupent par
 // sous-ensemble (un des deux, r\u00e9duit \u00e0 son seul nom de ville, devient un
@@ -762,16 +766,22 @@ async function loadClubsCalendrier() {
   const { data } = await fetchToutesLesLignes(() =>
     db.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur')
   );
-  const parSignature = new Map();
-  const noter = (nom) => {
-    if (!nom) return;
-    const sig = clubIdentitySignature(nom);
-    if (!sig) return;
-    const actuel = parSignature.get(sig);
-    parSignature.set(sig, actuel ? meilleurNomClub(actuel, nom) : nom);
-  };
-  (data || []).forEach(r => { noter(r.equipe_domicile); noter(r.equipe_exterieur); });
-  clubsCalendrierCache = [...parSignature.values()].sort();
+  const nomsBruts = new Set();
+  (data || []).forEach(r => {
+    if (r.equipe_domicile) nomsBruts.add(r.equipe_domicile);
+    if (r.equipe_exterieur) nomsBruts.add(r.equipe_exterieur);
+  });
+  // Regroupe par clubWordsMatch (comparaison par sous-ensemble, pas une
+  // simple égalité de signature) : certaines variantes (ex: "Lorient B" /
+  // "FC LORIENT 2") ne partagent pas exactement les mêmes mots après
+  // normalisation mais sont bien le même club.
+  const groupes = []; // [{ representant }]
+  for (const nom of nomsBruts) {
+    const groupe = groupes.find(g => clubWordsMatch(g.representant, nom));
+    if (groupe) groupe.representant = meilleurNomClub(groupe.representant, nom);
+    else groupes.push({ representant: nom });
+  }
+  clubsCalendrierCache = groupes.map(g => g.representant).sort();
   return clubsCalendrierCache;
 }
 // Comme clubWords(), mais ajoute aussi les mots du nom complet quand le club

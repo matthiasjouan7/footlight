@@ -456,7 +456,19 @@ const CLUB_SYNONYMES_COMPLETS = {
   'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
   'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
   'berri chateauroux': { mots: ['lb', 'chateauroux'], elargi: false },
+  'gfa rv': { mots: ['rumilly', 'vallieres'], elargi: false },
+  'lyon duchere': { mots: ['lyon', 'duchere'], elargi: false },
+  'touraine uf': { mots: ['union', 'foot', 'touraine'], elargi: false },
+  fcldsd: { mots: ['limonest'], elargi: false },
 };
+// Paires de clubs réels distincts dont les signatures se recoupent par
+// sous-ensemble (voir même liste dans footlight-inscription-joueur.html/
+// footlight-modifier-profil.html) — à exclure du rapprochement par
+// sous-ensemble ci-dessous pour ne pas les fusionner à tort.
+const CLUB_PAIRES_DISTINCTES = new Set([
+  ['apm metz', 'metz'].sort().join('|'),
+  ['asptt dijon', 'dijon'].sort().join('|'),
+]);
 function clubWords(s) {
   const mots = normalizeClub(s).split(' ').filter(Boolean);
   const remplaces = mots.map(w => CLUB_MOTS_REMPLACEMENT[w] || w);
@@ -476,6 +488,29 @@ function clubWordsPourSuggestion(s) {
   const cle = mots.slice().sort().join(' ');
   const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
   return synonyme ? [...mots, ...synonyme.mots] : mots;
+}
+// Mots d'un club, augmentés du nom développé pour les sigles marqués
+// "elargi: true" (voir CLUB_SYNONYMES_COMPLETS).
+function clubWordsElargi(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
+}
+// Deux noms désignent le même club si leur signature d'identité est
+// identique, ou si les mots de l'un sont un sous-ensemble des mots de
+// l'autre (ex: "Lorient" sous-ensemble de "Lorient B" — équipe réserve).
+function clubWordsMatch(a, b) {
+  const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
+  if (sigA && sigB && sigA === sigB) return true;
+  if (sigA && sigB && CLUB_PAIRES_DISTINCTES.has([sigA, sigB].sort().join('|'))) return false;
+  const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
+  if (!wa.length || !wb.length) return false;
+  const setA = new Set(wa), setB = new Set(wb);
+  const small = wa.length <= wb.length ? setA : setB;
+  const big = wa.length <= wb.length ? setB : setA;
+  for (const w of small) if (!big.has(w)) return false;
+  return true;
 }
 async function fetchToutesLesLignes(construireRequete) {
   const TAILLE_PAGE = 1000;
@@ -509,16 +544,22 @@ async function loadClubsCalendrier() {
   const { data } = await fetchToutesLesLignes(() =>
     db.from('calendrier_officiel').select('equipe_domicile, equipe_exterieur')
   );
-  const parSignature = new Map();
-  const noter = (nom) => {
-    if (!nom) return;
-    const sig = clubIdentitySignature(nom);
-    if (!sig) return;
-    const actuel = parSignature.get(sig);
-    parSignature.set(sig, actuel ? meilleurNomClub(actuel, nom) : nom);
-  };
-  (data || []).forEach(r => { noter(r.equipe_domicile); noter(r.equipe_exterieur); });
-  clubsCalendrierCache = [...parSignature.values()].sort();
+  const nomsBruts = new Set();
+  (data || []).forEach(r => {
+    if (r.equipe_domicile) nomsBruts.add(r.equipe_domicile);
+    if (r.equipe_exterieur) nomsBruts.add(r.equipe_exterieur);
+  });
+  // Regroupe par clubWordsMatch (comparaison par sous-ensemble, pas une
+  // simple égalité de signature) : certaines variantes (ex: "Lorient B" /
+  // "FC LORIENT 2") ne partagent pas exactement les mêmes mots après
+  // normalisation mais sont bien le même club.
+  const groupes = []; // [{ representant }]
+  for (const nom of nomsBruts) {
+    const groupe = groupes.find(g => clubWordsMatch(g.representant, nom));
+    if (groupe) groupe.representant = meilleurNomClub(groupe.representant, nom);
+    else groupes.push({ representant: nom });
+  }
+  clubsCalendrierCache = groupes.map(g => g.representant).sort();
   return clubsCalendrierCache;
 }
 function suggestClubs(inputValue, clubs) {
