@@ -236,9 +236,19 @@ const { data: calendrier, error: errCal } = await supabase
   .eq('division', DIVISION).eq('groupe', GROUPE).eq('saison', SAISON);
 if (errCal) { console.error('Erreur lecture calendrier_officiel :', errCal.message); await browser.close(); process.exit(1); }
 
+// Tolérance de ±3 jours (et non une égalité stricte de date) : la date
+// FFF et date_match (issue de la synchro calendrier lequipe.fr) peuvent
+// diverger de 1-3 jours pour le même match réel — décalage déjà rencontré
+// à de multiples reprises sur National 1 cette session. Choisit, parmi les
+// lignes candidates (mêmes équipes), celle dont la date est la plus proche.
+const TOLERANCE_JOURS = 3;
+function joursEcart(a, b) {
+  return Math.abs((new Date(a).getTime() - new Date(b).getTime()) / 86400000);
+}
 const matchsARapprocher = [];
 for (const m of matchsFff) {
-  const ligne = (calendrier || []).find((c) => c.date_match === m.date && clubsCorrespondent(c.equipe_domicile, m.domicile) && clubsCorrespondent(c.equipe_exterieur, m.exterieur));
+  const candidates = (calendrier || []).filter((c) => joursEcart(c.date_match, m.date) <= TOLERANCE_JOURS && clubsCorrespondent(c.equipe_domicile, m.domicile) && clubsCorrespondent(c.equipe_exterieur, m.exterieur));
+  const ligne = candidates.sort((a, b) => joursEcart(a.date_match, m.date) - joursEcart(b.date_match, m.date))[0];
   if (ligne) matchsARapprocher.push({ ...m, calendrierOfficielId: ligne.id, equipeDomicileCal: ligne.equipe_domicile, equipeExterieurCal: ligne.equipe_exterieur });
 }
 console.log(`${matchsARapprocher.length}/${matchsFff.length} match(s) FFF rapproché(s) à une ligne calendrier_officiel existante.`);
