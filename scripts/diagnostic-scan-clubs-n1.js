@@ -33,15 +33,26 @@ async function main() {
   const joueurs = await fetchToutesPages('joueurs', 'id, prenom, nom, club, matchs_joues', (q) => q.eq('niveau', 'N1').eq('saison', SAISON));
   console.log(`${joueurs.length} joueur(s) N1 saison ${SAISON}, ${new Set(joueurs.map((j) => j.club)).size} club(s) distinct(s).\n`);
 
-  // Compte matchs_joueur par joueur (toute la division N1, pagination par lots).
+  // Compte matchs_joueur par joueur (toute la division N1, pagination par lots
+  // ET par page : un lot de 50 joueurs cumule souvent plus de 1000 lignes
+  // matchs_joueur — la limite de page par défaut de PostgREST/Supabase — sans
+  // le .range() ci-dessous les lignes au-delà de la 1000e étaient tronquées
+  // en silence, faisant croire à tort que certains joueurs du lot n'avaient
+  // aucune ligne calendrier (mj=0.0) alors qu'ils en avaient 30 et plus).
   const ids = joueurs.map((j) => j.id);
   let mj = [];
   const TAILLE_LOT = 50;
   for (let i = 0; i < ids.length; i += TAILLE_LOT) {
     const lot = ids.slice(i, i + TAILLE_LOT);
-    const { data, error } = await supabase.from('matchs_joueur').select('joueur_id').in('joueur_id', lot);
-    if (error) { console.error('Erreur matchs_joueur :', error.message); process.exit(1); }
-    mj = mj.concat(data);
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error } = await supabase.from('matchs_joueur').select('joueur_id').in('joueur_id', lot).range(from, from + pageSize - 1);
+      if (error) { console.error('Erreur matchs_joueur :', error.message); process.exit(1); }
+      mj = mj.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
   }
   const compteMj = new Map();
   for (const m of mj) compteMj.set(m.joueur_id, (compteMj.get(m.joueur_id) || 0) + 1);

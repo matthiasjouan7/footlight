@@ -25,7 +25,7 @@ const CLUBS = [
 for (const club of CLUBS) {
   const { data: joueurs, error } = await supabase
     .from('joueurs')
-    .select('id, prenom, nom, club, niveau, saison, matchs_joues, created_at, updated_at')
+    .select('id, prenom, nom, club, niveau, saison, matchs_joues, created_at')
     .eq('club', club)
     .eq('niveau', 'N1');
   if (error) { console.error(`Erreur joueurs (${club}) :`, error.message); continue; }
@@ -39,7 +39,7 @@ for (const club of CLUBS) {
       .eq('joueur_id', j.id)
       .order('date_match', { ascending: true });
     if (errMj) { console.log(`  ${j.prenom} ${j.nom} : erreur matchs_joueur : ${errMj.message}`); continue; }
-    console.log(`  ${j.prenom} ${j.nom} (id=${j.id}, joueur.saison=${j.saison}, matchs_joues=${j.matchs_joues}, updated_at=${j.updated_at})`);
+    console.log(`  ${j.prenom} ${j.nom} (id=${j.id}, joueur.saison=${j.saison}, matchs_joues=${j.matchs_joues}, created_at=${j.created_at})`);
     console.log(`    ${mj.length} ligne(s) matchs_joueur au total (toutes saisons) :`);
     for (const m of mj.slice(0, 6)) {
       console.log(`      id=${m.id} saison=${m.saison} date=${m.date_match} adv=${m.adversaire} min=${m.minutes_jouees} cal_id=${m.calendrier_officiel_id} created_at=${m.created_at}`);
