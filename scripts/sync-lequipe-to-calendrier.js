@@ -144,6 +144,7 @@ const CLUB_SYNONYMES_COMPLETS = {
   'pf tarbes': { mots: ['pyrenees', 'tarbes'], elargi: false },
   'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
   'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
+  'berri chateauroux': { mots: ['lb', 'chateauroux'], elargi: false },
 };
 const CLUB_PAIRES_DISTINCTES = new Set([
   ['apm metz', 'metz'].sort().join('|'),
