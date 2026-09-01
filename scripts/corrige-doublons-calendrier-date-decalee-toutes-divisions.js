@@ -152,7 +152,7 @@ async function traiterCombo(division, groupe, calendrier) {
     if (candidats.length === 1) paires.set(Number(l.id), Number(candidats[0].id));
     else if (candidats.length > 1) ambigus.push({ legacy: l, candidats });
   }
-  if (!paires.size) return { paires: 0, rattaches: 0, supprimesMj: 0, ignores: 0, calendrierSupprimes: 0 };
+  if (!paires.size && !ambigus.length) return { paires: 0, rattaches: 0, supprimesMj: 0, ignores: 0, calendrierSupprimes: 0 };
 
   console.log(`\n=== ${division} groupe ${groupe} : ${paires.size} paire(s) legacy/canonique à date décalée ===`);
   for (const [legacyId, canonId] of paires) {
@@ -162,7 +162,7 @@ async function traiterCombo(division, groupe, calendrier) {
   }
   if (ambigus.length) {
     console.log(`  ${ambigus.length} ligne(s) legacy ignorée(s) par sécurité (plusieurs candidats canoniques) :`);
-    for (const a of ambigus.slice(0, 10)) console.log(`    id=${a.legacy.id} (${a.legacy.date_match}) "${a.legacy.equipe_domicile}" vs "${a.legacy.equipe_exterieur}" -> ${a.candidats.length} candidat(s)`);
+    for (const a of ambigus) console.log(`    id=${a.legacy.id} (${a.legacy.date_match}) "${a.legacy.equipe_domicile}" vs "${a.legacy.equipe_exterieur}" -> ${a.candidats.length} candidat(s) : ${a.candidats.map((c) => `id=${c.id}(${c.date_match})"${c.equipe_domicile}"vs"${c.equipe_exterieur}"`).join(', ')}`);
   }
 
   const legacyIds = [...paires.keys()];
