@@ -1,0 +1,26 @@
+name: Valide parseur FFF (Hyères/Limonest, lecture seule)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  valide:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Valider
+        working-directory: scripts
+        run: node valide-parseur-fff-hyeres-limonest.js
