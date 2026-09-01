@@ -95,9 +95,11 @@ for (const [GROUPE, gpNo] of Object.entries(GROUPES)) {
     .select('equipe_domicile, equipe_exterieur, date_match')
     .eq('division', DIVISION).eq('groupe', GROUPE).eq('saison', SAISON);
 
+  const TOLERANCE_JOURS = 3;
+  const joursEcart = (a, b) => Math.abs((new Date(a).getTime() - new Date(b).getTime()) / 86400000);
   let rapprochesGroupe = 0;
   for (const m of matchsFff) {
-    const trouve = (calendrier || []).some((c) => c.date_match === m.date && clubsCorrespondent(c.equipe_domicile, m.domicile) && clubsCorrespondent(c.equipe_exterieur, m.exterieur));
+    const trouve = (calendrier || []).some((c) => joursEcart(c.date_match, m.date) <= TOLERANCE_JOURS && clubsCorrespondent(c.equipe_domicile, m.domicile) && clubsCorrespondent(c.equipe_exterieur, m.exterieur));
     if (trouve) rapprochesGroupe++;
     else tousNonRapproches.push({ groupe: GROUPE, ...m });
   }
