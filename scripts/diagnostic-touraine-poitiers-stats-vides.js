@@ -1,78 +1,41 @@
-// Diagnostic lecture seule : Union Foot de Touraine (et variantes) a joues=0.0 pour tous ses joueurs
-// malgré des lignes calendrier normalement peuplées (mj~16-20). Objectif : comprendre pourquoi
-// aucune stat n'a jamais été synchronisée pour ce club, avant toute correction.
-const { createClient } = require('@supabase/supabase-js');
+// Diagnostic lecture seule : pourquoi le rattrapage lequipe.fr trouve bien
+// la rencontre "Limonest vs UF Touraine" (20 joueurs) mais aucun des joueurs
+// FootLight de l'Union Foot de Touraine n'y figure. Liste toutes les lignes
+// calendrier_officiel du groupe C autour du 2026-08-29 et, pour chacune,
+// combien de matchs_joueur pointent vers elle (et de quel club).
+import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://qcxarfmxctznxngjagrz.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!SUPABASE_KEY) {
-  console.error('SUPABASE_SERVICE_ROLE_KEY manquant.');
-  process.exit(1);
-}
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); process.exit(1); }
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const CLUBS = ['Union Foot de Touraine', 'UNION FOOT TOURAINE'];
+const SAISON = '2026-2027';
 
-async function fetchToutesPages(table, colonnes, filtreFn) {
-  let toutes = [];
-  let page = 0;
-  const TAILLE = 1000;
-  while (true) {
-    let requete = supabase.from(table).select(colonnes).range(page * TAILLE, (page + 1) * TAILLE - 1);
-    if (filtreFn) requete = filtreFn(requete);
-    const { data, error } = await requete;
-    if (error) throw error;
-    toutes = toutes.concat(data);
-    if (data.length < TAILLE) break;
-    page++;
+const { data: cal, error: errCal } = await supabase
+  .from('calendrier_officiel')
+  .select('id, groupe, journee, date_match, equipe_domicile, equipe_exterieur')
+  .eq('saison', SAISON)
+  .eq('division', 'N1')
+  .eq('groupe', 'C')
+  .gte('date_match', '2026-08-27')
+  .lte('date_match', '2026-08-31');
+if (errCal) { console.error(errCal.message); process.exit(1); }
+console.log(`${cal.length} ligne(s) calendrier_officiel N1/C entre le 27 et le 31/08.`);
+
+for (const r of cal) {
+  const { data: mj, error: errMj } = await supabase
+    .from('matchs_joueur')
+    .select('id, joueur_id')
+    .eq('calendrier_officiel_id', r.id);
+  if (errMj) { console.log(`  id=${r.id} erreur: ${errMj.message}`); continue; }
+  const joueurIds = [...new Set(mj.map((m) => m.joueur_id))];
+  let clubs = [];
+  if (joueurIds.length) {
+    const { data: joueurs } = await supabase.from('joueurs').select('id, club').in('id', joueurIds);
+    const parClub = new Map();
+    for (const j of joueurs || []) parClub.set(j.club, (parClub.get(j.club) || 0) + 1);
+    clubs = [...parClub.entries()].map(([c, n]) => `${c}:${n}`);
   }
-  return toutes;
+  console.log(`  id=${r.id} j${r.journee} date=${r.date_match} "${r.equipe_domicile}" vs "${r.equipe_exterieur}" -> ${mj.length} matchs_joueur (${clubs.join(', ') || 'aucun'})`);
 }
-
-async function main() {
-  for (const club of CLUBS) {
-    console.log(`\n=== ${club} ===`);
-    const { data: joueurs, error } = await supabase
-      .from('joueurs')
-      .select('id, nom, prenom, club, niveau, division, groupe, matchs_joues')
-      .eq('club', club)
-      .eq('saison', '2026-2027');
-    if (error) throw error;
-    console.log(`${joueurs.length} joueur(s) trouvé(s).`);
-    if (!joueurs.length) continue;
-
-    const divisions = new Set(joueurs.map((j) => `${j.division}::${j.groupe}::${j.niveau}`));
-    console.log('Division/groupe/niveau distincts :', [...divisions].join(' | '));
-
-    for (const j of joueurs.slice(0, 5)) {
-      const { data: mj, error: errMj } = await supabase
-        .from('matchs_joueur')
-        .select('id, date_match, adversaire, score_pour, score_contre, minutes_jouees, calendrier_officiel_id')
-        .eq('joueur_id', j.id)
-        .order('date_match', { ascending: true })
-        .limit(5);
-      if (errMj) throw errMj;
-      console.log(`  ${j.prenom} ${j.nom} (id=${j.id}, matchs_joues=${j.matchs_joues}) — ${mj.length} ligne(s) matchs_joueur (échantillon) :`);
-      for (const m of mj) {
-        console.log(`    date=${m.date_match} adv=${m.adversaire} score=${m.score_pour}-${m.score_contre} min=${m.minutes_jouees} cal_id=${m.calendrier_officiel_id}`);
-      }
-    }
-  }
-
-  console.log('\n--- Recherche calendrier_officiel N1 correspondant à "touraine" ---');
-  const calendrier = await fetchToutesPages(
-    'calendrier_officiel',
-    'id, division, groupe, journee, date_match, equipe_domicile, equipe_exterieur',
-    (r) => r.eq('division', 'National 1').eq('saison', '2026-2027')
-  );
-  const matches = calendrier.filter((c) => /touraine/i.test(c.equipe_domicile) || /touraine/i.test(c.equipe_exterieur));
-  console.log(`${matches.length} ligne(s) calendrier trouvée(s) pour "touraine".`);
-  for (const m of matches.slice(0, 15)) {
-    console.log(`  id=${m.id} groupe=${m.groupe} j${m.journee} ${m.date_match} ${m.equipe_domicile} vs ${m.equipe_exterieur}`);
-  }
-}
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
