@@ -184,13 +184,22 @@ for (const m of matchs) {
   if (dejaPresents.has(m.joueur_id)) {
     console.log(`  ${nom} (${club}) : ${dryRun ? 'à supprimer' : 'suppression'} matchs_joueur id=${m.id} (doublon avec calendrier_officiel_id=${idCanon})`);
     totalSupprimesMj++;
-    if (!dryRun) { const { error } = await supabase.from('matchs_joueur').delete().eq('id', m.id); if (error) console.log(`    Erreur : ${error.message}`); }
+    if (!dryRun) {
+      const { data, error } = await supabase.from('matchs_joueur').delete().eq('id', m.id).select('id');
+      if (error) console.log(`    Erreur : ${error.message}`);
+      else if (!data || !data.length) console.log(`    ATTENTION : suppression sans effet (0 ligne affectée) pour matchs_joueur id=${m.id}`);
+    }
   } else {
     dejaPresents.add(m.joueur_id);
     joueursParCanoniqueId.set(idCanon, dejaPresents);
     console.log(`  ${nom} (${club}) : ${dryRun ? 'à rattacher' : 'rattachement'} matchs_joueur id=${m.id} → calendrier_officiel_id=${idCanon}`);
     totalRattaches++;
-    if (!dryRun) { const { error } = await supabase.from('matchs_joueur').update({ calendrier_officiel_id: idCanon }).eq('id', m.id); if (error) console.log(`    Erreur : ${error.message}`); }
+    if (!dryRun) {
+      const { data, error } = await supabase.from('matchs_joueur').update({ calendrier_officiel_id: idCanon }).eq('id', m.id).select('id, calendrier_officiel_id');
+      if (error) console.log(`    Erreur : ${error.message}`);
+      else if (!data || !data.length) console.log(`    ATTENTION : mise à jour sans effet (0 ligne affectée) pour matchs_joueur id=${m.id}`);
+      else if (Number(data[0].calendrier_officiel_id) !== idCanon) console.log(`    ATTENTION : valeur après écriture (${data[0].calendrier_officiel_id}) différente de la valeur demandée (${idCanon}) pour matchs_joueur id=${m.id}`);
+    }
   }
 }
 
@@ -214,8 +223,9 @@ console.log(`\nLignes calendrier ${dryRun ? 'à supprimer' : 'supprimées'} : ${
 if (!dryRun) {
   for (let i = 0; i < idsASupprimerFinal.length; i += TAILLE_LOT) {
     const lot = idsASupprimerFinal.slice(i, i + TAILLE_LOT);
-    const { error } = await supabase.from('calendrier_officiel').delete().in('id', lot);
-    if (error) console.log(`  Erreur suppression calendrier : ${error.message}`);
+    const { data, error } = await supabase.from('calendrier_officiel').delete().in('id', lot).select('id');
+    if (error) console.log(`  Erreur suppression calendrier (lot ${lot.join(',')}) : ${error.message}`);
+    else console.log(`  Lot de ${lot.length} id(s) : ${data ? data.length : 0} ligne(s) réellement supprimée(s).`);
   }
 }
 
