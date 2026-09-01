@@ -1,15 +1,12 @@
 // Diagnostic lecture seule : Union Foot de Touraine (et variantes) a joues=0.0 pour tous ses joueurs
 // malgré des lignes calendrier normalement peuplées (mj~16-20). Objectif : comprendre pourquoi
 // aucune stat n'a jamais été synchronisée pour ce club, avant toute correction.
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://qcxarfmxctznxngjagrz.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!SUPABASE_KEY) {
-  console.error('SUPABASE_SERVICE_ROLE_KEY manquant.');
-  process.exit(1);
-}
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); process.exit(1); }
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const CLUBS = ['Union Foot de Touraine', 'UNION FOOT TOURAINE'];
 
