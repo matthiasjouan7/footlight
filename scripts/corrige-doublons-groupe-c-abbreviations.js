@@ -127,15 +127,33 @@ const canoniqueParDate = new Map();
 for (const [date, liste] of parDate) canoniqueParDate.set(date, liste.filter((r) => !ligneLegacy(r)));
 const lignesParId = new Map(calendrier.map((r) => [Number(r.id), r]));
 
-const idsListe = [...idsASupprimer];
-let matchs = [];
-const TAILLE_LOT = 50;
-for (let i = 0; i < idsListe.length; i += TAILLE_LOT) {
-  const lot = idsListe.slice(i, i + TAILLE_LOT);
-  const { data, error } = await supabase.from('matchs_joueur').select('id, joueur_id, calendrier_officiel_id').in('calendrier_officiel_id', lot);
-  if (error) { console.error('Erreur lecture matchs_joueur :', error.message); process.exit(1); }
-  matchs = matchs.concat(data);
+// PostgREST plafonne chaque requête à 1000 lignes par défaut : un lot de 50
+// ids calendrier peut référencer bien plus de 1000 lignes matchs_joueur au
+// total (2 équipes complètes par match), d'où la pagination par .range()
+// EN PLUS du batching par id, sans quoi les résultats sont tronqués en
+// silence (constaté en pratique : total figé à exactement 5000 = 5 lots ×
+// plafond 1000, quel que soit l'état réel des données).
+async function fetchMatchsJoueurParCalendrierIds(ids) {
+  let toutes = [];
+  const TAILLE_LOT = 50;
+  for (let i = 0; i < ids.length; i += TAILLE_LOT) {
+    const lot = ids.slice(i, i + TAILLE_LOT);
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error } = await supabase.from('matchs_joueur').select('id, joueur_id, calendrier_officiel_id').in('calendrier_officiel_id', lot).range(from, from + pageSize - 1);
+      if (error) { console.error('Erreur lecture matchs_joueur :', error.message); process.exit(1); }
+      toutes = toutes.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+  }
+  return toutes;
 }
+
+const idsListe = [...idsASupprimer];
+const TAILLE_LOT = 50;
+const matchs = await fetchMatchsJoueurParCalendrierIds(idsListe);
 console.log(`${matchs.length} ligne(s) matchs_joueur pointent vers une ligne calendrier à supprimer.\n`);
 
 const joueurIds = [...new Set(matchs.map((m) => m.joueur_id))];
@@ -153,13 +171,7 @@ const nomParJoueur = new Map(joueurs.map((j) => [j.id, `${j.prenom} ${j.nom}`]))
 const joueursParCanoniqueId = new Map();
 {
   const idsCanoniques = [...new Set([...canoniqueParDate.values()].flat().map((r) => Number(r.id)))];
-  let mjCanon = [];
-  for (let i = 0; i < idsCanoniques.length; i += TAILLE_LOT) {
-    const lot = idsCanoniques.slice(i, i + TAILLE_LOT);
-    const { data, error } = await supabase.from('matchs_joueur').select('joueur_id, calendrier_officiel_id').in('calendrier_officiel_id', lot);
-    if (error) { console.error('Erreur lecture matchs_joueur canoniques :', error.message); process.exit(1); }
-    mjCanon = mjCanon.concat(data);
-  }
+  const mjCanon = await fetchMatchsJoueurParCalendrierIds(idsCanoniques);
   for (const m of mjCanon) {
     const id = Number(m.calendrier_officiel_id);
     if (!joueursParCanoniqueId.has(id)) joueursParCanoniqueId.set(id, new Set());
