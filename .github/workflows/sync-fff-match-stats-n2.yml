@@ -1,0 +1,47 @@
+name: Sync stats de match FFF -> matchs_joueur (National 2, DRY_RUN par défaut)
+
+on:
+  workflow_dispatch:
+    inputs:
+      groupe:
+        description: "Groupe National 2 (A-H)"
+        required: true
+        type: choice
+        options: ["A", "B", "C", "D", "E", "F", "G", "H"]
+      limite_matchs:
+        description: "Nombre maximum de matchs traités ce run"
+        required: false
+        type: string
+        default: "40"
+      write:
+        description: "Écrire réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Synchroniser
+        working-directory: scripts
+        env:
+          GROUPE: ${{ inputs.groupe }}
+          LIMITE_MATCHS: ${{ inputs.limite_matchs }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node sync-fff-match-stats-n2.js
