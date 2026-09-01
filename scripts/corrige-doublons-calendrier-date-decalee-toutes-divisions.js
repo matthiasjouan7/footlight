@@ -58,6 +58,7 @@ const CLUB_SYNONYMES_COMPLETS = {
   'gfa rv': { mots: ['rumilly', 'vallieres'], elargi: false },
   'lyon duchere': { mots: ['lyon', 'duchere'], elargi: false },
   'touraine uf': { mots: ['union', 'foot', 'touraine'], elargi: false },
+  fcldsd: { mots: ['limonest'], elargi: false },
 };
 const CLUB_PAIRES_DISTINCTES = new Set([
   ['apm metz', 'metz'].sort().join('|'),
