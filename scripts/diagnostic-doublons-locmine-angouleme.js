@@ -41,3 +41,4 @@ async function analyser(nomA, nomB) {
 
 await analyser('LOCMINE ST CO', 'Locminé');
 await analyser('ANGOULEME CHTE FC', 'Angoulême');
+await analyser('BERRI CHATEAUROUX', 'Châteauroux');
