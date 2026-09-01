@@ -61,8 +61,17 @@ function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
   return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
 }
+// "2ème équipe" : une source (FFF) marque parfois l'équipe réserve par un
+// chiffre ("... 2"), une autre (calendrier issu de lequipe.fr) par une
+// lettre ("... B") — même équipe, jamais le même mot. Canonicalise les
+// suffixes réserve courants (b->2, c->3...) avant de comparer.
+const LETTRE_VERS_CHIFFRE_RESERVE = { b: '2', c: '3', d: '4', e: '5', f: '6', g: '7', h: '8' };
+function canonicaliserMot(w) {
+  return LETTRE_VERS_CHIFFRE_RESERVE[w] || w;
+}
 function motsCorrespondent(a, b) {
-  if (a === b) return true;
+  const ca = canonicaliserMot(a), cb = canonicaliserMot(b);
+  if (ca === cb) return true;
   const [court, long] = a.length <= b.length ? [a, b] : [b, a];
   return court.length >= 4 && long.startsWith(court);
 }
