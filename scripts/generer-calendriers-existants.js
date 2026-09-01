@@ -60,6 +60,7 @@ const CLUB_SYNONYMES_COMPLETS = {
   'pf tarbes': { mots: ['pyrenees', 'tarbes'], elargi: false },
   'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
   'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
+  'berri chateauroux': { mots: ['lb', 'chateauroux'], elargi: false },
 };
 // Paires de clubs réels distincts dont les signatures se recoupent par
 // sous-ensemble (un des deux, réduit à son seul nom de ville, devient un
