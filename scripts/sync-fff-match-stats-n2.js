@@ -56,7 +56,13 @@ console.log(`Mode : ${DRY_RUN ? 'DRY_RUN (aucune écriture)' : 'ÉCRITURE RÉELL
 function normaliserClub(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
-const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'vf', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
+// 'ol' : abréviation FFF d'"Olympique" (déjà générique) non reconnue comme
+// telle en l'état (ex: "Ales Ol 1" vs "Olympique d'Alès en Cévennes" — 0
+// mot commun sans ce mapping). 'd' : reste de l'apostrophe de "d'Alès"
+// après normalisation. '1' : FFF marque souvent l'équipe fanion par un
+// "1" final ("Panazol As 1", "So Romorantin 1") absent du nom FootLight
+// — contrairement à 2/3.../8 (équipe réserve, distinctif, jamais retiré).
+const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'vf', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'ol', 'd', '1', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
 function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
   return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
