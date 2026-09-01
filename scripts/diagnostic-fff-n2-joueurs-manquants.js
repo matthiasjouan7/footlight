@@ -112,8 +112,10 @@ for (const [GROUPE, gpNo] of Object.entries(GROUPES_LETTRE_VERS_GPNO)) {
   pageJeton.on('request', (req) => {
     if (req.url().includes('/api/data/matches') && !jeton) jeton = req.headers()['x-competition'] || null;
   });
-  await pageJeton.goto(`https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/${gpNo}/resultats-et-calendrier`, { waitUntil: 'networkidle', timeout: 60000 });
-  await pageJeton.waitForTimeout(800);
+  try {
+    await pageJeton.goto(`https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/${gpNo}/resultats-et-calendrier`, { waitUntil: 'networkidle', timeout: 60000 });
+    await pageJeton.waitForTimeout(800);
+  } catch (e) { console.log(`Groupe ${GROUPE} : erreur navigation (${e.message.split('\n')[0]}), ignoré.`); continue; }
   if (!jeton) { console.log(`Groupe ${GROUPE} : jeton introuvable, ignoré.`); continue; }
 
   async function appelerApi(dateDebut, dateFin) {
