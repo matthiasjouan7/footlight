@@ -174,15 +174,20 @@ async function traiterCombo(division, groupe, calendrier) {
     }
   }
 
+  const MAX_LIGNES_IGNOREES_AFFICHEES = 20;
   let totalRattaches = 0, totalSupprimesMj = 0, totalIgnores = 0;
   for (const m of matchs) {
     const ligneLegacyRow = lignesParId.get(Number(m.calendrier_officiel_id));
     const club = clubParJoueur.get(m.joueur_id);
     const nom = nomParJoueur.get(m.joueur_id) || m.joueur_id;
-    if (!club) { console.log(`    Joueur ${m.joueur_id} introuvable — ignoré.`); totalIgnores++; continue; }
+    if (!club) {
+      if (totalIgnores < MAX_LIGNES_IGNOREES_AFFICHEES) console.log(`    Joueur ${m.joueur_id} introuvable — ignoré.`);
+      totalIgnores++;
+      continue;
+    }
     const candidats = (canoniqueParDate.get(ligneLegacyRow.date_match) || []).filter((r) => clubsCorrespondent(r.equipe_domicile, club) || clubsCorrespondent(r.equipe_exterieur, club));
     if (candidats.length !== 1) {
-      console.log(`    ${nom} (${club}) : ${candidats.length} ligne(s) canonique(s) trouvée(s) pour ${ligneLegacyRow.date_match} (attendu 1) — ignoré par sécurité.`);
+      if (totalIgnores < MAX_LIGNES_IGNOREES_AFFICHEES) console.log(`    ${nom} (${club}) : ${candidats.length} ligne(s) canonique(s) trouvée(s) pour ${ligneLegacyRow.date_match} (attendu 1) — ignoré par sécurité.`);
       totalIgnores++;
       continue;
     }
@@ -209,6 +214,7 @@ async function traiterCombo(division, groupe, calendrier) {
       }
     }
   }
+  if (totalIgnores > MAX_LIGNES_IGNOREES_AFFICHEES) console.log(`    ... ${totalIgnores - MAX_LIGNES_IGNOREES_AFFICHEES} autre(s) cas ignoré(s) par sécurité, non affiché(s) individuellement.`);
   console.log(`  Résumé matchs_joueur : ${totalRattaches} rattachement(s), ${totalSupprimesMj} suppression(s), ${totalIgnores} ignoré(s) par sécurité.`);
 
   const idsProblematiques = new Set();
