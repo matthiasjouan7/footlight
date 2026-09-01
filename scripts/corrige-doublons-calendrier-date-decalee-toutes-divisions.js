@@ -138,16 +138,16 @@ async function traiterCombo(division, groupe, calendrier) {
   const canonique = calendrier.filter((r) => !ligneLegacy(r));
   if (!legacy.length || !canonique.length) return { paires: 0, rattaches: 0, supprimesMj: 0, ignores: 0, calendrierSupprimes: 0 };
 
-  // N'apparie que les lignes legacy qui n'ont PAS déjà une ligne canonique
-  // à la même date exacte (déjà traitées par le script précédent) — donc
-  // ici uniquement les cas à date décalée.
-  const parDateCanon = new Map();
-  for (const c of canonique) { if (!parDateCanon.has(c.date_match)) parDateCanon.set(c.date_match, []); parDateCanon.get(c.date_match).push(c); }
-
+  // Une ligne legacy déjà fusionnée avec succès par le script à date exacte
+  // (corrige-doublons-calendrier-toutes-divisions.js) n'existe plus en base
+  // (supprimée) : inutile de la ré-exclure ici. Il ne faut PAS exclure une
+  // ligne legacy simplement parce qu'une ligne canonique quelconque (pour
+  // d'autres équipes) partage sa date exacte par coïncidence — bug constaté
+  // en pratique : la paire Fréjus/Saint-Priest (id 2244) était ignorée à
+  // tort car une autre rencontre canonique tombait sur la même date.
   const paires = new Map(); // legacyId -> canoniqueId
   const ambigus = [];
   for (const l of legacy) {
-    if (parDateCanon.has(l.date_match)) continue; // déjà couvert par la fusion à date exacte
     const candidats = canonique.filter((c) => joursEcart(c.date_match, l.date_match) <= TOLERANCE_JOURS && equipesCorrespondent(l, c));
     if (candidats.length === 1) paires.set(Number(l.id), Number(candidats[0].id));
     else if (candidats.length > 1) ambigus.push({ legacy: l, candidats });
