@@ -1,7 +1,28 @@
-name: Diagnostic accès Transfermarkt N3 Bretagne (lecture seule)
+name: Diagnostic accès Transfermarkt (lecture seule)
 
 on:
   workflow_dispatch:
+    inputs:
+      wettbewerb:
+        description: "Code wettbewerb Transfermarkt (ex: FR5E, FR5C)"
+        required: false
+        type: string
+        default: "FR5E"
+      slug:
+        description: "Slug décoratif de l'URL (n'affecte que l'URL, pas la vraie compétition)"
+        required: false
+        type: string
+        default: "championnat-national-3-bretagne"
+      saison:
+        description: "saison_id"
+        required: false
+        type: string
+        default: "2026"
+      spieltag:
+        description: "Journée"
+        required: false
+        type: string
+        default: "1"
 
 jobs:
   diagnostic:
@@ -23,4 +44,9 @@ jobs:
 
       - name: Diagnostiquer
         working-directory: scripts
+        env:
+          WETTBEWERB: ${{ inputs.wettbewerb }}
+          SLUG: ${{ inputs.slug }}
+          SAISON: ${{ inputs.saison }}
+          SPIELTAG: ${{ inputs.spieltag }}
         run: node diagnostic-transfermarkt-n3-bretagne.js
