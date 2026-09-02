@@ -1,0 +1,35 @@
+name: Diagnostic jeton FFF introuvable (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      groupe:
+        description: "Groupe National 2 (A-H)"
+        required: false
+        type: choice
+        options: ["A", "B", "C", "D", "E", "F", "G", "H"]
+        default: "B"
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Diagnostiquer
+        working-directory: scripts
+        env:
+          GROUPE: ${{ inputs.groupe }}
+        run: node diagnostic-jeton-fff-introuvable.js
