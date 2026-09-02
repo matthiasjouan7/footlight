@@ -778,7 +778,7 @@ function applyFilters() {
     if (canAdvancedFilters) {
       if ((j.buts||0) < minButs) return false;
       if ((j.matchs_joues||0) < minMatchs) return false;
-      if (clubQuery.trim() && !(j.club||'').toLowerCase().includes(clubQuery.trim().toLowerCase())) return false;
+      if (clubQuery.trim() && !(j.club||'').toLowerCase().includes(clubQuery.trim().toLowerCase()) && !clubWordsMatch(clubQuery, j.club)) return false;
       if (!matchesCustomCriteria(j)) return false;
     }
     if (searchQuery.trim()) {
