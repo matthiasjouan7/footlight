@@ -36,15 +36,16 @@ for (const [clef] of parClub) {
   console.log(`\n########## Calendrier pour "${club}" (${niveau}, ${saison}) ##########`);
   const { data: cal, error: errC } = await supabase
     .from('calendrier_officiel')
-    .select('id, division, groupe, equipe_domicile, equipe_exterieur, date_match, score_domicile, score_exterieur')
+    .select('id, division, groupe, equipe_domicile, equipe_exterieur, date_match')
     .eq('division', niveau).eq('saison', saison)
     .or('equipe_domicile.ilike.%nancy%,equipe_exterieur.ilike.%nancy%')
     .order('date_match');
   if (errC) { console.error('  Erreur calendrier :', errC.message); continue; }
   if (!cal || cal.length === 0) { console.log('  Aucune ligne calendrier_officiel trouvée contenant "nancy".'); continue; }
   for (const c of cal) {
-    const { data: mj } = await supabase.from('matchs_joueur').select('id, minutes_jouees').eq('calendrier_officiel_id', c.id);
+    const { data: mj } = await supabase.from('matchs_joueur').select('id, minutes_jouees, score_pour, score_contre').eq('calendrier_officiel_id', c.id);
     const avecMinutes = (mj || []).filter((m) => m.minutes_jouees != null).length;
-    console.log(`  id=${c.id} — ${c.date_match} — groupe ${c.groupe} — "${c.equipe_domicile}" vs "${c.equipe_exterieur}" — score ${c.score_domicile ?? '?'}-${c.score_exterieur ?? '?'} — ${mj ? mj.length : 0} ligne(s) matchs_joueur (${avecMinutes} avec minutes_jouees)`);
+    const score = mj && mj[0] ? `${mj[0].score_pour ?? '?'}-${mj[0].score_contre ?? '?'}` : '?-?';
+    console.log(`  id=${c.id} — ${c.date_match} — groupe ${c.groupe} — "${c.equipe_domicile}" vs "${c.equipe_exterieur}" — score ${score} — ${mj ? mj.length : 0} ligne(s) matchs_joueur (${avecMinutes} avec minutes_jouees)`);
   }
 }
