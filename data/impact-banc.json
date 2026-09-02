@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-08-31T14:46:12.910Z",
+  "updated_at": "2026-09-02T11:56:26.073Z",
   "joueurs": [
     {
       "id": "5aa0139d-fb4e-4dc4-9054-aca4a213752a",
@@ -75,25 +75,6 @@
           "domicile": false,
           "situation": "à égalité",
           "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "6cae3f11-49fa-42a7-9e6c-58dddabf790a",
-      "prenom": "Ely",
-      "nom": "Julien",
-      "club": "Amiens SC",
-      "niveau": "Ligue 3",
-      "poste": "ailier droit",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-29",
-          "adversaire": "FC VERSAILLES",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
           "points": 1
         }
       ]
