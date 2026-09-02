@@ -27,8 +27,14 @@ function normaliserClub(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'vf', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'ol', 'd', '1', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des']);
+// 'st' -> 'saint' / 'gd' -> 'grand' : FFF abrège souvent le nom de club
+// ("St Philbert Gd Lieu") alors que FootLight garde le nom développé
+// ("US Saint-Philbert-de-Grand-Lieu") - sans ce mapping, "st" (2 lettres)
+// est trop court pour matcher "saint" via le préfixe (seuil 4 lettres),
+// donc clubsCorrespondent échoue et le match reste sans stats détaillées.
+const MOTS_REMPLACEMENT_CLUB = { st: 'saint', ste: 'sainte', gd: 'grand' };
 function motsClub(s) {
-  const mots = normaliserClub(s).split(' ').filter(Boolean).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
+  const mots = normaliserClub(s).split(' ').filter(Boolean).map((w) => MOTS_REMPLACEMENT_CLUB[w] || w).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
   return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
 }
 const LETTRE_VERS_CHIFFRE_RESERVE = { b: '2', c: '3', d: '4', e: '5', f: '6', g: '7', h: '8' };
