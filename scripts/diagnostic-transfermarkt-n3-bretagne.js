@@ -1,20 +1,25 @@
-// Diagnostic lecture seule : teste si Transfermarkt est accessible depuis
-// les runners GitHub Actions (contrairement à la session interactive, qui
-// est bloquée par la politique réseau de son propre proxy — deux réseaux
-// différents). Si oui, vérifie la structure de la page "spieltag"
-// (calendrier d'une journée) pour National 3 Bretagne (wettbewerb=FR5E),
-// en extrait les liens vers les feuilles de match ("spielbericht"), puis
-// ouvre la première pour confirmer que la composition/buts/cartons/
-// remplacements sont bien exploitables (même logique de calcul des
-// minutes jouées que pour FFF : titulaire non remplacé -> 90, remplacé ->
-// minute de sortie, entrant -> 90 - minute d'entrée).
+// Diagnostic lecture seule : teste l'accès Transfermarkt depuis les
+// runners GitHub Actions et identifie la VRAIE compétition/groupe
+// derrière un code "wettbewerb" donné — le slug textuel de l'URL
+// ("championnat-national-3-bretagne" par ex.) n'est qu'une étiquette
+// décorative non fiable (constaté : wettbewerb=FR5E affiche en réalité
+// "Championnat National 2 - Groupe E", pas la Bretagne). Seul le titre
+// réel de la page de feuille de match fait foi. Passer WETTBEWERB (et
+// éventuellement SLUG/SAISON/SPIELTAG) en variables d'environnement pour
+// tester d'autres codes.
 import { chromium } from 'playwright';
 
-const URL_JOURNEE = 'https://www.transfermarkt.fr/championnat-national-3-bretagne/spieltag/wettbewerb/FR5E/saison_id/2026/spieltag/1';
+const WETTBEWERB = process.env.WETTBEWERB || 'FR5E';
+const SLUG = process.env.SLUG || 'championnat-national-3-bretagne';
+const SAISON = process.env.SAISON || '2026';
+const SPIELTAG = process.env.SPIELTAG || '1';
+
+const URL_JOURNEE = `https://www.transfermarkt.fr/${SLUG}/spieltag/wettbewerb/${WETTBEWERB}/saison_id/${SAISON}/spieltag/${SPIELTAG}`;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ locale: 'fr-FR', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' });
 
+console.log(`Code wettbewerb testé : ${WETTBEWERB}`);
 console.log(`Navigation vers : ${URL_JOURNEE}\n`);
 let statut = null;
 try {
@@ -26,7 +31,7 @@ try {
   await browser.close();
   process.exit(1);
 }
-console.log(`Titre de page : "${await page.title()}"`);
+console.log(`Titre de page (calendrier journée) : "${await page.title()}"`);
 
 if (statut && statut >= 400) {
   const texte = await page.evaluate(() => document.body.innerText).catch(() => '');
@@ -54,7 +59,8 @@ const premierHref = liensMatch[0][0];
 const urlMatch = premierHref.startsWith('http') ? premierHref : `https://www.transfermarkt.fr${premierHref}`;
 console.log(`\n########## Test de la feuille de match : ${urlMatch} ##########`);
 await page.goto(urlMatch, { waitUntil: 'networkidle', timeout: 45000 });
-console.log(`Titre : "${await page.title()}"`);
+const titreMatch = await page.title();
+console.log(`Titre RÉEL de la feuille de match (fait foi, contrairement au slug de l'URL) : "${titreMatch}"`);
 
 const donnees = await page.evaluate(() => {
   const texteBrut = document.body.innerText;
