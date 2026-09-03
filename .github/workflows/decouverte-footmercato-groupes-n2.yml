@@ -1,0 +1,34 @@
+name: Découverte groupes footmercato N2 (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url_competition:
+        description: "URL de la page compétition footmercato à inspecter"
+        required: false
+        type: string
+        default: "https://www.footmercato.net/france/national-2"
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Diagnostiquer
+        working-directory: scripts
+        env:
+          URL_COMPETITION: ${{ inputs.url_competition }}
+        run: node decouverte-footmercato-groupes-n2.js
