@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-09-02T11:56:26.073Z",
+  "updated_at": "2026-09-03T11:58:17.209Z",
   "joueurs": [
     {
       "id": "5aa0139d-fb4e-4dc4-9054-aca4a213752a",
@@ -75,25 +75,6 @@
           "domicile": false,
           "situation": "à égalité",
           "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
-      "prenom": "Marvin",
-      "nom": "Emmanuel",
-      "club": "Le Puy-en-Velay FC",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-07",
-          "adversaire": "SC BASTIA",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
           "points": 1
         }
       ]
@@ -186,6 +167,25 @@
         {
           "date": "2026-08-07",
           "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
+      "prenom": "Marvin",
+      "nom": "Emmanuel",
+      "club": "Le Puy-en-Velay FC",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC BASTIA",
           "domicile": false,
           "situation": "menait de 1 but",
           "resultat": "victoire",
