@@ -118,6 +118,22 @@ if (URL_MATCH_DIRECT || liensMatch.length > 0) {
       console.log(`--- Table #${t.index} (class="${t.classe}") ---`);
       for (const ligne of t.lignes) console.log(`  [${ligne.join(' | ')}]`);
     }
+
+    console.log(`\nTexte complet du conteneur Compo (au-delà de 5000 caractères) :\n${contenuOnglet ? contenuOnglet.texte.slice(5000, 10000) : ''}`);
+  }
+
+  const aLive = ongletsNav.find((o) => o.texte === 'Live');
+  if (aLive) {
+    console.log(`\n########## Clic sur l'onglet "Live" (fil chronologique complet ?) ##########`);
+    await page.click('a:has-text("Live")');
+    await page.waitForTimeout(1500);
+    const idLive = aLive.href.replace('#', '');
+    const contenuLive = await page.evaluate((id) => {
+      const el = document.getElementById(id);
+      return el ? (el.innerText || el.textContent || '').trim() : null;
+    }, idLive);
+    console.log(`Longueur texte conteneur #${idLive} : ${contenuLive ? contenuLive.length : 0} caractères.`);
+    console.log(`\nTexte du conteneur Live (5000 premiers caractères) :\n${contenuLive ? contenuLive.slice(0, 5000) : '(introuvable)'}`);
   }
 }
 
