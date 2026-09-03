@@ -70,6 +70,28 @@ if (URL_MATCH_DIRECT || liensMatch.length > 0) {
     console.log(`--- Table #${t.index} (class="${t.classe}") ---`);
     for (const ligne of t.lignes) console.log(`  [${ligne.join(' | ')}]`);
   }
+
+  // Cherche les liens des onglets (Résumé/Live/Compo/Stats/Class.) pour
+  // trouver l'URL exacte de la page compositions.
+  const ongletsNav = await page.evaluate(() => {
+    const liens = [...document.querySelectorAll('a')].filter((a) => {
+      const t = (a.textContent || '').trim();
+      return ['Résumé', 'Live', 'Compo', 'Stats', 'Class.'].includes(t);
+    });
+    return liens.map((a) => ({ texte: (a.textContent || '').trim(), href: a.getAttribute('href') }));
+  });
+  console.log(`\n${ongletsNav.length} onglet(s) de navigation trouvé(s) :`);
+  for (const o of ongletsNav) console.log(`  "${o.texte}" -> ${o.href}`);
+
+  const hrefCompo = ongletsNav.find((o) => o.texte === 'Compo');
+  if (hrefCompo && hrefCompo.href) {
+    const urlCompo = hrefCompo.href.startsWith('http') ? hrefCompo.href : `https://www.footmercato.net${hrefCompo.href}`;
+    console.log(`\n########## Test de la page compositions : ${urlCompo} ##########`);
+    await page.goto(urlCompo, { waitUntil: 'networkidle', timeout: 45000 });
+    const texteCompo = await page.evaluate(() => document.body.innerText).catch(() => '');
+    console.log(`Longueur innerText page compositions : ${texteCompo.length} caractères.`);
+    console.log(`\nExtrait innerText page compositions (5000 premiers caractères) :\n${texteCompo.slice(0, 5000)}`);
+  }
 }
 
 await browser.close();
