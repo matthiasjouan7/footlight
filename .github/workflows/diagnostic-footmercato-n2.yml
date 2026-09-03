@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: "https://www.footmercato.net/france/national-2/calendrier/8365150612397432064-journee-1"
+      url_match_direct:
+        description: "Si renseigné, saute le calendrier et teste directement cette page de match"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   diagnostic:
@@ -31,4 +36,5 @@ jobs:
         working-directory: scripts
         env:
           URL_CALENDRIER: ${{ inputs.url_calendrier }}
+          URL_MATCH_DIRECT: ${{ inputs.url_match_direct }}
         run: node diagnostic-footmercato-n2.js
