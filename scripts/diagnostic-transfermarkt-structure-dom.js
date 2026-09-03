@@ -1,11 +1,12 @@
-// Diagnostic lecture seule : dump structuré (tables HTML avec cellules
-// séparées, pas innerText qui perd les colonnes) d'une feuille de match
-// Transfermarkt, pour concevoir les sélecteurs du futur parseur de
-// secours (utilisé si FFF est indisponible, comme actuellement depuis
-// ~24h : "APPLICATION MOMENTANÉMENT INDISPONIBLE"). Cherche aussi les
-// éléments porteurs d'un attribut title/alt (les minutes de la
-// chronologie sont probablement encodées ainsi plutôt qu'en texte visible
-// brut, absentes de l'extraction innerText testée précédemment).
+// Diagnostic lecture seule (v2) : le premier passage a montré que
+// buts/cartons/remplacements ne sont pas dans des <table> mais dans une
+// timeline (div.sb-zeitleiste-ereignisse), vide en texte/title visibles —
+// l'info (minute, type d'événement, joueur) est probablement encodée via
+// des attributs style (position horizontale = minute) / class (type
+// d'icône) / data-* sur les enfants. Dump ciblé de cette structure, plus
+// recherche de toutes les classes préfixées "sb-" (convention
+// Transfermarkt "Spielbericht") pour repérer les conteneurs BUTS/
+// REMPLACEMENTS/CARTONS visibles dans le rendu mais absents des <table>.
 import { chromium } from 'playwright';
 
 const URL_MATCH = process.env.URL_MATCH || 'https://www.transfermarkt.fr/spielbericht/index/spielbericht/4967173';
@@ -13,41 +14,43 @@ const URL_MATCH = process.env.URL_MATCH || 'https://www.transfermarkt.fr/spielbe
 const browser = await chromium.launch();
 const page = await browser.newPage({ locale: 'fr-FR', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' });
 
-console.log(`Navigation vers : ${URL_MATCH}\n`);
 await page.goto(URL_MATCH, { waitUntil: 'networkidle', timeout: 45000 });
 console.log(`Titre : "${await page.title()}"\n`);
 
-const tables = await page.evaluate(() => {
-  return [...document.querySelectorAll('table')].map((t, i) => ({
-    index: i,
-    classe: t.className,
-    lignes: [...t.querySelectorAll('tr')].slice(0, 15).map((tr) =>
-      [...tr.querySelectorAll('td,th')].map((td) => (td.textContent || '').trim().replace(/\s+/g, ' '))
-    ),
-  }));
-});
-console.log(`${tables.length} table(s) HTML trouvée(s) :\n`);
-for (const t of tables) {
-  console.log(`--- Table #${t.index} (class="${t.classe}") ---`);
-  for (const ligne of t.lignes) console.log(`  [${ligne.join(' | ')}]`);
-  console.log('');
-}
-
-const elementsAvecTitre = await page.evaluate(() => {
-  return [...document.querySelectorAll('[title]')].slice(0, 60).map((el) => ({
+const timeline = await page.evaluate(() => {
+  const conteneur = document.querySelector('.sb-zeitleiste-ereignisse');
+  if (!conteneur) return null;
+  return [...conteneur.querySelectorAll('*')].map((el) => ({
     tag: el.tagName,
     classe: el.className,
-    titre: el.getAttribute('title'),
-  }));
+    style: el.getAttribute('style'),
+    dataAttrs: [...el.attributes].filter((a) => a.name.startsWith('data-')).map((a) => `${a.name}="${a.value}"`).join(' '),
+    texte: (el.textContent || '').trim().slice(0, 60),
+  })).filter((el) => el.style || el.dataAttrs || el.texte);
 });
-console.log(`\n${elementsAvecTitre.length} élément(s) avec attribut title (extrait) :`);
-for (const el of elementsAvecTitre) console.log(`  <${el.tag} class="${el.classe}"> title="${el.titre}"`);
+console.log(`Enfants de .sb-zeitleiste-ereignisse (${timeline ? timeline.length : 0}) :`);
+for (const el of timeline || []) console.log(`  <${el.tag} class="${el.classe}" style="${el.style || ''}" ${el.dataAttrs}> "${el.texte}"`);
 
-const conteneursChrono = await page.evaluate(() => {
-  const candidats = [...document.querySelectorAll('[class*="verlauf"], [class*="chrono"], [class*="timeline"], [class*="minute"]')];
-  return candidats.slice(0, 20).map((el) => ({ tag: el.tagName, classe: el.className, texte: (el.textContent || '').trim().slice(0, 100) }));
+const classesSb = await page.evaluate(() => {
+  const toutes = new Set();
+  for (const el of document.querySelectorAll('[class*="sb-"]')) {
+    for (const c of el.className.split(' ')) if (c.startsWith('sb-')) toutes.add(c);
+  }
+  return [...toutes].sort();
 });
-console.log(`\n${conteneursChrono.length} conteneur(s) au nom évocateur (verlauf/chrono/timeline/minute) :`);
-for (const c of conteneursChrono) console.log(`  <${c.tag} class="${c.classe}"> "${c.texte}"`);
+console.log(`\n${classesSb.length} classe(s) "sb-*" unique(s) trouvée(s) sur la page :`);
+console.log(`  ${classesSb.join(', ')}`);
+
+for (const motCle of ['sb-tore', 'sb-tor', 'sb-wechsel', 'sb-karten', 'sb-karte', 'sb-goal', 'sb-aufstellung']) {
+  const els = await page.evaluate((cle) => {
+    return [...document.querySelectorAll(`[class*="${cle}"]`)].slice(0, 5).map((el) => ({
+      tag: el.tagName, classe: el.className, html: el.outerHTML.slice(0, 400),
+    }));
+  }, motCle);
+  if (els.length) {
+    console.log(`\n########## Éléments class*="${motCle}" (${els.length}) ##########`);
+    for (const el of els) console.log(`  <${el.tag} class="${el.classe}">\n  HTML: ${el.html}\n`);
+  }
+}
 
 await browser.close();
