@@ -71,8 +71,10 @@ if (URL_MATCH_DIRECT || liensMatch.length > 0) {
     for (const ligne of t.lignes) console.log(`  [${ligne.join(' | ')}]`);
   }
 
-  // Cherche les liens des onglets (Résumé/Live/Compo/Stats/Class.) pour
-  // trouver l'URL exacte de la page compositions.
+  // Cherche les liens des onglets (Résumé/Live/Compo/Stats/Class.) : ce
+  // sont des ancres JS (href="#tabFormations"), pas de vraies URL — il
+  // faut cliquer dessus in-page (SPA) plutôt que naviguer, sous peine
+  // d'atterrir sur la page d'accueil (https://site#tabFormations).
   const ongletsNav = await page.evaluate(() => {
     const liens = [...document.querySelectorAll('a')].filter((a) => {
       const t = (a.textContent || '').trim();
@@ -83,14 +85,39 @@ if (URL_MATCH_DIRECT || liensMatch.length > 0) {
   console.log(`\n${ongletsNav.length} onglet(s) de navigation trouvé(s) :`);
   for (const o of ongletsNav) console.log(`  "${o.texte}" -> ${o.href}`);
 
-  const hrefCompo = ongletsNav.find((o) => o.texte === 'Compo');
-  if (hrefCompo && hrefCompo.href) {
-    const urlCompo = hrefCompo.href.startsWith('http') ? hrefCompo.href : `https://www.footmercato.net${hrefCompo.href}`;
-    console.log(`\n########## Test de la page compositions : ${urlCompo} ##########`);
-    await page.goto(urlCompo, { waitUntil: 'networkidle', timeout: 45000 });
-    const texteCompo = await page.evaluate(() => document.body.innerText).catch(() => '');
-    console.log(`Longueur innerText page compositions : ${texteCompo.length} caractères.`);
-    console.log(`\nExtrait innerText page compositions (5000 premiers caractères) :\n${texteCompo.slice(0, 5000)}`);
+  const aCompo = ongletsNav.find((o) => o.texte === 'Compo');
+  if (aCompo) {
+    console.log(`\n########## Clic sur l'onglet "Compo" (in-page) ##########`);
+    await page.click('a:has-text("Compo")');
+    await page.waitForTimeout(1500);
+
+    const idOnglet = aCompo.href.replace('#', '');
+    const contenuOnglet = await page.evaluate((id) => {
+      const el = document.getElementById(id);
+      return el ? { html: el.outerHTML.length, texte: (el.innerText || el.textContent || '').trim() } : null;
+    }, idOnglet);
+    if (contenuOnglet) {
+      console.log(`Conteneur #${idOnglet} : ${contenuOnglet.html} caractères HTML.`);
+      console.log(`\nTexte du conteneur (5000 premiers caractères) :\n${contenuOnglet.texte.slice(0, 5000)}`);
+    } else {
+      console.log(`Conteneur #${idOnglet} introuvable dans le DOM.`);
+    }
+
+    const tablesCompo = await page.evaluate((id) => {
+      const conteneur = document.getElementById(id) || document.body;
+      return [...conteneur.querySelectorAll('table')].map((t, i) => ({
+        index: i,
+        classe: t.className,
+        lignes: [...t.querySelectorAll('tr')].slice(0, 30).map((tr) =>
+          [...tr.querySelectorAll('td,th')].map((td) => (td.textContent || '').trim().replace(/\s+/g, ' '))
+        ),
+      }));
+    }, idOnglet);
+    console.log(`\n${tablesCompo.length} table(s) HTML dans le conteneur Compo.`);
+    for (const t of tablesCompo) {
+      console.log(`--- Table #${t.index} (class="${t.classe}") ---`);
+      for (const ligne of t.lignes) console.log(`  [${ligne.join(' | ')}]`);
+    }
   }
 }
 
