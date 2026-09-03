@@ -41,16 +41,13 @@ const classesSb = await page.evaluate(() => {
 console.log(`\n${classesSb.length} classe(s) "sb-*" unique(s) trouvée(s) sur la page :`);
 console.log(`  ${classesSb.join(', ')}`);
 
-for (const motCle of ['sb-tore', 'sb-tor', 'sb-wechsel', 'sb-karten', 'sb-karte', 'sb-goal', 'sb-aufstellung']) {
-  const els = await page.evaluate((cle) => {
-    return [...document.querySelectorAll(`[class*="${cle}"]`)].slice(0, 5).map((el) => ({
-      tag: el.tagName, classe: el.className, html: el.outerHTML.slice(0, 400),
-    }));
-  }, motCle);
-  if (els.length) {
-    console.log(`\n########## Éléments class*="${motCle}" (${els.length}) ##########`);
-    for (const el of els) console.log(`  <${el.tag} class="${el.classe}">\n  HTML: ${el.html}\n`);
-  }
-}
+const lignesAction = await page.evaluate(() => {
+  return [...document.querySelectorAll('.sb-aktion')].map((el) => ({
+    classe: el.className,
+    html: el.outerHTML.slice(0, 1200),
+  }));
+});
+console.log(`\n########## ${lignesAction.length} ligne(s) .sb-aktion (buts/cartons/remplacements) ##########`);
+for (const l of lignesAction) console.log(`\nclass="${l.classe}"\n${l.html}\n`);
 
 await browser.close();
