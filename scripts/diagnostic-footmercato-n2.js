@@ -128,12 +128,25 @@ if (URL_MATCH_DIRECT || liensMatch.length > 0) {
     await page.click('a:has-text("Live")');
     await page.waitForTimeout(1500);
     const idLive = aLive.href.replace('#', '');
+
+    // Le fil est filtré par défaut ("Temps forts"/"Buts") — clique sur
+    // "Tous" pour voir l'intégralité (cartons, remplacements compris).
+    const clicTous = await page.evaluate((id) => {
+      const conteneur = document.getElementById(id);
+      if (!conteneur) return false;
+      const boutonTous = [...conteneur.querySelectorAll('a, button, [role="button"], li, span')].find((el) => (el.textContent || '').trim() === 'Tous');
+      if (boutonTous) { boutonTous.click(); return true; }
+      return false;
+    }, idLive);
+    console.log(`Bouton "Tous" cliqué : ${clicTous}`);
+    await page.waitForTimeout(1500);
+
     const contenuLive = await page.evaluate((id) => {
       const el = document.getElementById(id);
       return el ? (el.innerText || el.textContent || '').trim() : null;
     }, idLive);
-    console.log(`Longueur texte conteneur #${idLive} : ${contenuLive ? contenuLive.length : 0} caractères.`);
-    console.log(`\nTexte du conteneur Live (5000 premiers caractères) :\n${contenuLive ? contenuLive.slice(0, 5000) : '(introuvable)'}`);
+    console.log(`Longueur texte conteneur #${idLive} après clic "Tous" : ${contenuLive ? contenuLive.length : 0} caractères.`);
+    console.log(`\nTexte du conteneur Live (8000 premiers caractères) :\n${contenuLive ? contenuLive.slice(0, 8000) : '(introuvable)'}`);
   }
 }
 
