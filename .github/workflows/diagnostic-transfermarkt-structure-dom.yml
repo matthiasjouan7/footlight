@@ -1,0 +1,34 @@
+name: Diagnostic structure DOM Transfermarkt (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url_match:
+        description: "URL de la feuille de match Transfermarkt à inspecter"
+        required: false
+        type: string
+        default: "https://www.transfermarkt.fr/spielbericht/index/spielbericht/4967173"
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Diagnostiquer
+        working-directory: scripts
+        env:
+          URL_MATCH: ${{ inputs.url_match }}
+        run: node diagnostic-transfermarkt-structure-dom.js
