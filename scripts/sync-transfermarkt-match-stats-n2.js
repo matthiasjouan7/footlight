@@ -139,8 +139,11 @@ for (const m of matchsTm) {
     await page.goto(m.url, { waitUntil: 'networkidle', timeout: 45000 });
   } catch (e) { console.log(`  Erreur chargement ${m.url} : ${e.message.split('\n')[0]}`); continue; }
   const titre = await page.title();
-  // Titre attendu : "Domicile - Extérieur (S:S), JJ mois AAAA - Championnat National 2 - Groupe X - Rapport de match | Transfermarkt"
-  const mTitre = titre.match(/^(.+?) - (.+?) \(\d+:\d+\), (\d{1,2} \w+ \d{4})/);
+  // Titre réel observé (pas de score entre parenthèses, contrairement à
+  // ce qui était supposé) : "Domicile - Extérieur, JJ mois[.] AAAA -
+  // Championnat National 2 - Groupe X - Rapport de match | Transfermarkt"
+  // — le mois peut être abrégé avec un point ("5 sept. 2026").
+  const mTitre = titre.match(/^(.+?) - (.+?), (\d{1,2} [^\d\s.]+\.? \d{4}) -/);
   if (!mTitre) { console.log(`  Titre inattendu, match ignoré : "${titre}"`); continue; }
   infosDetaillees.push({ ...m, domicile: mTitre[1].trim(), exterieur: mTitre[2].trim(), dateTexte: mTitre[3] });
 }
@@ -152,11 +155,19 @@ const { data: calendrier, error: errCal } = await supabase
   .eq('division', DIVISION).eq('groupe', GROUPE).eq('saison', SAISON);
 if (errCal) { console.error('Erreur lecture calendrier_officiel :', errCal.message); await browser.close(); process.exit(1); }
 
-const MOIS_FR = { janvier: 0, février: 1, mars: 2, avril: 3, mai: 4, juin: 5, juillet: 6, août: 7, septembre: 8, octobre: 9, novembre: 10, décembre: 11 };
+// Transfermarkt abrège certains mois avec un point ("5 sept. 2026") et
+// écrit les autres en toutes lettres ("29 août 2026") — couvre les deux
+// formes (abrégée sans le point, et complète).
+const MOIS_FR = {
+  janv: 0, janvier: 0, févr: 1, fevr: 1, février: 1, fevrier: 1, mars: 2,
+  avr: 3, avril: 3, mai: 4, juin: 5, juil: 6, juillet: 6, août: 7, aout: 7,
+  sept: 8, septembre: 8, oct: 9, octobre: 9, nov: 10, novembre: 10,
+  déc: 11, dec: 11, décembre: 11, decembre: 11,
+};
 function parseDateFr(texte) {
-  const m = texte.match(/(\d{1,2}) (\w+) (\d{4})/);
+  const m = texte.match(/(\d{1,2}) ([^\d\s.]+)\.? (\d{4})/);
   if (!m) return null;
-  const mois = MOIS_FR[m[2].toLowerCase()];
+  const mois = MOIS_FR[m[2].toLowerCase().replace(/\.$/, '')];
   if (mois == null) return null;
   return new Date(Date.UTC(parseInt(m[3], 10), mois, parseInt(m[1], 10)));
 }
