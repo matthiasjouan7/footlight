@@ -77,34 +77,22 @@ function clubsCorrespondent(a, b) {
   return true;
 }
 
-// ---- Rapprochement joueur (nom de famille, tolérance légère) ----
+// ---- Rapprochement joueur (nom de famille, égalité stricte) ----
 function normaliserNom(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]+/g, ' ').trim();
 }
-function distanceLevenshtein(a, b) {
-  const m = a.length, n = b.length;
-  const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
-  for (let j = 0; j <= n; j++) d[0][j] = j;
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      d[i][j] = a[i - 1] === b[j - 1] ? d[i - 1][j - 1] : 1 + Math.min(d[i - 1][j], d[i][j - 1], d[i - 1][j - 1]);
-    }
-  }
-  return d[m][n];
-}
 // Transfermarkt affiche "P. Nom" (initiale du prénom). Compare juste le
-// nom de famille (dernier mot affiché), tolérance légère.
+// nom de famille (dernier mot affiché). Égalité stricte uniquement : une
+// tolérance floue (ex. distance de Levenshtein) confond des noms de
+// famille réels proches mais différents (ex. "Lebert" vs "Hebert",
+// observé groupe F) — un faux rapprochement de stats est pire qu'un
+// joueur non retrouvé (ignoré, sans impact).
 function nomFamilleCorrespond(nomAffiche, nomJoueur) {
   const mots = normaliserNom(nomAffiche).split(' ').filter(Boolean);
   if (!mots.length) return false;
   const candidat = mots[mots.length - 1];
   const cible = normaliserNom(nomJoueur);
-  // Un candidat trop court (ex. "b" venant d'un nom de club mal capturé
-  // comme "FC Metz B") matche par erreur presque tout nom via la
-  // tolérance Levenshtein — on exige alors une égalité stricte.
-  if (candidat.length < 3) return candidat === cible;
-  const seuil = candidat.length >= 8 ? 2 : 1;
-  return distanceLevenshtein(candidat, cible) <= seuil;
+  return candidat === cible;
 }
 
 // ---- 1. Découvre les matchs joués (parcourt les journées de la page spieltag) ----
