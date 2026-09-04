@@ -99,6 +99,10 @@ function nomFamilleCorrespond(nomAffiche, nomJoueur) {
   if (!mots.length) return false;
   const candidat = mots[mots.length - 1];
   const cible = normaliserNom(nomJoueur);
+  // Un candidat trop court (ex. "b" venant d'un nom de club mal capturé
+  // comme "FC Metz B") matche par erreur presque tout nom via la
+  // tolérance Levenshtein — on exige alors une égalité stricte.
+  if (candidat.length < 3) return candidat === cible;
   const seuil = candidat.length >= 8 ? 2 : 1;
   return distanceLevenshtein(candidat, cible) <= seuil;
 }
@@ -275,10 +279,14 @@ function calculerStatsMatch(donnees, clubDomicile, clubExterieur) {
   const [compoDomicile, compoExterieur] = donnees.compositions;
   const resultats = new Map(); // "club|nomAffiche" -> stats
   const cle = (club, nom) => `${club}|${nom}`;
-  for (const nom of compoDomicile || []) resultats.set(cle(clubDomicile, nom), { nomAffiche: nom, club: clubDomicile, titulaire: true, minutes: 90, buts: 0, cartonsJaunes: 0, cartonsRouges: 0 });
-  for (const nom of compoExterieur || []) resultats.set(cle(clubExterieur, nom), { nomAffiche: nom, club: clubExterieur, titulaire: false, minutes: 90, buts: 0, cartonsJaunes: 0, cartonsRouges: 0 });
+  // Garde-fou : une entrée de composition qui correspond en fait à un nom
+  // de club (ligne d'en-tête mal capturée dans le tableau, ex. "FC Metz B")
+  // n'est pas un joueur — l'exclure évite un faux rapprochement plus tard.
+  const estNomDeClub = (nom) => clubsCorrespondent(nom, clubDomicile) || clubsCorrespondent(nom, clubExterieur);
+  for (const nom of compoDomicile || []) { if (estNomDeClub(nom)) continue; resultats.set(cle(clubDomicile, nom), { nomAffiche: nom, club: clubDomicile, titulaire: true, minutes: 90, buts: 0, cartonsJaunes: 0, cartonsRouges: 0 }); }
+  for (const nom of compoExterieur || []) { if (estNomDeClub(nom)) continue; resultats.set(cle(clubExterieur, nom), { nomAffiche: nom, club: clubExterieur, titulaire: false, minutes: 90, buts: 0, cartonsJaunes: 0, cartonsRouges: 0 }); }
   // Corrige : la 2e table est l'équipe extérieure, donc titulaire doit être true pour elle aussi.
-  for (const nom of compoExterieur || []) resultats.get(cle(clubExterieur, nom)).titulaire = true;
+  for (const nom of compoExterieur || []) { const r = resultats.get(cle(clubExterieur, nom)); if (r) r.titulaire = true; }
 
   function clubReel(clubTitre) {
     if (!clubTitre) return null;
