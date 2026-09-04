@@ -1,0 +1,47 @@
+name: Sync stats de match Transfermarkt -> matchs_joueur (National 2, automatique)
+
+on:
+  schedule:
+    # 7h30 UTC — après la synchro FFF équivalente (7h00), en secours pour
+    # les groupes/matchs que FFF ne couvre pas (voir sync-fff-match-stats-n2.js
+    # et diagnostic-fff-portee-blocage.js : blocage anti-bot FFF).
+    #
+    # Contrairement à sync-fff-match-stats-n2-scheduled.yml (matrice, 8
+    # groupes en parallèle), les 8 groupes sont traités ICI de façon
+    # SÉQUENTIELLE dans un seul job : des exécutions en parallèle contre
+    # transfermarkt.fr ont provoqué un ralentissement/blocage transitoire
+    # (pages chargées mais vides de liens de match) lors des tests de ce
+    # pipeline — voir l'historique des runs de sync-transfermarkt-match-stats-n2.yml.
+    - cron: "30 7 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Synchroniser les 8 groupes (séquentiel)
+        working-directory: scripts
+        env:
+          NB_JOURNEES: "3"
+          LIMITE_MATCHS: "30"
+          DRY_RUN: "false"
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          for GROUPE in A B C D E F G H; do
+            echo "########## Groupe $GROUPE ##########"
+            GROUPE=$GROUPE node sync-transfermarkt-match-stats-n2.js || echo "Groupe $GROUPE : échec, on continue avec le suivant."
+          done
