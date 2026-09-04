@@ -4,8 +4,27 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-09-03T11:58:17.209Z",
+  "updated_at": "2026-09-04T11:57:51.036Z",
   "joueurs": [
+    {
+      "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
+      "prenom": "Fadel",
+      "nom": "Gobitaka",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "ailier_gauche",
+      "points": 3,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "SM CAEN",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        }
+      ]
+    },
     {
       "id": "5aa0139d-fb4e-4dc4-9054-aca4a213752a",
       "prenom": "Sory",
@@ -30,25 +49,6 @@
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
-        }
-      ]
-    },
-    {
-      "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
-      "prenom": "Fadel",
-      "nom": "Gobitaka",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
-      "points": 3,
-      "contributions": [
-        {
-          "date": "2026-08-14",
-          "adversaire": "SM CAEN",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
         }
       ]
     },
@@ -80,6 +80,25 @@
       ]
     },
     {
+      "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
+      "prenom": "Armand",
+      "nom": "Gnanduillet",
+      "club": "SM Caen",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "US THIONVILLE LUSITANOS",
+          "domicile": false,
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
       "prenom": "Félix",
       "nom": "Tomi",
@@ -99,6 +118,25 @@
       ]
     },
     {
+      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
+      "prenom": "Marvin",
+      "nom": "Emmanuel",
+      "club": "Le Puy-en-Velay FC",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC BASTIA",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
       "prenom": "George",
       "nom": "Morgan",
@@ -113,25 +151,6 @@
           "domicile": true,
           "situation": "était mené 1 but(s)",
           "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
-      "prenom": "Armand",
-      "nom": "Gnanduillet",
-      "club": "SM Caen",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-14",
-          "adversaire": "US THIONVILLE LUSITANOS",
-          "domicile": false,
-          "situation": "était mené 2 but(s)",
-          "resultat": "defaite",
           "points": 1
         }
       ]
@@ -167,25 +186,6 @@
         {
           "date": "2026-08-07",
           "adversaire": "SC AUBAGNE AIR BEL",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
-      "prenom": "Marvin",
-      "nom": "Emmanuel",
-      "club": "Le Puy-en-Velay FC",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-07",
-          "adversaire": "SC BASTIA",
           "domicile": false,
           "situation": "menait de 1 but",
           "resultat": "victoire",
