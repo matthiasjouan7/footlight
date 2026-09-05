@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-09-04T11:57:51.036Z",
+  "updated_at": "2026-09-05T11:08:32.275Z",
   "joueurs": [
     {
       "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
@@ -99,6 +99,44 @@
       ]
     },
     {
+      "id": "a7b216af-f55e-4e8c-809a-a7096bc29538",
+      "prenom": "Alexis",
+      "nom": "Gouletquer",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "09b12a16-8987-4e18-826f-baea9db78e71",
+      "prenom": "Jalil",
+      "nom": "Moustaid",
+      "club": "US THIONVILLE LUSITANOS",
+      "niveau": "Ligue 3",
+      "poste": "milieu_offensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
       "prenom": "Félix",
       "nom": "Tomi",
@@ -151,44 +189,6 @@
           "domicile": true,
           "situation": "était mené 1 but(s)",
           "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "a7b216af-f55e-4e8c-809a-a7096bc29538",
-      "prenom": "Alexis",
-      "nom": "Gouletquer",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-07",
-          "adversaire": "SC AUBAGNE AIR BEL",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "09b12a16-8987-4e18-826f-baea9db78e71",
-      "prenom": "Jalil",
-      "nom": "Moustaid",
-      "club": "US THIONVILLE LUSITANOS",
-      "niveau": "Ligue 3",
-      "poste": "milieu_offensif",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-07",
-          "adversaire": "SC AUBAGNE AIR BEL",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
           "points": 1
         }
       ]
