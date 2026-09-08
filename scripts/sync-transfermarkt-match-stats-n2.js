@@ -229,21 +229,30 @@ async function parserPageMatchTransfermarkt(pageMatch) {
     return [...document.querySelectorAll('.sb-team, .sb-heim, .sb-gast')].map((el) => (el.textContent || '').trim()).filter(Boolean);
   });
 
+  // Le type d'événement (but/jaune/rouge/changement) N'EST PAS porté par une
+  // classe CSS distinctive sur .sb-aktion-spielstand comme supposé à
+  // l'origine (aucun <span> dedans, juste un <b>1:0</b> — confirmé en
+  // pratique via diagnostic-transfermarkt-stlomanche-noms.js, HTML brut
+  // dumpé). Avec l'ancien sélecteur, `type` restait TOUJOURS 'inconnu' :
+  // aucun but/carton/changement n'était jamais compté, quel que soit le
+  // joueur ou le match — pas seulement pour St Lo Manche. On déduit donc le
+  // type de la présence des sous-éléments structurels (remplacement) et du
+  // texte de l'événement (carton), la présence d'un score non vide dans
+  // .sb-aktion-spielstand étant la preuve la plus fiable d'un but (le score
+  // ne change que sur un but, jamais sur un carton ou un remplacement).
   const evenements = await pageMatch.evaluate(() => {
     return [...document.querySelectorAll('.sb-aktion')].map((el) => {
-      const uhr = el.querySelector('.sb-aktion-uhr .sb-sprite-uhr-klein');
       const club = el.querySelector('.sb-aktion-wappen a, .sb-aktion-wappen img');
-      const spielstand = el.querySelector('.sb-aktion-spielstand span');
+      const spielstand = el.querySelector('.sb-aktion-spielstand');
       const aktion = el.querySelector('.sb-aktion-aktion a');
       const wechselAus = el.querySelector('.sb-aktion-wechsel-aus a, .sb-aktion-spielerbild-aus img, [class*="wechsel-aus"] img');
       const wechselEin = el.querySelector('.sb-aktion-wechsel-ein a, .sb-aktion-spielerbild-ein img, [class*="wechsel-ein"] img');
-      let type = 'inconnu';
-      const classe = spielstand ? spielstand.className : '';
-      if (classe.includes('sb-tor')) type = 'but';
-      else if (classe.includes('sb-gelbrot')) type = 'rouge';
-      else if (classe.includes('sb-gelb')) type = 'jaune';
-      else if (classe.includes('sb-wechsel')) type = 'changement';
       const texteAction = el.textContent || '';
+      let type = 'inconnu';
+      if (wechselAus || wechselEin) type = 'changement';
+      else if (/carton rouge/i.test(texteAction)) type = 'rouge';
+      else if (/carton jaune/i.test(texteAction)) type = 'jaune';
+      else if (spielstand && spielstand.textContent.trim()) type = 'but';
       const estDeuxiemeJaune = /2[eè]me carton jaune|second carton jaune|deuxi[eè]me carton jaune/i.test(texteAction);
       return {
         clubTitre: club ? (club.getAttribute('title') || club.textContent || '').trim() : null,
