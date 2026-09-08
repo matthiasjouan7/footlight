@@ -98,4 +98,30 @@ for (const t of toutesLesTables) {
   console.log(`  table[${t.index}] class="${t.classe}" — ${t.nbLignes} ligne(s) — ${t.joueurs.length} nom(s) extrait(s)${t.joueurs.length ? ' : ' + t.joueurs.map((n) => `"${n}"`).join(', ') : ''}`);
 }
 
+// Diagnostique pourquoi buts/cartons ressortent systématiquement à 0 : vérifie
+// si la page expose bien un fil d'événements (.sb-aktion) et une timeline
+// (.sb-zeitleiste-ereignisse), ou si cette compétition/ce niveau ne publie
+// tout simplement pas ce détail sur Transfermarkt (contrairement aux
+// compositions, qui elles sont bien présentes).
+const diagnosticEvenements = await page.evaluate(() => {
+  const aktions = [...document.querySelectorAll('.sb-aktion')].map((el) => (el.textContent || '').replace(/\s+/g, ' ').trim());
+  const timelineBlocs = document.querySelectorAll('.sb-zeitleiste-ereignisse > *').length;
+  const scoreEl = document.querySelector('.sb-endstand, .sb-spielstand, [class*="ergebnis"], [class*="resultat"]');
+  return {
+    nbAktions: aktions.length,
+    exemplesAktions: aktions.slice(0, 5),
+    nbTimelineBlocs: timelineBlocs,
+    scoreTexte: scoreEl ? (scoreEl.textContent || '').trim() : null,
+    titrePage: document.title,
+  };
+});
+console.log(`\n=== Diagnostic événements (buts/cartons/remplacements) ===`);
+console.log(`Score affiché sur la page : "${diagnosticEvenements.scoreTexte}"`);
+console.log(`${diagnosticEvenements.nbAktions} élément(s) .sb-aktion trouvé(s) (buts/cartons/remplacements).`);
+if (diagnosticEvenements.nbAktions) {
+  console.log('Exemples :');
+  for (const a of diagnosticEvenements.exemplesAktions) console.log(`  "${a}"`);
+}
+console.log(`${diagnosticEvenements.nbTimelineBlocs} bloc(s) trouvé(s) dans .sb-zeitleiste-ereignisse.`);
+
 await browser.close();
