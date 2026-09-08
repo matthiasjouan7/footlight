@@ -200,9 +200,20 @@ const matchsAsynchroniser = matchsARapprocher.filter((m) => {
 console.log(`${matchsAsynchroniser.length} match(s) à synchroniser ce run (limite ${LIMITE_MATCHS}).\n`);
 
 // ---- 5. Parseur page match : composition + .sb-aktion + timeline (minute approximative) ----
+// Certaines pages spielbericht insèrent une <table> supplémentaire avant les
+// 2 vraies tables de composition (ex: FC St-Lô Manche — constaté en pratique
+// via diagnostic-transfermarkt-stlomanche-noms.js : table[0] vide, la vraie
+// compo domicile est en table[1] et l'extérieure en table[2]). Un simple
+// slice(0, 2) prenait alors [vide, domicile] pour [domicile, extérieur],
+// attribuant TOUTE la compo domicile au mauvais club et ignorant purement et
+// simplement la compo extérieure — d'où l'absence totale de stats pour ce
+// club malgré des matchs bien synchronisés pour les autres. On récupère donc
+// désormais TOUTES les <table> de la page ; l'attribution domicile/extérieur
+// se fait plus loin par vote (comparaison des noms aux joueurs déjà connus
+// de chaque club), pas par position.
 async function parserPageMatchTransfermarkt(pageMatch) {
-  const compositions = await pageMatch.evaluate(() => {
-    return [...document.querySelectorAll('table')].slice(0, 2).map((t) => {
+  const compositionsToutes = await pageMatch.evaluate(() => {
+    return [...document.querySelectorAll('table')].map((t) => {
       const lignes = [...t.querySelectorAll('tr')].map((tr) => [...tr.querySelectorAll('td,th')].map((td) => (td.textContent || '').trim()));
       const joueurs = [];
       for (const l of lignes) {
@@ -259,12 +270,38 @@ async function parserPageMatchTransfermarkt(pageMatch) {
     return blocs;
   });
 
-  return { compositions, nomsEquipes, evenements, timeline };
+  return { compositionsToutes, nomsEquipes, evenements, timeline };
+}
+
+// Attribue chaque table de composition candidate (≥5 noms, pour ignorer les
+// tables parasites sans lien avec une compo) au club domicile ou extérieur
+// par vote : compte, pour chaque table, combien de noms correspondent à un
+// joueur déjà connu de FootLight pour chaque club (mêmes fonctions de
+// rapprochement que pour l'écriture finale, donc cohérent avec elle). Ne se
+// fie à la position des <table> dans le DOM que si le vote ne tranche pas
+// (repli sur l'ancien comportement, ex: aucun des deux clubs n'a de joueur
+// déjà suivi par FootLight).
+function detecterCompositions(compositionsToutes, joueursConnus, clubDomicile, clubExterieur) {
+  const candidates = compositionsToutes.filter((noms) => noms.length >= 5);
+  function score(noms, club) {
+    return noms.filter((nom) => joueursConnus.some((j) => clubsCorrespondent(j.club, club) && nomFamilleCorrespond(nom, j.nom))).length;
+  }
+  let compoDomicile = null, compoExterieur = null;
+  const restantes = [...candidates];
+  for (const noms of candidates) {
+    const scoreDom = score(noms, clubDomicile), scoreExt = score(noms, clubExterieur);
+    if (scoreDom > 0 && scoreDom >= scoreExt && !compoDomicile) { compoDomicile = noms; restantes.splice(restantes.indexOf(noms), 1); }
+    else if (scoreExt > 0 && scoreExt > scoreDom && !compoExterieur) { compoExterieur = noms; restantes.splice(restantes.indexOf(noms), 1); }
+  }
+  // Repli positionnel pour ce qui n'a pas pu être tranché par vote (aucun
+  // joueur connu dans l'une ou l'autre table pour ce match).
+  if (!compoDomicile) compoDomicile = restantes.shift() || [];
+  if (!compoExterieur) compoExterieur = restantes.shift() || [];
+  return [compoDomicile, compoExterieur];
 }
 
 // ---- 6. Calcule les stats par joueur à partir des événements + timeline ----
-function calculerStatsMatch(donnees, clubDomicile, clubExterieur) {
-  const [compoDomicile, compoExterieur] = donnees.compositions;
+function calculerStatsMatch(compoDomicile, compoExterieur, donnees, clubDomicile, clubExterieur) {
   const resultats = new Map(); // "club|nomAffiche" -> stats
   const cle = (club, nom) => `${club}|${nom}`;
   // Garde-fou : une entrée de composition qui correspond en fait à un nom
@@ -332,6 +369,11 @@ function calculerStatsMatch(donnees, clubDomicile, clubExterieur) {
 let totalMaj = 0, totalAmbigus = 0, totalNonTrouves = 0;
 for (const m of matchsAsynchroniser) {
   console.log(`--- ${m.dateTm} — ${m.equipeDomicileCal} vs ${m.equipeExterieurCal} (calendrier_officiel_id=${m.calendrierOfficielId}) ---`);
+  const lignesMj = parCalendrierId.get(m.calendrierOfficielId) || [];
+  const joueurIds = lignesMj.map((l) => l.joueur_id);
+  const { data: joueurs, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom, club').in('id', joueurIds);
+  if (errJ) { console.log(`  Erreur lecture joueurs : ${errJ.message}`); continue; }
+
   let donnees;
   try {
     await page.goto(m.url, { waitUntil: 'networkidle', timeout: 45000 });
@@ -339,17 +381,13 @@ for (const m of matchsAsynchroniser) {
     donnees = await parserPageMatchTransfermarkt(page);
   } catch (e) { console.log(`  Erreur chargement page : ${e.message.split('\n')[0]}`); continue; }
 
-  if (!donnees.compositions[0]?.length && !donnees.compositions[1]?.length) {
+  if (!donnees.compositionsToutes.some((noms) => noms.length >= 5)) {
     console.log('  Compositions introuvables ou vides, match ignoré.');
     continue;
   }
 
-  const resultatsParseur = calculerStatsMatch(donnees, m.equipeDomicileCal, m.equipeExterieurCal);
-
-  const lignesMj = parCalendrierId.get(m.calendrierOfficielId) || [];
-  const joueurIds = lignesMj.map((l) => l.joueur_id);
-  const { data: joueurs, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom, club').in('id', joueurIds);
-  if (errJ) { console.log(`  Erreur lecture joueurs : ${errJ.message}`); continue; }
+  const [compoDomicile, compoExterieur] = detecterCompositions(donnees.compositionsToutes, joueurs, m.equipeDomicileCal, m.equipeExterieurCal);
+  const resultatsParseur = calculerStatsMatch(compoDomicile, compoExterieur, donnees, m.equipeDomicileCal, m.equipeExterieurCal);
 
   for (const r of resultatsParseur) {
     const candidatsClub = joueurs.filter((j) => clubsCorrespondent(j.club, r.club));
