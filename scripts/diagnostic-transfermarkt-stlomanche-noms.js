@@ -124,4 +124,17 @@ if (diagnosticEvenements.nbAktions) {
 }
 console.log(`${diagnosticEvenements.nbTimelineBlocs} bloc(s) trouvé(s) dans .sb-zeitleiste-ereignisse.`);
 
+// Les buts existent bien côté Transfermarkt (score + .sb-aktion non vides)
+// mais calculerStatsMatch() n'en a extrait aucun : le sélecteur DOM utilisé
+// pour le club (.sb-aktion-wappen) ou le joueur (.sb-aktion-aktion a) a
+// probablement changé. Dump la structure brute des 3 premiers .sb-aktion
+// pour identifier le bon sélecteur.
+const detailAktions = await page.evaluate(() => {
+  return [...document.querySelectorAll('.sb-aktion')].slice(0, 3).map((el) => ({
+    html: el.innerHTML.replace(/\s+/g, ' ').trim().slice(0, 2000),
+  }));
+});
+console.log(`\n=== HTML brut des 3 premiers .sb-aktion (pour retrouver le bon sélecteur club/joueur) ===`);
+detailAktions.forEach((a, i) => console.log(`\n--- .sb-aktion[${i}] ---\n${a.html}`));
+
 await browser.close();
