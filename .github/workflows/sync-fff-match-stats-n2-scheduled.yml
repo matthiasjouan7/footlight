@@ -1,11 +1,14 @@
 name: Sync stats de match FFF -> matchs_joueur (National 2, automatique)
 
 on:
-  schedule:
-    # 7h00 UTC — après la synchro calendrier lequipe.fr (6h00) et la
-    # synchro stats lequipe.fr (6h30), pour que calendrier_officiel soit
-    # à jour avant de rapprocher les matchs FFF.
-    - cron: "0 7 * * *"
+  # Cron désactivé : epreuves.fff.fr bloque désormais les IP des runners
+  # GitHub Actions (403 "application momentanément indisponible", page de
+  # blocage anti-bot type Akamai, confirmé stable sur plusieurs jours via
+  # diagnostic-jeton-fff-introuvable.js). Le script échouait à 100% depuis
+  # le 02/09 (0 écriture) sans jamais alimenter matchs_joueur — inutile de
+  # continuer à consommer des minutes CI pour rien. National 2 s'appuie
+  # désormais uniquement sur sync-transfermarkt-match-stats-n2-scheduled.
+  # Laissé en workflow_dispatch au cas où le blocage se lèverait côté FFF.
   workflow_dispatch: {}
 
 jobs:
