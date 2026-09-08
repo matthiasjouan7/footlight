@@ -19,11 +19,11 @@ const SAISON = '2026-2027';
 console.log('=== Recherche "Lemaitre" / "Lemaître" (tous niveaux, au cas où) ===\n');
 const { data: candidats, error: errC } = await supabase
   .from('joueurs')
-  .select('id, prenom, nom, club, niveau, groupe, saison, matchs_joues, buts')
+  .select('id, prenom, nom, club, niveau, saison, matchs_joues, buts')
   .or('nom.ilike.%lemaitre%,nom.ilike.%lema%tre%,prenom.ilike.%herman%');
 if (errC) { console.error('Erreur recherche joueurs :', errC.message); process.exit(1); }
 for (const j of candidats) {
-  console.log(`id=${j.id} ${j.prenom} ${j.nom} — club="${j.club}" niveau=${j.niveau} groupe=${j.groupe} saison=${j.saison} matchs_joues=${j.matchs_joues} buts=${j.buts}`);
+  console.log(`id=${j.id} ${j.prenom} ${j.nom} — club="${j.club}" niveau=${j.niveau} saison=${j.saison} matchs_joues=${j.matchs_joues} buts=${j.buts}`);
 }
 
 const cible = candidats.find((j) => j.saison === SAISON && j.niveau === 'N2') || candidats.find((j) => j.saison === SAISON) || candidats[0];
@@ -31,7 +31,7 @@ if (!cible) {
   console.log('\nAucun joueur trouvé avec ce nom. Vérifier l\'orthographe exacte ou le club.');
   process.exit(0);
 }
-console.log(`\n=== Joueur ciblé : id=${cible.id} ${cible.prenom} ${cible.nom} (club="${cible.club}", niveau=${cible.niveau}, groupe=${cible.groupe}) ===\n`);
+console.log(`\n=== Joueur ciblé : id=${cible.id} ${cible.prenom} ${cible.nom} (club="${cible.club}", niveau=${cible.niveau}) ===\n`);
 
 const { data: mj, error: errMj } = await supabase
   .from('matchs_joueur')
