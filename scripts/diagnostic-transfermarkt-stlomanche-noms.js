@@ -45,6 +45,18 @@ for (const j of joueurs) console.log(`  id=${j.id} "${j.prenom} ${j.nom}" club="
 const browser = await chromium.launch();
 const page = await browser.newPage({ locale: 'fr-FR', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' });
 
+function normaliserMot(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+const MOTS_GENERIQUES = new Set(['fc', 'as', 'sm', 'ta', 'ea', 'oc', 'af', '1', '2', 'de', 'du', 'des', 'la', 'le', 'les', 'saint', 'st']);
+function motSignificatif(nomClub) {
+  const mots = normaliserMot(nomClub).split(' ').filter((w) => w.length > 2 && !MOTS_GENERIQUES.has(w));
+  return mots[0] || normaliserMot(nomClub).split(' ')[0];
+}
+const motDomicile = motSignificatif(ligneCal.equipe_domicile);
+const motExterieur = motSignificatif(ligneCal.equipe_exterieur);
+console.log(`Mots recherchés dans le titre Transfermarkt : "${motDomicile}" + "${motExterieur}"`);
+
 let urlMatch = null;
 for (let journee = 1; journee <= NB_JOURNEES && !urlMatch; journee++) {
   const urlJournee = `https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/${WETTBEWERB}/saison_id/${SAISON_ID_TM}/spieltag/${journee}`;
@@ -55,8 +67,8 @@ for (let journee = 1; journee <= NB_JOURNEES && !urlMatch; journee++) {
     if (!idMatch) continue;
     const urlCandidate = `https://www.transfermarkt.fr${href}`;
     await page.goto(urlCandidate, { waitUntil: 'networkidle', timeout: 45000 });
-    const titre = await page.title();
-    if (titre.toLowerCase().includes('milizac') && titre.toLowerCase().includes('manche')) { urlMatch = urlCandidate; console.log(`\nTitre Transfermarkt trouvé (journée ${journee}) : "${titre}"`); break; }
+    const titre = normaliserMot(await page.title());
+    if (titre.includes(motDomicile) && titre.includes(motExterieur)) { urlMatch = urlCandidate; console.log(`\nTitre Transfermarkt trouvé (journée ${journee}) : "${await page.title()}"`); break; }
   }
 }
 
