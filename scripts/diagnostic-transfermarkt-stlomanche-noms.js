@@ -76,8 +76,12 @@ if (!urlMatch) { console.log('\nMatch introuvable côté Transfermarkt dans les 
 
 await page.goto(urlMatch, { waitUntil: 'networkidle', timeout: 45000 });
 await page.waitForTimeout(500);
-const compositions = await page.evaluate(() => {
-  return [...document.querySelectorAll('table')].slice(0, 2).map((t) => {
+// Diagnostique TOUTES les <table> de la page (pas seulement les 2 premières
+// comme le script de production) pour vérifier si la composition d'une
+// des deux équipes se trouve au-delà de l'index 1 (ex: une table non liée
+// aux compositions serait insérée avant, décalant tout).
+const toutesLesTables = await page.evaluate(() => {
+  return [...document.querySelectorAll('table')].map((t, i) => {
     const lignes = [...t.querySelectorAll('tr')].map((tr) => [...tr.querySelectorAll('td,th')].map((td) => (td.textContent || '').trim()));
     const joueursTxt = [];
     for (const l of lignes) {
@@ -85,13 +89,13 @@ const compositions = await page.evaluate(() => {
         for (const nom of l[1].split(',').map((s) => s.trim()).filter(Boolean)) joueursTxt.push(nom);
       }
     }
-    return joueursTxt;
+    return { index: i, classe: t.className || null, nbLignes: lignes.length, joueurs: joueursTxt };
   });
 });
 console.log(`\nURL du match : ${urlMatch}`);
-console.log(`\nComposition table 1 (${compositions[0]?.length || 0} nom(s)) :`);
-for (const n of compositions[0] || []) console.log(`  "${n}"`);
-console.log(`\nComposition table 2 (${compositions[1]?.length || 0} nom(s)) :`);
-for (const n of compositions[1] || []) console.log(`  "${n}"`);
+console.log(`\n${toutesLesTables.length} <table> trouvée(s) au total sur la page :`);
+for (const t of toutesLesTables) {
+  console.log(`  table[${t.index}] class="${t.classe}" — ${t.nbLignes} ligne(s) — ${t.joueurs.length} nom(s) extrait(s)${t.joueurs.length ? ' : ' + t.joueurs.map((n) => `"${n}"`).join(', ') : ''}`);
+}
 
 await browser.close();
