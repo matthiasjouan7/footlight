@@ -1,0 +1,85 @@
+// Diagnostic lecture seule : sync-transfermarkt-match-stats-n2.js (DRY_RUN,
+// National 2 groupe C) ne propose AUCUNE écriture pour les matchs de
+// "Fc St Lo Manche 1" (ex: id=845 St-Pierre de Milizac vs Fc St Lo Manche 1,
+// id=869 Fc St Lo Manche 1 vs Stade Rennais FC B) alors que d'autres matchs
+// du même groupe fonctionnent. Objectif : comparer les noms bruts affichés
+// par Transfermarkt dans la composition à ceux stockés côté FootLight pour
+// ce club, afin de comprendre pourquoi nomFamilleCorrespond() ne matche
+// jamais aucun joueur de ce club précis.
+import { chromium } from 'playwright';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseKey) { console.error('SUPABASE_SERVICE_ROLE_KEY manquant.'); process.exit(1); }
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const SAISON = '2026-2027';
+const CALENDRIER_OFFICIEL_ID = parseInt(process.env.CALENDRIER_OFFICIEL_ID || '845', 10);
+const WETTBEWERB = 'FR5C';
+const SAISON_ID_TM = '2026';
+const NB_JOURNEES = parseInt(process.env.NB_JOURNEES || '6', 10);
+
+console.log(`=== Diagnostic noms Transfermarkt vs FootLight pour calendrier_officiel_id=${CALENDRIER_OFFICIEL_ID} ===\n`);
+
+// ---- Côté FootLight : la ligne calendrier + les joueurs déjà rattachés ----
+const { data: ligneCal, error: errCal } = await supabase
+  .from('calendrier_officiel')
+  .select('id, equipe_domicile, equipe_exterieur, date_match')
+  .eq('id', CALENDRIER_OFFICIEL_ID).single();
+if (errCal) { console.error('Erreur lecture calendrier_officiel :', errCal.message); process.exit(1); }
+console.log(`Ligne calendrier : "${ligneCal.equipe_domicile}" vs "${ligneCal.equipe_exterieur}" (${ligneCal.date_match})\n`);
+
+const { data: mj, error: errMj } = await supabase
+  .from('matchs_joueur')
+  .select('id, joueur_id, minutes_jouees')
+  .eq('calendrier_officiel_id', CALENDRIER_OFFICIEL_ID);
+if (errMj) { console.error('Erreur lecture matchs_joueur :', errMj.message); process.exit(1); }
+const joueurIds = mj.map((l) => l.joueur_id);
+const { data: joueurs, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom, club').in('id', joueurIds);
+if (errJ) { console.error('Erreur lecture joueurs :', errJ.message); process.exit(1); }
+console.log(`${joueurs.length} joueur(s) FootLight déjà rattaché(s) à ce match (via matchs_joueur) :`);
+for (const j of joueurs) console.log(`  id=${j.id} "${j.prenom} ${j.nom}" club="${j.club}"`);
+
+// ---- Côté Transfermarkt : retrouve l'URL du match puis extrait les compositions brutes ----
+const browser = await chromium.launch();
+const page = await browser.newPage({ locale: 'fr-FR', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' });
+
+let urlMatch = null;
+for (let journee = 1; journee <= NB_JOURNEES && !urlMatch; journee++) {
+  const urlJournee = `https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/${WETTBEWERB}/saison_id/${SAISON_ID_TM}/spieltag/${journee}`;
+  await page.goto(urlJournee, { waitUntil: 'networkidle', timeout: 45000 });
+  const liens = await page.evaluate(() => [...document.querySelectorAll('a[href*="/spielbericht/index/spielbericht/"]')].map((a) => a.getAttribute('href')));
+  for (const href of [...new Set(liens)]) {
+    const idMatch = (href.match(/spielbericht\/(\d+)/) || [])[1];
+    if (!idMatch) continue;
+    const urlCandidate = `https://www.transfermarkt.fr${href}`;
+    await page.goto(urlCandidate, { waitUntil: 'networkidle', timeout: 45000 });
+    const titre = await page.title();
+    if (titre.toLowerCase().includes('milizac') && titre.toLowerCase().includes('manche')) { urlMatch = urlCandidate; console.log(`\nTitre Transfermarkt trouvé (journée ${journee}) : "${titre}"`); break; }
+  }
+}
+
+if (!urlMatch) { console.log('\nMatch introuvable côté Transfermarkt dans les journées scannées.'); await browser.close(); process.exit(0); }
+
+await page.goto(urlMatch, { waitUntil: 'networkidle', timeout: 45000 });
+await page.waitForTimeout(500);
+const compositions = await page.evaluate(() => {
+  return [...document.querySelectorAll('table')].slice(0, 2).map((t) => {
+    const lignes = [...t.querySelectorAll('tr')].map((tr) => [...tr.querySelectorAll('td,th')].map((td) => (td.textContent || '').trim()));
+    const joueursTxt = [];
+    for (const l of lignes) {
+      if (l.length === 2 && l[1] && !['Officielle', 'Probable'].includes(l[1])) {
+        for (const nom of l[1].split(',').map((s) => s.trim()).filter(Boolean)) joueursTxt.push(nom);
+      }
+    }
+    return joueursTxt;
+  });
+});
+console.log(`\nURL du match : ${urlMatch}`);
+console.log(`\nComposition table 1 (${compositions[0]?.length || 0} nom(s)) :`);
+for (const n of compositions[0] || []) console.log(`  "${n}"`);
+console.log(`\nComposition table 2 (${compositions[1]?.length || 0} nom(s)) :`);
+for (const n of compositions[1] || []) console.log(`  "${n}"`);
+
+await browser.close();
