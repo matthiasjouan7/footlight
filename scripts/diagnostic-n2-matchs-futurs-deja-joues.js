@@ -33,12 +33,34 @@ let mj = [];
 for (let i = 0; i < ids.length; i += 500) {
   const lot = ids.slice(i, i + 500);
   if (!lot.length) continue;
-  const { data, error } = await supabase.from('matchs_joueur').select('id, joueur_id, calendrier_officiel_id, minutes_jouees, buts, titulaire').in('calendrier_officiel_id', lot);
+  const { data, error } = await supabase.from('matchs_joueur').select('id, joueur_id, calendrier_officiel_id, minutes_jouees, buts, titulaire, score_pour, score_contre').in('calendrier_officiel_id', lot);
   if (error) { console.error('Erreur matchs_joueur :', error.message); process.exit(1); }
   mj = mj.concat(data || []);
 }
 const avecMinutes = mj.filter((m) => m.minutes_jouees != null);
 console.log(`${avecMinutes.length} ligne(s) matchs_joueur avec minutes_jouees renseigné pour un match à une date FUTURE (impossible normalement).\n`);
+
+// L'utilisateur signale des matchs "déjà validés" — minutes_jouees n'est pas
+// en cause (0 ci-dessus), mais un score pourrait être renseigné (score_pour/
+// score_contre, remplis par d'autres sources que Transfermarkt, ex.
+// L'Équipe) sans qu'aucune minute de jeu n'ait été comptabilisée : c'est
+// probablement CE que l'utilisateur perçoit comme "validé".
+const avecScore = mj.filter((m) => m.score_pour != null || m.score_contre != null);
+console.log(`${avecScore.length} ligne(s) matchs_joueur avec un score (score_pour/score_contre) renseigné pour un match à une date FUTURE.\n`);
+if (avecScore.length) {
+  const parCalScore = new Map();
+  for (const m of avecScore) {
+    if (!parCalScore.has(m.calendrier_officiel_id)) parCalScore.set(m.calendrier_officiel_id, []);
+    parCalScore.get(m.calendrier_officiel_id).push(m);
+  }
+  console.log('=== Détail des matchs futurs avec un score déjà renseigné ===');
+  for (const [calId, lignes] of parCalScore) {
+    const c = cal.find((r) => r.id === calId);
+    const exemple = lignes[0];
+    console.log(`  id=${calId} division=${c.division} groupe=${c.groupe} date=${c.date_match} "${c.equipe_domicile}" vs "${c.equipe_exterieur}" — score ${exemple.score_pour}-${exemple.score_contre} sur ${lignes.length} ligne(s) joueur`);
+  }
+  console.log('');
+}
 
 const parCal = new Map();
 for (const m of avecMinutes) {
