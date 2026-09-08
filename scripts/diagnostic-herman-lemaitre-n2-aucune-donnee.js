@@ -26,7 +26,10 @@ for (const j of candidats) {
   console.log(`id=${j.id} ${j.prenom} ${j.nom} — club="${j.club}" niveau=${j.niveau} saison=${j.saison} matchs_joues=${j.matchs_joues} buts=${j.buts}`);
 }
 
-const cible = candidats.find((j) => j.saison === SAISON && j.niveau === 'N2') || candidats.find((j) => j.saison === SAISON) || candidats[0];
+const cible = candidats.find((j) => j.saison === SAISON && j.niveau === 'N2' && /herman/i.test(j.prenom))
+  || candidats.find((j) => j.saison === SAISON && j.niveau === 'N2')
+  || candidats.find((j) => j.saison === SAISON)
+  || candidats[0];
 if (!cible) {
   console.log('\nAucun joueur trouvé avec ce nom. Vérifier l\'orthographe exacte ou le club.');
   process.exit(0);
