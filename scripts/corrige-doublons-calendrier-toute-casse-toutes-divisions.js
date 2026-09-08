@@ -50,6 +50,7 @@ const CLUB_SYNONYMES_COMPLETS = {
   'pf tarbes': { mots: ['pyrenees', 'tarbes'], elargi: false },
   'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
   'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
+  goal: { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
   'berri chateauroux': { mots: ['lb', 'chateauroux'], elargi: false },
   'gfa rv': { mots: ['rumilly', 'vallieres'], elargi: false },
   'lyon duchere': { mots: ['lyon', 'duchere'], elargi: false },
