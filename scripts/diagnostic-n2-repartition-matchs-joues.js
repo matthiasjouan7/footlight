@@ -44,10 +44,29 @@ function clubsCorrespondent(a, b) {
   return small.every((w) => big.some((w2) => w === w2 || (Math.min(w.length, w2.length) >= 4 && (w.startsWith(w2) || w2.startsWith(w)))));
 }
 
-const { data: calendrierComplet, error: errCalTout } = await supabase
-  .from('calendrier_officiel').select('id, groupe, journee, date_match, equipe_domicile, equipe_exterieur')
-  .eq('division', 'N2').eq('saison', SAISON);
-if (errCalTout) { console.error('Erreur calendrier_officiel :', errCalTout.message); process.exit(1); }
+// Pagination explicite + tri stable (.order('id')) : sans .range(), Supabase
+// plafonne silencieusement une réponse à 1000 lignes (~1450+ lignes N2
+// attendues sur 8 groupes) — sans .order() explicite, des appels .range()
+// successifs ne sont pas garantis de couvrir exactement toutes les lignes
+// (PostgreSQL ne garantit un ordre stable entre requêtes qu'avec un ORDER
+// BY explicite), ce qui a très probablement causé la disparition pure et
+// simple des groupes G et H du run précédent.
+let calendrierComplet = [];
+{
+  const PAGE = 1000;
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from('calendrier_officiel').select('id, groupe, journee, date_match, equipe_domicile, equipe_exterieur')
+      .eq('division', 'N2').eq('saison', SAISON).order('id')
+      .range(from, from + PAGE - 1);
+    if (error) { console.error('Erreur calendrier_officiel :', error.message); process.exit(1); }
+    calendrierComplet = calendrierComplet.concat(data || []);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
+}
+console.log(`${calendrierComplet.length} ligne(s) calendrier_officiel N2 (tous groupes).\n`);
 
 // Pagination explicite : sans .range(), Supabase plafonne silencieusement
 // une réponse à 1000 lignes — déjà rencontré plusieurs fois cette session
@@ -60,7 +79,7 @@ let joueursN2 = [];
   for (;;) {
     const { data, error } = await supabase
       .from('joueurs').select('id, prenom, nom, club')
-      .eq('niveau', 'N2').eq('saison', SAISON)
+      .eq('niveau', 'N2').eq('saison', SAISON).order('id')
       .range(from, from + PAGE - 1);
     if (error) { console.error('Erreur joueurs :', error.message); process.exit(1); }
     joueursN2 = joueursN2.concat(data || []);
@@ -90,12 +109,17 @@ for (const j of joueursN2) {
 }
 if (sansGroupe.length) console.log(`${sansGroupe.length} joueur(s) N2 dont le club n'a été rapproché d'AUCUN groupe : ${sansGroupe.slice(0, 10).map((j) => `${j.prenom} ${j.nom} (${j.club})`).join(', ')}${sansGroupe.length > 10 ? '…' : ''}\n`);
 
-// Un lot de 200 joueur_id peut à lui seul dépasser 1000 lignes
-// matchs_joueur (jusqu'à ~30 lignes/joueur sur la saison) : pagine aussi
-// CHAQUE lot, sans quoi la troncature silencieuse à 1000 lignes fait
-// disparaître à tort la plupart des vraies stats du décompte (bug constaté
-// : Herman Lemaître, dont les 2 buts sont bien en base, ressortait à 0
-// match avant ce correctif).
+// Filtre .not('minutes_jouees','is',null) CÔTÉ SERVEUR : à ce stade de la
+// saison (2 journées jouées), l'immense majorité des lignes matchs_joueur
+// d'un joueur sont encore à null (calendrier complet pré-généré) — sans ce
+// filtre, un lot de 100 joueur_id pouvait renvoyer jusqu'à ~3000 lignes,
+// nécessitant une pagination .range() sur une requête SANS .order()
+// explicite : PostgreSQL ne garantit alors pas qu'un appel .range()
+// suivant reprenne exactement où le précédent s'est arrêté, ce qui a très
+// probablement fait disparaître des lignes valides du décompte (bug
+// constaté : Herman Lemaître, dont les 2 buts sont bien en base, ressortait
+// à 0 match). Avec ce filtre, chaque lot ne renvoie plus que quelques
+// centaines de lignes au pire — largement sous la limite de 1000.
 const joueurIdsToutes = joueursN2.map((j) => j.id);
 let mjTous = [];
 const TAILLE_LOT = 100;
@@ -106,7 +130,7 @@ for (let i = 0; i < joueurIdsToutes.length; i += TAILLE_LOT) {
   for (;;) {
     const { data, error } = await supabase
       .from('matchs_joueur').select('joueur_id, minutes_jouees')
-      .eq('saison', SAISON).in('joueur_id', lot)
+      .eq('saison', SAISON).in('joueur_id', lot).not('minutes_jouees', 'is', null).order('id')
       .range(from, from + PAGE - 1);
     if (error) { console.error('Erreur matchs_joueur :', error.message); break; }
     mjTous = mjTous.concat(data || []);
@@ -116,7 +140,6 @@ for (let i = 0; i < joueurIdsToutes.length; i += TAILLE_LOT) {
 }
 const nbMatchsParJoueur = new Map();
 for (const m of mjTous) {
-  if (m.minutes_jouees == null) continue;
   nbMatchsParJoueur.set(m.joueur_id, (nbMatchsParJoueur.get(m.joueur_id) || 0) + 1);
 }
 
