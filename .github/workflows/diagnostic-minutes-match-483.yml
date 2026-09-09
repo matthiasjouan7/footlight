@@ -1,0 +1,31 @@
+name: Diagnostic minutes match précis (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      calendrier_officiel_id:
+        description: "ID calendrier_officiel du match à inspecter"
+        required: false
+        type: string
+        default: "483"
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Diagnostiquer
+        working-directory: scripts
+        env:
+          CALENDRIER_OFFICIEL_ID: ${{ inputs.calendrier_officiel_id }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node diagnostic-minutes-match-483.js
