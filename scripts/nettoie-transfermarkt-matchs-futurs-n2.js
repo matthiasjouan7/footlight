@@ -70,7 +70,7 @@ console.log(`${mjPollues.length} ligne(s) matchs_joueur N2 à corriger (minutes_
 if (!mjPollues.length) { console.log('Rien à nettoyer.'); process.exit(0); }
 
 const joueurIds = [...new Set(mjPollues.map((m) => m.joueur_id))];
-const { data: joueurs, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom, club, groupe').in('id', joueurIds);
+const { data: joueurs, error: errJ } = await supabase.from('joueurs').select('id, prenom, nom, club').in('id', joueurIds);
 if (errJ) { console.error('Erreur joueurs :', errJ.message); process.exit(1); }
 const joueurParId = new Map((joueurs || []).map((j) => [j.id, j]));
 
