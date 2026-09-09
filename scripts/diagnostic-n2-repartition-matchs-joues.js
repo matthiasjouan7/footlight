@@ -49,10 +49,25 @@ const { data: calendrierComplet, error: errCalTout } = await supabase
   .eq('division', 'N2').eq('saison', SAISON);
 if (errCalTout) { console.error('Erreur calendrier_officiel :', errCalTout.message); process.exit(1); }
 
-const { data: joueursN2, error: errJ } = await supabase
-  .from('joueurs').select('id, prenom, nom, club')
-  .eq('niveau', 'N2').eq('saison', SAISON);
-if (errJ) { console.error('Erreur joueurs :', errJ.message); process.exit(1); }
+// Pagination explicite : sans .range(), Supabase plafonne silencieusement
+// une réponse à 1000 lignes — déjà rencontré plusieurs fois cette session
+// (diagnostic-n2-matchs-futurs-deja-joues.js notamment). Il y a largement
+// plus de 1000 joueurs N2 toutes divisions confondues.
+let joueursN2 = [];
+{
+  const PAGE = 1000;
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from('joueurs').select('id, prenom, nom, club')
+      .eq('niveau', 'N2').eq('saison', SAISON)
+      .range(from, from + PAGE - 1);
+    if (error) { console.error('Erreur joueurs :', error.message); process.exit(1); }
+    joueursN2 = joueursN2.concat(data || []);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
+}
 console.log(`${joueursN2.length} joueur(s) FootLight niveau N2 (saison ${SAISON}).\n`);
 
 const clubsParGroupe = new Map();
@@ -75,13 +90,29 @@ for (const j of joueursN2) {
 }
 if (sansGroupe.length) console.log(`${sansGroupe.length} joueur(s) N2 dont le club n'a été rapproché d'AUCUN groupe : ${sansGroupe.slice(0, 10).map((j) => `${j.prenom} ${j.nom} (${j.club})`).join(', ')}${sansGroupe.length > 10 ? '…' : ''}\n`);
 
+// Un lot de 200 joueur_id peut à lui seul dépasser 1000 lignes
+// matchs_joueur (jusqu'à ~30 lignes/joueur sur la saison) : pagine aussi
+// CHAQUE lot, sans quoi la troncature silencieuse à 1000 lignes fait
+// disparaître à tort la plupart des vraies stats du décompte (bug constaté
+// : Herman Lemaître, dont les 2 buts sont bien en base, ressortait à 0
+// match avant ce correctif).
 const joueurIdsToutes = joueursN2.map((j) => j.id);
 let mjTous = [];
-for (let i = 0; i < joueurIdsToutes.length; i += 200) {
-  const lot = joueurIdsToutes.slice(i, i + 200);
-  const { data, error } = await supabase.from('matchs_joueur').select('joueur_id, minutes_jouees').eq('saison', SAISON).in('joueur_id', lot);
-  if (error) { console.error('Erreur matchs_joueur :', error.message); continue; }
-  mjTous = mjTous.concat(data || []);
+const TAILLE_LOT = 100;
+for (let i = 0; i < joueurIdsToutes.length; i += TAILLE_LOT) {
+  const lot = joueurIdsToutes.slice(i, i + TAILLE_LOT);
+  const PAGE = 1000;
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from('matchs_joueur').select('joueur_id, minutes_jouees')
+      .eq('saison', SAISON).in('joueur_id', lot)
+      .range(from, from + PAGE - 1);
+    if (error) { console.error('Erreur matchs_joueur :', error.message); break; }
+    mjTous = mjTous.concat(data || []);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
 }
 const nbMatchsParJoueur = new Map();
 for (const m of mjTous) {
