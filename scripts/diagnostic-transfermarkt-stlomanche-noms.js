@@ -16,7 +16,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const SAISON = '2026-2027';
 const CALENDRIER_OFFICIEL_ID = parseInt(process.env.CALENDRIER_OFFICIEL_ID || '845', 10);
-const WETTBEWERB = 'FR5C';
+const GROUPE = (process.env.GROUPE || 'C').toUpperCase();
+const WETTBEWERB = `FR5${GROUPE}`;
 const SAISON_ID_TM = '2026';
 const NB_JOURNEES = parseInt(process.env.NB_JOURNEES || '6', 10);
 

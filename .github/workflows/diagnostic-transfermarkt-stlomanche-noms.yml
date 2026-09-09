@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: "845"
+      groupe:
+        description: "Groupe National 2 (A-H), détermine le code wettbewerb Transfermarkt FR5<lettre>"
+        required: false
+        type: string
+        default: "C"
 
 jobs:
   diagnostic:
@@ -31,5 +36,6 @@ jobs:
         working-directory: scripts
         env:
           CALENDRIER_OFFICIEL_ID: ${{ inputs.calendrier_officiel_id }}
+          GROUPE: ${{ inputs.groupe }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node diagnostic-transfermarkt-stlomanche-noms.js
