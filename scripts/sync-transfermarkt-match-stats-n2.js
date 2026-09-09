@@ -167,16 +167,27 @@ const TOLERANCE_JOURS = 3;
 function joursEcart(a, b) {
   return Math.abs((new Date(a).getTime() - new Date(b).getTime()) / 86400000);
 }
+// Transfermarkt publie une composition "Probable" (prévisionnelle) pour un
+// match à venir plusieurs jours avant le coup d'envoi — le script la
+// traitait jusqu'ici comme une composition "Officielle" (confirmée après le
+// match), écrivant minutes_jouees=90/titulaire=true pour des matchs pas
+// encore joués (constaté sur plusieurs matchs N2, ex. calendrier_officiel_id
+// 703/873/875/877/881/885). Garde-fou : ignore tout match dont la date
+// calendrier_officiel est strictement postérieure à aujourd'hui.
+const AUJOURD_HUI = new Date().toISOString().slice(0, 10);
 const matchsARapprocher = [];
+let ignoresDateFuture = 0;
 for (const m of infosDetaillees) {
   const dateTm = parseDateFr(m.dateTexte);
   if (!dateTm) continue;
   const dateTmStr = dateTm.toISOString().slice(0, 10);
   const candidates = (calendrier || []).filter((c) => joursEcart(c.date_match, dateTmStr) <= TOLERANCE_JOURS && clubsCorrespondent(c.equipe_domicile, m.domicile) && clubsCorrespondent(c.equipe_exterieur, m.exterieur));
   const ligne = candidates.sort((a, b) => joursEcart(a.date_match, dateTmStr) - joursEcart(b.date_match, dateTmStr))[0];
-  if (ligne) matchsARapprocher.push({ ...m, dateTm: dateTmStr, calendrierOfficielId: ligne.id, equipeDomicileCal: ligne.equipe_domicile, equipeExterieurCal: ligne.equipe_exterieur });
+  if (!ligne) continue;
+  if (ligne.date_match > AUJOURD_HUI) { ignoresDateFuture++; continue; }
+  matchsARapprocher.push({ ...m, dateTm: dateTmStr, calendrierOfficielId: ligne.id, equipeDomicileCal: ligne.equipe_domicile, equipeExterieurCal: ligne.equipe_exterieur });
 }
-console.log(`${matchsARapprocher.length}/${infosDetaillees.length} match(s) Transfermarkt rapproché(s) à une ligne calendrier_officiel existante.`);
+console.log(`${matchsARapprocher.length}/${infosDetaillees.length} match(s) Transfermarkt rapproché(s) à une ligne calendrier_officiel existante (${ignoresDateFuture} ignoré(s) car date future — composition probable non confirmée).`);
 
 // ---- 4. Ne garde que les matchs pas encore synchronisés ----
 const idsCandidats = matchsARapprocher.map((m) => m.calendrierOfficielId);
