@@ -86,13 +86,23 @@ for (const { groupe, a, b } of paires) {
   const avecMinutesA = (mjA || []).filter((m) => m.minutes_jouees != null).length;
   const avecMinutesB = (mjB || []).filter((m) => m.minutes_jouees != null).length;
 
-  // Le doublon (créé par sync-lequipe-to-calendrier.js, jamais synchronisé
-  // par les autres pipelines) est celui des deux SANS aucune minute
-  // renseignée. Si les DEUX ont des minutes, ou si les deux en sont
-  // dépourvues, on ne sait pas lequel est l'original par sécurité — ignoré.
+  // Le doublon (créé par sync-lequipe-to-calendrier.js par simple insertion,
+  // jamais rattaché à aucun joueur) est celui des deux SANS aucune minute
+  // renseignée. Si les DEUX en sont dépourvus (journée pas encore
+  // synchronisée par les autres pipelines — cas constaté sur 10 des 32
+  // paires : l'original a alors plusieurs dizaines de lignes matchs_joueur
+  // pré-générées mais aucune minute, pas encore l'original étant vide de
+  // minutes), on retombe sur le nombre TOTAL de lignes matchs_joueur : le
+  // doublon n'en a jamais aucune (aucun script de génération de calendrier
+  // n'a jamais tourné dessus), l'original en a toujours plusieurs dizaines
+  // (une par joueur des deux clubs, pré-générée dès l'ajout à l'effectif).
+  // Ne reste ambigu par sécurité que si les deux ont des minutes, ou si les
+  // deux ont 0 minute ET 0 ligne au total (aucun signal pour départager).
   let original, doublon;
   if (avecMinutesA > 0 && avecMinutesB === 0) { original = a; doublon = b; }
   else if (avecMinutesB > 0 && avecMinutesA === 0) { original = b; doublon = a; }
+  else if (avecMinutesA === 0 && avecMinutesB === 0 && (mjA || []).length > 0 && (mjB || []).length === 0) { original = a; doublon = b; }
+  else if (avecMinutesA === 0 && avecMinutesB === 0 && (mjB || []).length > 0 && (mjA || []).length === 0) { original = b; doublon = a; }
   else {
     console.log(`Groupe ${groupe} — id=${a.id} (${avecMinutesA}/${(mjA || []).length}) <-> id=${b.id} (${avecMinutesB}/${(mjB || []).length}) : ambigu, ignoré par sécurité.`);
     totalIgnorees++;
