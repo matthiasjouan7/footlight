@@ -77,22 +77,40 @@ function clubsCorrespondent(a, b) {
   return true;
 }
 
-// ---- Rapprochement joueur (nom de famille, égalité stricte) ----
+// ---- Rapprochement joueur (nom de famille, tolérance légère) ----
 function normaliserNom(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]+/g, ' ').trim();
 }
-// Transfermarkt affiche "P. Nom" (initiale du prénom). Compare juste le
-// nom de famille (dernier mot affiché). Égalité stricte uniquement : une
-// tolérance floue (ex. distance de Levenshtein) confond des noms de
-// famille réels proches mais différents (ex. "Lebert" vs "Hebert",
-// observé groupe F) — un faux rapprochement de stats est pire qu'un
-// joueur non retrouvé (ignoré, sans impact).
+function distanceLevenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      d[i][j] = a[i - 1] === b[j - 1] ? d[i - 1][j - 1] : 1 + Math.min(d[i - 1][j], d[i][j - 1], d[i - 1][j - 1]);
+    }
+  }
+  return d[m][n];
+}
+// Transfermarkt affiche désormais le nom complet non abrégé ("Ilyas El
+// Houssni"), pas "P. Nom" comme supposé jusqu'ici — ne comparer que le
+// DERNIER mot ("houssni") échoue systématiquement pour tout nom de famille
+// composé ("El Houssni", "Nait Imaghran", "El Hamri"...), très fréquent
+// dans plusieurs clubs N2 (Berre, Alès, Montpellier...), d'où le volume
+// massif de joueurs "non trouvés" sur les groupes D/F/G. Reprend le même
+// essai de plusieurs découpages + tolérance de faute de frappe que
+// sync-fff-match-stats-n2.js (validé) plutôt que le dernier mot seul.
 function nomFamilleCorrespond(nomAffiche, nomJoueur) {
   const mots = normaliserNom(nomAffiche).split(' ').filter(Boolean);
-  if (!mots.length) return false;
-  const candidat = mots[mots.length - 1];
-  const cible = normaliserNom(nomJoueur);
-  return candidat === cible;
+  const nomCible = normaliserNom(nomJoueur);
+  for (let debut = 1; debut < mots.length; debut++) {
+    const candidat = mots.slice(debut).join(' ');
+    const seuil = candidat.length >= 8 ? 2 : 1;
+    if (distanceLevenshtein(candidat, nomCible) <= seuil) return true;
+    const premierMot = candidat.split(' ')[0];
+    if (premierMot && distanceLevenshtein(premierMot, nomCible) <= 1) return true;
+  }
+  return false;
 }
 
 // ---- 1. Découvre les matchs joués (parcourt les journées de la page spieltag) ----
@@ -228,7 +246,9 @@ async function parserPageMatchTransfermarkt(pageMatch) {
       const lignes = [...t.querySelectorAll('tr')].map((tr) => [...tr.querySelectorAll('td,th')].map((td) => (td.textContent || '').trim()));
       const joueurs = [];
       for (const l of lignes) {
-        if (l.length === 2 && l[1] && !['Officielle', 'Probable'].includes(l[1])) {
+        // Exclut la ligne "Manager" (entraîneur, pas un joueur) du tableau
+        // ÉQUIPES — sinon traité à tort comme une entrée de composition.
+        if (l.length === 2 && l[1] && !['Officielle', 'Probable'].includes(l[1]) && !['Manager', 'Entraîneur', 'Entraineur'].includes(l[0])) {
           for (const nom of l[1].split(',').map((s) => s.trim()).filter(Boolean)) joueurs.push(nom);
         }
       }
