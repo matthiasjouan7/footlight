@@ -113,13 +113,34 @@ function normalizeName(s) {
 function normalizeClub(s) {
   return normalizeName(s).replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim().replace(/\s\d{1,2}$/, '');
 }
+// Mots génériques globaux — élargie suite à 32 lignes calendrier_officiel N2
+// dupliquées (id 3100-3465) créées par ce script en écriture réelle
+// quotidienne (cron sync-lequipe-scheduled.yml) : pour ~12 clubs distincts,
+// le nom officiel porte un qualificatif (acronyme, région, département) que
+// lequipe.fr omet entièrement dans son nom court, ce qui fait échouer le
+// sous-ensemble de mots même après retrait des mots génériques existants
+// (ex: "Losc Lille 2" vs "Lille B" — "losc" ne se retrouve nulle part côté
+// lequipe.fr). Comme "olympique"/"athletic"/"stade" etc. déjà traités en
+// générique bien qu'ils fassent partie du nom officiel, ces qualificatifs
+// suivent la même logique — le risque de collision entre deux clubs
+// distincts par la seule présence d'un de ces mots est nul en pratique
+// (chaque club reste distingué par son nom de ville, seul mot réellement
+// significatif conservé après filtrage).
 const CLUB_MOTS_GENERIQUES = new Set([
   'fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sa', 'sas',
   'sr', 'srfa', 'ol', 'om', 'rc',
   'fco', 'osc', 'sco', 'ent', 'entente', 'athletic', 'olympique', 'football', 'club',
   'sporting', 'racing', 'stade',
   'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des',
+  // Qualificatifs club-spécifiques omis par lequipe.fr (voir commentaire ci-dessus).
+  'af', 'aj', 'd', 'may', 'losc', 'lorraine', 'montb', 'alsace', 'hsc', 'berri',
 ]);
+// Reste d'apostrophe ("D'Annecy" -> "d annecy" -> mot isolé "d") et codes
+// départementaux accolés au nom de ville ("Versailles 78", "Orléans 45") :
+// aucun des deux n'aide jamais à distinguer deux clubs différents dans ce
+// jeu de données (le département est une métadonnée, pas une identité), et
+// le retrait existant ne traite que LE DERNIER groupe de 1-2 chiffres (le
+// suffixe d'équipe réserve "1"/"2"), pas un code écrit avant lui.
 const CLUB_MOTS_REMPLACEMENT = {
   st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert',
   virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee', sbfc: 'beaucairois',
@@ -144,7 +165,6 @@ const CLUB_SYNONYMES_COMPLETS = {
   'pf tarbes': { mots: ['pyrenees', 'tarbes'], elargi: false },
   'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
   'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
-  'berri chateauroux': { mots: ['lb', 'chateauroux'], elargi: false },
 };
 const CLUB_PAIRES_DISTINCTES = new Set([
   ['apm metz', 'metz'].sort().join('|'),
@@ -153,8 +173,17 @@ const CLUB_PAIRES_DISTINCTES = new Set([
 function clubWords(s) {
   const mots = normalizeClub(s).split(' ').filter(Boolean);
   const remplaces = mots.map((w) => CLUB_MOTS_REMPLACEMENT[w] || w);
-  let sansGeneriques = remplaces.filter((w) => !CLUB_MOTS_GENERIQUES.has(w));
-  if (sansGeneriques.includes('hyeres')) sansGeneriques = sansGeneriques.filter((w) => w !== '83');
+  // Code départemental accolé au nom de ville ("Versailles 78", "Orléans
+  // 45", "Hyères 83") : seul le DERNIER groupe de 1-2 chiffres est retiré
+  // plus haut (suffixe d'équipe réserve "1"/"2") ; un code écrit avant
+  // reste un mot à part entière, absent du nom court lequipe.fr, et fait
+  // échouer le rapprochement (constaté sur 3 des 32 doublons calendrier
+  // N2 créés par ce script). Généralise l'ancien cas particulier
+  // "hyeres" -> retire "83" à tout nombre de 1-3 chiffres isolé, jamais
+  // significatif pour distinguer deux clubs entre eux dans ce jeu de
+  // données.
+  const sansCodesDepartement = remplaces.filter((w) => !/^\d{1,3}$/.test(w));
+  const sansGeneriques = sansCodesDepartement.filter((w) => !CLUB_MOTS_GENERIQUES.has(w));
   return sansGeneriques.length ? sansGeneriques : remplaces;
 }
 function clubIdentitySignature(s) {
@@ -168,16 +197,24 @@ function clubWordsElargi(s) {
   const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
   return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
 }
+// Tolérance sur des abréviations non couvertes par CLUB_MOTS_REMPLACEMENT
+// (ex: "Chat." pour "Château", "Lyonnais" pour "Lyon", "Mont." pour
+// "Montpellier", "Roche" pour "Rocheville") : un mot court (4+ lettres,
+// pour éviter les faux positifs sur des sigles courts type "sm"/"fc") qui
+// est le préfixe strict de l'autre est considéré comme le même mot.
+function motsProches(a, b) {
+  if (a === b) return true;
+  const [court, long] = a.length <= b.length ? [a, b] : [b, a];
+  return court.length >= 4 && long.startsWith(court);
+}
 function clubsCorrespondent(a, b) {
   const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
   if (sigA && sigB && sigA === sigB) return true;
   if (sigA && sigB && CLUB_PAIRES_DISTINCTES.has([sigA, sigB].sort().join('|'))) return false;
   const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
   if (!wa.length || !wb.length) return false;
-  const setA = new Set(wa), setB = new Set(wb);
-  const small = wa.length <= wb.length ? setA : setB;
-  const big = wa.length <= wb.length ? setB : setA;
-  for (const w of small) if (!big.has(w)) return false;
+  const [small, big] = wa.length <= wb.length ? [wa, wb] : [wb, wa];
+  for (const w of small) if (!big.some((w2) => motsProches(w, w2))) return false;
   return true;
 }
 
