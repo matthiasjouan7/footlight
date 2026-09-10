@@ -101,4 +101,41 @@ compositionsToutes.forEach((noms, i) => {
   if (noms.length) console.log(`  Table ${i} (${noms.length} nom(s)) : ${JSON.stringify(noms)}`);
 });
 
+// Structure réelle des sections ÉQUIPES/BUTS/REMPLACEMENTS/CARTONS (mise en
+// page actuelle de Transfermarkt, visiblement différente de celle supposée
+// par le parseur .sb-aktion/.sb-team existant) : dump des classes/texte pour
+// concevoir un nouveau parseur fiable.
+const structure = await page.evaluate(() => {
+  function resume(el, profondeur = 0) {
+    if (!el || profondeur > 3) return '';
+    const classe = el.className ? `.${String(el.className).split(' ').join('.')}` : '';
+    const texteDirect = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).filter(Boolean).join(' ');
+    let s = `${'  '.repeat(profondeur)}<${el.tagName.toLowerCase()}${classe}> ${texteDirect}`.trimEnd() + '\n';
+    for (const enfant of el.children) s += resume(enfant, profondeur + 1);
+    return s;
+  }
+  const titres = [...document.querySelectorAll('h2, h3')].map((h) => h.textContent.trim());
+  const sectionsMatch = [...document.querySelectorAll('[class*="sb-"], [class*="spielbericht"]')].slice(0, 5).map((el) => el.className);
+  return { titres, sectionsMatch, htmlSample: document.body.innerHTML.length };
+});
+console.log(`\nTitres H2/H3 sur la page : ${JSON.stringify(structure.titres)}`);
+console.log(`Classes contenant "sb-"/"spielbericht" (5 premières) : ${JSON.stringify(structure.sectionsMatch)}`);
+
+// Cible directement les blocs par leur h2 (ÉQUIPES/BUTS/REMPLACEMENTS/CARTONS)
+// et dump le HTML brut du conteneur suivant, pour voir les vraies classes.
+const blocsParTitre = await page.evaluate(() => {
+  const resultat = {};
+  for (const h of document.querySelectorAll('h2')) {
+    const titre = h.textContent.trim().toUpperCase();
+    if (['ÉQUIPES', 'BUTS', 'REMPLACEMENTS', 'CARTONS'].includes(titre)) {
+      let conteneur = h.nextElementSibling;
+      resultat[titre] = conteneur ? conteneur.outerHTML.slice(0, 1500) : '(aucun élément suivant)';
+    }
+  }
+  return resultat;
+});
+for (const [titre, html] of Object.entries(blocsParTitre)) {
+  console.log(`\n--- Bloc "${titre}" (HTML brut, 1500 premiers caractères) ---\n${html}`);
+}
+
 await browser.close();
