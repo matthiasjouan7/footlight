@@ -1,0 +1,36 @@
+name: Applique stats manuelles FFF (capture d'écran) -> matchs_joueur
+
+on:
+  workflow_dispatch:
+    inputs:
+      donnees_json:
+        description: 'JSON: { "calendrierOfficielId": 497, "joueurs": [{ "nomAffiche": "...", "club": "...", "titulaire": true, "minutes": 90, "buts": 0, "cartonsJaunes": 0, "cartonsRouges": 0 }, ...] }'
+        required: true
+        type: string
+      write:
+        description: "Écrire réellement en base (sinon DRY_RUN)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  applique:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Appliquer les stats
+        working-directory: scripts
+        env:
+          DONNEES_JSON: ${{ inputs.donnees_json }}
+          DRY_RUN: ${{ inputs.write == true && 'false' || 'true' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node applique-stats-match-fff-manuel.js
