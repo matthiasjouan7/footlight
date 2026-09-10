@@ -35,6 +35,30 @@ console.log('');
 const browser = await chromium.launch(process.env.PW_EXECUTABLE_PATH ? { executablePath: process.env.PW_EXECUTABLE_PATH } : {});
 const page = await browser.newPage({ locale: 'fr-FR', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' });
 
+// Même rapprochement club que sync-transfermarkt-match-stats-n2.js (mots
+// génériques + tolérance de préfixe), pour éviter les faux positifs d'un
+// simple "includes" sur sous-chaîne (ex: "as" trouvé dans "atlas").
+function normaliserClub(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'vf', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'ol', 'd', '1', '2', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des', 'ea']);
+const MOTS_REMPLACEMENT_CLUB = { st: 'saint', ste: 'sainte', gd: 'grand' };
+function motsClub(s) {
+  const mots = normaliserClub(s).split(' ').filter(Boolean).map((w) => MOTS_REMPLACEMENT_CLUB[w] || w).filter((w) => !MOTS_GENERIQUES_CLUB.has(w));
+  return mots.length ? mots : normaliserClub(s).split(' ').filter(Boolean);
+}
+function motsCorrespondent(a, b) {
+  const [court, long] = a.length <= b.length ? [a, b] : [b, a];
+  return court === long || (court.length >= 4 && long.startsWith(court));
+}
+function clubsCorrespondent(a, b) {
+  const wa = motsClub(a), wb = motsClub(b);
+  if (!wa.length || !wb.length) return false;
+  const [small, big] = wa.length <= wb.length ? [wa, wb] : [wb, wa];
+  for (const w of small) if (!big.some((w2) => motsCorrespondent(w, w2))) return false;
+  return true;
+}
+
 let urlMatch = null;
 for (let journee = 1; journee <= 3 && !urlMatch; journee++) {
   const urlJournee = `https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5${GROUPE}/saison_id/${SAISON_ID_TM}/spieltag/${journee}`;
@@ -44,17 +68,12 @@ for (let journee = 1; journee <= 3 && !urlMatch; journee++) {
     const testUrl = `https://www.transfermarkt.fr${href}`;
     await page.goto(testUrl, { waitUntil: 'networkidle', timeout: 45000 });
     const titre = await page.title();
-    if (titre.includes(ligneCal.equipe_domicile.split(' ')[0]) || titre.toLowerCase().includes('ales') || titre.toLowerCase().includes('berre')) {
-      console.log(`Journée ${journee} — candidat titre : "${titre}" (${testUrl})`);
-    }
     const mTitre = titre.match(/^(.+?) - (.+?), /);
     if (mTitre) {
       const [, dom, ext] = mTitre;
-      // Rapprochement grossier par mot commun pour retrouver le bon match.
-      const motsCal = (ligneCal.equipe_domicile + ' ' + ligneCal.equipe_exterieur).toLowerCase();
-      if (motsCal.includes(dom.toLowerCase().split(' ')[0]) || motsCal.includes(ext.toLowerCase().split(' ')[0])) {
+      if (clubsCorrespondent(dom, ligneCal.equipe_domicile) || clubsCorrespondent(ext, ligneCal.equipe_exterieur) || clubsCorrespondent(dom, ligneCal.equipe_exterieur) || clubsCorrespondent(ext, ligneCal.equipe_domicile)) {
         urlMatch = testUrl;
-        console.log(`-> Match retenu : "${titre}"\n`);
+        console.log(`-> Match retenu : "${titre}" (${testUrl})\n`);
         break;
       }
     }
