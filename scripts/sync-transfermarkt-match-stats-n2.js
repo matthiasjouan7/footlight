@@ -52,8 +52,16 @@ const LIMITE_MATCHS = parseInt(process.env.LIMITE_MATCHS || '20', 10);
 console.log(`Mode : ${DRY_RUN ? 'DRY_RUN (aucune écriture)' : 'ÉCRITURE RÉELLE'} — National 2 groupe ${GROUPE} (wettbewerb=${WETTBEWERB}) via Transfermarkt, ${NB_JOURNEES} journée(s), limite ${LIMITE_MATCHS} match(s).\n`);
 
 // ---- Rapprochement club (même logique que sync-fff-match-stats-n2.js) ----
+// Retire les points AVANT de remplacer le reste des caractères non
+// alphanumériques par des espaces : un sigle pointé ("S.F.C.") serait
+// sinon éclaté en lettres isolées ("s", "f", "c") alors que Transfermarkt
+// écrit le même sigle collé ("SFC"), faisant échouer tout rapprochement
+// pour ce club — cas réel : "Neuilly Marne S.F.C." (FootLight) / "SFC
+// Neuilly-sur-Marne" (Transfermarkt), qui bloquait la synchro de CE club
+// précis à chaque run sans jamais remonter d'erreur (le match n'était
+// simplement jamais rapproché à une ligne calendrier_officiel).
 function normaliserClub(s) {
-  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\./g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 const MOTS_GENERIQUES_CLUB = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'vf', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'ol', 'd', '1', '2', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des', 'ea']);
 const MOTS_REMPLACEMENT_CLUB = { st: 'saint', ste: 'sainte', gd: 'grand' };
