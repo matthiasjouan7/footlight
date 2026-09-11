@@ -35,19 +35,89 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const SAISON = '2026-2027';
 console.log(`Mode : ${DRY_RUN ? 'DRY_RUN (aucune écriture)' : 'ÉCRITURE RÉELLE'}\n`);
 
-function normaliserMot(s) {
-  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+// Reprend intégralement le moteur de rapprochement de sync-lequipe-to-
+// calendrier.js (déjà corrigé et éprouvé) plutôt qu'une version
+// simplifiée maison : cette dernière avait laissé passer 14 doublons
+// supplémentaires (ex: "GFC Ajaccio"/"Gazelec Fc Ajaccio 1", "Rennes B"/
+// "Stade Rennais FC B", "Beaucaire"/"Sbfc 1") jamais détectés lors du
+// premier nettoyage, alors que le moteur complet (synonymes, tolérance
+// de préfixe, retrait des codes départementaux) les résout pour la
+// plupart.
+function normalizeName(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
 }
-const MOTS_GENERIQUES = new Set(['fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sm', 'sa', 'ta', 'ea', 'oc', 'af', 'vf', 'football', 'club', 'sporting', 'racing', 'stade', 'olympique', 'ol', 'd', '1', '2', 'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des', 'saint', 'st', 'sainte', 'ste']);
-function motsClub(s) {
-  const mots = normaliserMot(s).split(' ').filter((w) => w.length > 1 && !MOTS_GENERIQUES.has(w));
-  return mots.length ? mots : normaliserMot(s).split(' ').filter(Boolean);
+function normalizeClub(s) {
+  return normalizeName(s).replace(/[.'/-]/g, ' ').replace(/\s+/g, ' ').trim().replace(/\s\d{1,2}$/, '');
+}
+const CLUB_MOTS_GENERIQUES = new Set([
+  'fc', 'ofc', 'afc', 'asc', 'ac', 'sc', 'csc', 'cs', 'us', 'uso', 'as', 'sa', 'sas',
+  'sr', 'srfa', 'ol', 'om', 'rc',
+  'fco', 'osc', 'sco', 'ent', 'entente', 'athletic', 'olympique', 'football', 'club',
+  'sporting', 'racing', 'stade',
+  'sur', 'sous', 'en', 'la', 'le', 'les', 'de', 'du', 'des',
+  'af', 'aj', 'd', 'may', 'losc', 'lorraine', 'montb', 'alsace', 'hsc', 'berri',
+]);
+const CLUB_MOTS_REMPLACEMENT = {
+  st: 'saint', ste: 'sainte', gd: 'grand', philibert: 'philbert',
+  virois: 'vire', bayonnais: 'bayonne', briochin: 'brieuc', vfc: 'vendee', sbfc: 'beaucairois',
+  alenconnaise: 'alencon', raph: 'raphael',
+};
+const CLUB_SYNONYMES_COMPLETS = {
+  qrm: { mots: ['quevilly', 'rouen', 'metropole'], elargi: false },
+  astdv: { mots: ['touques', 'deauville', 'trouville', 'villers'], elargi: true },
+  alencon: { mots: ['alenconnaise', '61'], elargi: true },
+  'anne sainte vertou': { mots: ['ussa'], elargi: true },
+  'sables vf': { mots: ['sable', 'vendee'], elargi: false },
+  'sable vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'sables vendee': { mots: ['sable', 'vendee'], elargi: false },
+  'bourgoin j': { mots: ['jallieu'], elargi: true },
+  'romorantin so': { mots: ['sologne'], elargi: true },
+  'co locmine saint': { mots: ['colomban', 'locmine', 'saint'], elargi: false },
+  'angouleme chte': { mots: ['angouleme', 'charente'], elargi: false },
+  'pf tarbes': { mots: ['pyrenees', 'tarbes'], elargi: false },
+  'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
+  'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
+  // "GFC Ajaccio" (lequipe.fr) / "Gazelec Fc Ajaccio 1" (officiel) — GFC
+  // est l'abréviation usuelle de "Gazélec Football Club", jamais reconnue
+  // par CLUB_MOTS_REMPLACEMENT (fusion de deux mots en un seul sigle).
+  'ajaccio gfc': { mots: ['ajaccio', 'gazelec'], elargi: false },
+};
+const CLUB_PAIRES_DISTINCTES = new Set([
+  ['apm metz', 'metz'].sort().join('|'),
+  ['asptt dijon', 'dijon'].sort().join('|'),
+]);
+function clubWords(s) {
+  const mots = normalizeClub(s).split(' ').filter(Boolean);
+  const remplaces = mots.map((w) => CLUB_MOTS_REMPLACEMENT[w] || w);
+  const sansCodesDepartement = remplaces.filter((w) => !/^\d{1,3}$/.test(w));
+  const sansGeneriques = sansCodesDepartement.filter((w) => !CLUB_MOTS_GENERIQUES.has(w));
+  return sansGeneriques.length ? sansGeneriques : remplaces;
+}
+function clubIdentitySignature(s) {
+  const cle = clubWords(s).slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return synonyme ? synonyme.mots.slice().sort().join(' ') : cle;
+}
+function clubWordsElargi(s) {
+  const mots = clubWords(s);
+  const cle = mots.slice().sort().join(' ');
+  const synonyme = CLUB_SYNONYMES_COMPLETS[cle];
+  return (synonyme && synonyme.elargi) ? [...mots, ...synonyme.mots] : mots;
+}
+function motsProches(a, b) {
+  if (a === b) return true;
+  const [court, long] = a.length <= b.length ? [a, b] : [b, a];
+  return court.length >= 4 && long.startsWith(court);
 }
 function clubsProchesOuIdentiques(a, b) {
-  const wa = motsClub(a), wb = motsClub(b);
+  const sigA = clubIdentitySignature(a), sigB = clubIdentitySignature(b);
+  if (sigA && sigB && sigA === sigB) return true;
+  if (sigA && sigB && CLUB_PAIRES_DISTINCTES.has([sigA, sigB].sort().join('|'))) return false;
+  const wa = clubWordsElargi(a), wb = clubWordsElargi(b);
   if (!wa.length || !wb.length) return false;
   const [small, big] = wa.length <= wb.length ? [wa, wb] : [wb, wa];
-  return small.every((w) => big.some((w2) => w2 === w || (w.length >= 4 && w2.length >= 4 && (w2.startsWith(w) || w.startsWith(w2)))));
+  for (const w of small) if (!big.some((w2) => motsProches(w, w2))) return false;
+  return true;
 }
 
 const { data: cal, error: errCal } = await supabase

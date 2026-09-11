@@ -165,6 +165,10 @@ const CLUB_SYNONYMES_COMPLETS = {
   'pf tarbes': { mots: ['pyrenees', 'tarbes'], elargi: false },
   'chateaubriant volt': { mots: ['voltigeurs', 'chateaubriant'], elargi: false },
   'associat grand ouest': { mots: ['grand', 'ouest', 'association', 'lyonnaise'], elargi: false },
+  // "GFC Ajaccio" (lequipe.fr) / "Gazelec Fc Ajaccio 1" (officiel) — GFC
+  // est l'abréviation usuelle de "Gazélec Football Club", jamais reconnue
+  // par CLUB_MOTS_REMPLACEMENT (fusion de deux mots en un seul sigle).
+  'ajaccio gfc': { mots: ['ajaccio', 'gazelec'], elargi: false },
 };
 const CLUB_PAIRES_DISTINCTES = new Set([
   ['apm metz', 'metz'].sort().join('|'),
