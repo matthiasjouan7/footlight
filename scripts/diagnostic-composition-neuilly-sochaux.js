@@ -64,17 +64,17 @@ for (let journee = 1; journee <= 3; journee++) {
   const urlJournee = `https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/${WETTBEWERB}/saison_id/${SAISON_ID_TM}/spieltag/${journee}`;
   await page.goto(urlJournee, { waitUntil: 'networkidle', timeout: 45000 });
   const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href*="/spielbericht/index/spielbericht/"]')].map((a) => a.getAttribute('href')));
+  console.log(`--- Journée ${journee} : ${[...new Set(hrefs)].length} match(s) ---`);
   for (const href of [...new Set(hrefs)]) {
     const testUrl = `https://www.transfermarkt.fr${href}`;
     await page.goto(testUrl, { waitUntil: 'networkidle', timeout: 45000 });
     const titre = await page.title();
-    if (/neuilly/i.test(titre) && /sochaux/i.test(titre)) {
-      console.log(`Match trouvé (journée ${journee}) : "${titre}"\nURL : ${testUrl}\n`);
+    console.log(`  "${titre}"`);
+    if (/neuilly/i.test(titre) && !urlMatch) {
+      console.log(`  ^ contient "neuilly" -> URL : ${testUrl}`);
       urlMatch = testUrl;
-      break;
     }
   }
-  if (urlMatch) break;
 }
 
 if (!urlMatch) {
