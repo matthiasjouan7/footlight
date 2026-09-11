@@ -60,7 +60,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ locale: 'fr-FR', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' });
 
 let urlMatch = null;
-for (let journee = 1; journee <= 3; journee++) {
+for (let journee = 1; journee <= 3 && !urlMatch; journee++) {
   const urlJournee = `https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/${WETTBEWERB}/saison_id/${SAISON_ID_TM}/spieltag/${journee}`;
   await page.goto(urlJournee, { waitUntil: 'networkidle', timeout: 45000 });
   const hrefs = await page.evaluate(() => [...document.querySelectorAll('a[href*="/spielbericht/index/spielbericht/"]')].map((a) => a.getAttribute('href')));
@@ -70,9 +70,10 @@ for (let journee = 1; journee <= 3; journee++) {
     await page.goto(testUrl, { waitUntil: 'networkidle', timeout: 45000 });
     const titre = await page.title();
     console.log(`  "${titre}"`);
-    if (/neuilly/i.test(titre) && !urlMatch) {
-      console.log(`  ^ contient "neuilly" -> URL : ${testUrl}`);
+    if (/neuilly/i.test(titre) && /sochaux/i.test(titre)) {
+      console.log(`  ^ correspond -> URL : ${testUrl}`);
       urlMatch = testUrl;
+      break;
     }
   }
 }
@@ -82,6 +83,13 @@ if (!urlMatch) {
   await browser.close();
   process.exit(0);
 }
+
+// Re-navigue explicitement vers le match ciblé : la boucle ci-dessus a pu
+// visiter d'autres pages après l'avoir trouvé (aucun `break` initialement),
+// laissant `page` sur une AUTRE page lors de l'extraction — corrigé ici par
+// une navigation explicite avant de lire les tables de composition.
+await page.goto(urlMatch, { waitUntil: 'networkidle', timeout: 45000 });
+console.log(`\nPage rechargée pour extraction : ${await page.title()}\n`);
 
 const compositionsToutes = await page.evaluate(() => {
   return [...document.querySelectorAll('table')].map((t) => {
