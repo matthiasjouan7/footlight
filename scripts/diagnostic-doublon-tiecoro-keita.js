@@ -14,7 +14,7 @@ const { data: joueurs, error } = await supabase
   .from('joueurs')
   .select('*')
   .ilike('nom', '%keita%')
-  .ilike('prenom', '%tiecoro%');
+  .ilike('prenom', '%iécoro%');
 if (error) { console.error('Erreur :', error.message); process.exit(1); }
 
 console.log(`${(joueurs || []).length} fiche(s) "Tiécoro Keita" trouvée(s) :\n`);
