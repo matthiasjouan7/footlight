@@ -347,7 +347,7 @@ async function parserPageMatchTransfermarkt(pageMatch) {
 function detecterCompositions(compositionsToutes, joueursConnus, clubDomicile, clubExterieur) {
   const candidates = compositionsToutes.filter((noms) => noms.length >= 5);
   function score(noms, club) {
-    return noms.filter((nom) => joueursConnus.some((j) => clubsCorrespondent(j.club, club) && nomFamilleCorrespond(nom, j.nom))).length;
+    return noms.filter((nom) => joueursConnus.some((j) => clubsCorrespondent(j.club, club) && trouveCorrespondanceNom(nom, j.nom))).length;
   }
   let compoDomicile = null, compoExterieur = null;
   const restantes = [...candidates];
