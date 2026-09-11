@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-09-10T12:07:30.011Z",
+  "updated_at": "2026-09-11T12:00:55.976Z",
   "joueurs": [
     {
       "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
@@ -153,44 +153,6 @@
       ]
     },
     {
-      "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
-      "prenom": "Enzo",
-      "nom": "Montet",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "milieu_defensif",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "US CONCARNEAU",
-          "domicile": false,
-          "situation": "était mené 2 but(s)",
-          "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
-      "prenom": "George",
-      "nom": "Morgan",
-      "club": "AS Cannes",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-14",
-          "adversaire": "FC FLEURY 91",
-          "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
       "prenom": "Félix",
       "nom": "Tomi",
@@ -248,6 +210,25 @@
       ]
     },
     {
+      "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
+      "prenom": "Enzo",
+      "nom": "Montet",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "milieu_defensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "US CONCARNEAU",
+          "domicile": false,
+          "situation": "était mené 2 but(s)",
+          "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "a7b216af-f55e-4e8c-809a-a7096bc29538",
       "prenom": "Alexis",
       "nom": "Gouletquer",
@@ -282,6 +263,44 @@
           "situation": "menait de 1 but",
           "resultat": "victoire",
           "points": 1
+        }
+      ]
+    },
+    {
+      "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
+      "prenom": "George",
+      "nom": "Morgan",
+      "club": "AS Cannes",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-14",
+          "adversaire": "FC FLEURY 91",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
+          "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "d0c00a8a-5dfd-4d58-823c-ade76f18e2e2",
+      "prenom": "Mathis",
+      "nom": "Colin",
+      "club": "Amiens SC",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "SC BASTIA",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
         }
       ]
     },
@@ -335,25 +354,6 @@
         {
           "date": "2026-09-05",
           "adversaire": "FC VERSAILLES",
-          "domicile": false,
-          "situation": "menait 2 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "d0c00a8a-5dfd-4d58-823c-ade76f18e2e2",
-      "prenom": "Mathis",
-      "nom": "Colin",
-      "club": "Amiens SC",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "SC BASTIA",
           "domicile": false,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
