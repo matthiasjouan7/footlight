@@ -105,18 +105,30 @@ function distanceLevenshtein(a, b) {
 // de départager deux joueurs du même club au même nom de famille — cas
 // fréquent (ex: deux frères) et jusqu'ici toujours ignoré comme "ambigu"
 // alors que Transfermarkt donne le prénom complet nécessaire pour trancher.
+//
+// Distingue aussi correspondance EXACTE et approchée (exact: true/false) :
+// la tolérance de faute de frappe, nécessaire pour rattraper de vraies
+// coquilles entre sources (ex: "Nkoka" TM / "Nkouka" FootLight), créait
+// sinon un faux rapprochement entre deux noms de famille simplement
+// proches mais réellement différents (ex: "Boudin" et "Bodin", deux
+// joueurs distincts du même club) — scanne tous les découpages possibles
+// pour ne renvoyer une correspondance approchée que si aucun découpage
+// n'aboutit à un nom de famille strictement identique.
 function trouveCorrespondanceNom(nomAffiche, nomJoueur) {
   const mots = normaliserNom(nomAffiche).split(' ').filter(Boolean);
   const nomCible = normaliserNom(nomJoueur);
+  let meilleurApproche = null;
   for (let debut = 1; debut < mots.length; debut++) {
     const candidat = mots.slice(debut).join(' ');
-    const seuil = candidat.length >= 8 ? 2 : 1;
     const prenomAffiche = mots.slice(0, debut).join(' ');
-    if (distanceLevenshtein(candidat, nomCible) <= seuil) return { prenomAffiche };
+    if (candidat === nomCible) return { prenomAffiche, exact: true };
+    if (meilleurApproche) continue;
+    const seuil = candidat.length >= 8 ? 2 : 1;
+    if (distanceLevenshtein(candidat, nomCible) <= seuil) { meilleurApproche = { prenomAffiche, exact: false }; continue; }
     const premierMot = candidat.split(' ')[0];
-    if (premierMot && distanceLevenshtein(premierMot, nomCible) <= 1) return { prenomAffiche };
+    if (premierMot && distanceLevenshtein(premierMot, nomCible) <= 1) meilleurApproche = { prenomAffiche, exact: false };
   }
-  return null;
+  return meilleurApproche;
 }
 function prenomsCorrespondent(a, b) {
   const na = normaliserNom(a), nb = normaliserNom(b);
@@ -442,10 +454,17 @@ for (const m of matchsAsynchroniser) {
 
   for (const r of resultatsParseur) {
     const candidatsClub = joueurs.filter((j) => clubsCorrespondent(j.club, r.club));
-    const correspondances = candidatsClub
+    const correspondancesToutes = candidatsClub
       .map((j) => ({ joueur: j, match: trouveCorrespondanceNom(r.nomAffiche, j.nom) }))
       .filter((c) => c.match);
-    if (correspondances.length === 0) { totalNonTrouves++; continue; }
+    if (correspondancesToutes.length === 0) { totalNonTrouves++; continue; }
+    // Un nom de famille exact prime toujours sur une simple ressemblance :
+    // sans ça, un candidat au nom réellement différent mais proche (ex:
+    // "Bodin" pour "Boudin") entrait à tort en concurrence avec le bon
+    // joueur au nom exact, créant une fausse ambiguïté entre deux personnes
+    // distinctes.
+    const correspondancesExactes = correspondancesToutes.filter((c) => c.match.exact);
+    const correspondances = correspondancesExactes.length ? correspondancesExactes : correspondancesToutes;
     let joueur;
     if (correspondances.length === 1) {
       joueur = correspondances[0].joueur;
