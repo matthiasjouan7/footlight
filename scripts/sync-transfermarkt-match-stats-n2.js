@@ -100,17 +100,28 @@ function distanceLevenshtein(a, b) {
 // massif de joueurs "non trouvés" sur les groupes D/F/G. Reprend le même
 // essai de plusieurs découpages + tolérance de faute de frappe que
 // sync-fff-match-stats-n2.js (validé) plutôt que le dernier mot seul.
-function nomFamilleCorrespond(nomAffiche, nomJoueur) {
+// Renvoie aussi le prénom affiché déduit du découpage qui a matché (tout
+// ce qui précède le nom de famille reconnu), pour permettre à l'appelant
+// de départager deux joueurs du même club au même nom de famille — cas
+// fréquent (ex: deux frères) et jusqu'ici toujours ignoré comme "ambigu"
+// alors que Transfermarkt donne le prénom complet nécessaire pour trancher.
+function trouveCorrespondanceNom(nomAffiche, nomJoueur) {
   const mots = normaliserNom(nomAffiche).split(' ').filter(Boolean);
   const nomCible = normaliserNom(nomJoueur);
   for (let debut = 1; debut < mots.length; debut++) {
     const candidat = mots.slice(debut).join(' ');
     const seuil = candidat.length >= 8 ? 2 : 1;
-    if (distanceLevenshtein(candidat, nomCible) <= seuil) return true;
+    const prenomAffiche = mots.slice(0, debut).join(' ');
+    if (distanceLevenshtein(candidat, nomCible) <= seuil) return { prenomAffiche };
     const premierMot = candidat.split(' ')[0];
-    if (premierMot && distanceLevenshtein(premierMot, nomCible) <= 1) return true;
+    if (premierMot && distanceLevenshtein(premierMot, nomCible) <= 1) return { prenomAffiche };
   }
-  return false;
+  return null;
+}
+function prenomsCorrespondent(a, b) {
+  const na = normaliserNom(a), nb = normaliserNom(b);
+  if (!na || !nb) return false;
+  return na === nb || distanceLevenshtein(na, nb) <= 1;
 }
 
 // ---- 1. Découvre les matchs joués (parcourt les journées de la page spieltag) ----
@@ -431,14 +442,31 @@ for (const m of matchsAsynchroniser) {
 
   for (const r of resultatsParseur) {
     const candidatsClub = joueurs.filter((j) => clubsCorrespondent(j.club, r.club));
-    const correspondances = candidatsClub.filter((j) => nomFamilleCorrespond(r.nomAffiche, j.nom));
+    const correspondances = candidatsClub
+      .map((j) => ({ joueur: j, match: trouveCorrespondanceNom(r.nomAffiche, j.nom) }))
+      .filter((c) => c.match);
     if (correspondances.length === 0) { totalNonTrouves++; continue; }
-    if (correspondances.length > 1) {
-      console.log(`  Ambiguïté : "${r.nomAffiche}" correspond à ${correspondances.length} joueurs FootLight (${correspondances.map((j) => `${j.prenom} ${j.nom}`).join(', ')}), ignoré.`);
-      totalAmbigus++;
-      continue;
+    let joueur;
+    if (correspondances.length === 1) {
+      joueur = correspondances[0].joueur;
+    } else {
+      // Même nom de famille pour plusieurs joueurs du club (ex: deux frères) :
+      // départage par le prénom affiché, que Transfermarkt donne en entier.
+      const parPrenom = correspondances.filter((c) => prenomsCorrespondent(c.match.prenomAffiche, c.joueur.prenom));
+      if (parPrenom.length === 1) {
+        joueur = parPrenom[0].joueur;
+      } else if (parPrenom.length === 0) {
+        // Aucun prénom candidat ne correspond : ce n'est probablement aucun
+        // des homonymes connus (une 3e personne non suivie), pas une vraie
+        // ambiguïté entre les deux.
+        totalNonTrouves++;
+        continue;
+      } else {
+        console.log(`  Ambiguïté : "${r.nomAffiche}" correspond à ${correspondances.length} joueurs FootLight (${correspondances.map((c) => `${c.joueur.prenom} ${c.joueur.nom}`).join(', ')}), ignoré.`);
+        totalAmbigus++;
+        continue;
+      }
     }
-    const joueur = correspondances[0];
     const ligneMj = lignesMj.find((l) => l.joueur_id === joueur.id);
     if (!ligneMj) continue;
     if (ligneMj.minutes_jouees != null) continue;
