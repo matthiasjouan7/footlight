@@ -169,6 +169,12 @@ const CLUB_SYNONYMES_COMPLETS = {
   // est l'abréviation usuelle de "Gazélec Football Club", jamais reconnue
   // par CLUB_MOTS_REMPLACEMENT (fusion de deux mots en un seul sigle).
   'ajaccio gfc': { mots: ['ajaccio', 'gazelec'], elargi: false },
+  // "GFA RV" (officiel, N1 groupe C) / "Rumilly Vallières" (lequipe.fr) —
+  // GFA RV est le sigle du "Groupement de Football Amateur Rumilly
+  // Vallières", aucun mot en commun avec le nom en toutes lettres. Sans ce
+  // synonyme, chaque journée impliquant ce club crée un doublon calendrier
+  // (constaté : calendrier_officiel_id=3503 en double de id=2814).
+  'gfa rv': { mots: ['rumilly', 'vallieres'], elargi: false },
 };
 const CLUB_PAIRES_DISTINCTES = new Set([
   ['apm metz', 'metz'].sort().join('|'),
