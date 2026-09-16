@@ -33,11 +33,30 @@ for (const m of matchs) {
   console.log(`${m.date_match} (${statutDate}) ${m.division} groupe ${m.groupe} — ${m.equipe_domicile} vs ${m.equipe_exterieur} (id=${m.id}) : ${avecMinutes}/${total} ligne(s) avec minutes`);
 }
 
+// Seulement 2 matchs trouvés est suspect si le club devrait déjà en avoir
+// joué 4 : vérifie si le calendrier N1 groupe C est simplement incomplet
+// pour tout le groupe (pas seulement Hyères), ou seulement pour ce club.
+const { data: calGroupeC } = await supabase
+  .from('calendrier_officiel')
+  .select('id, date_match, equipe_domicile, equipe_exterieur')
+  .eq('saison', SAISON).eq('division', 'N1').eq('groupe', 'C')
+  .lte('date_match', AUJOURD_HUI)
+  .order('date_match');
+console.log(`\n--- Calendrier complet N1 groupe C, matchs déjà passés (${(calGroupeC || []).length} au total) ---`);
+for (const m of calGroupeC || []) {
+  console.log(`  ${m.date_match} — ${m.equipe_domicile} vs ${m.equipe_exterieur} (id=${m.id})`);
+}
+
 console.log('\n--- Effectif Hyères côté FootLight (matchs_joues par joueur) ---');
-const { data: joueurs } = await supabase
+// ilike ne fait pas de comparaison insensible aux accents en Postgres : une
+// recherche "%hyeres%" (sans accent) ne trouve pas "Hyères" (avec accent),
+// piège déjà rencontré sur "Tiécoro" — on récupère donc tout le niveau N1
+// de la saison et on filtre en JS après avoir retiré les accents.
+const { data: joueursN1 } = await supabase
   .from('joueurs').select('id, prenom, nom, club, niveau, matchs_joues')
-  .eq('saison', SAISON).ilike('club', '%hyeres%');
-console.log(`${(joueurs || []).length} joueur(s) trouvé(s).`);
+  .eq('saison', SAISON).eq('niveau', 'N1');
+const joueurs = (joueursN1 || []).filter((j) => normalise(j.club).includes('hyeres'));
+console.log(`${(joueurs || []).length} joueur(s) trouvé(s) (sur ${(joueursN1 || []).length} joueurs N1 scannés).`);
 const parNiveau = new Map();
 for (const j of joueurs || []) {
   if (!parNiveau.has(j.niveau)) parNiveau.set(j.niveau, []);
