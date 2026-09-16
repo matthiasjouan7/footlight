@@ -1,7 +1,11 @@
 // Diagnostic lecture seule : Hyères est signalé à 3 matchs joués alors
-// qu'il devrait être à 4. Liste tous les matchs calendrier_officiel N2
-// impliquant Hyères, avec le nombre de lignes matchs_joueur avec/sans
-// minutes pour chacun, pour identifier précisément quel match manque.
+// qu'il devrait être à 4. La première version de ce script utilisait une
+// requête calendrier_officiel non scopée (saison seule, toutes divisions/
+// groupes confondus) qui s'est révélée tronquée par la limite par défaut
+// de Supabase (~1000 lignes) — même piège que pour Balagne (diagnostic-
+// nom-club-balagne.js) : le match id=2810 (HYERES F.C. vs ISTRES FC,
+// journée 3) n'apparaissait tout simplement pas dans le résultat. Scope
+// directement sur division=N1 + groupe=C pour éviter toute troncature.
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://migarohddystlyhuoxfg.supabase.co';
@@ -13,16 +17,16 @@ const SAISON = '2026-2027';
 
 function normalise(s) { return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 
-const { data: cal, error } = await supabase
+const { data: calGroupeC, error } = await supabase
   .from('calendrier_officiel')
-  .select('id, division, groupe, date_match, equipe_domicile, equipe_exterieur')
-  .eq('saison', SAISON);
+  .select('id, date_match, equipe_domicile, equipe_exterieur')
+  .eq('saison', SAISON).eq('division', 'N1').eq('groupe', 'C')
+  .order('date_match');
 if (error) { console.error('Erreur :', error.message); process.exit(1); }
+console.log(`${(calGroupeC || []).length} ligne(s) calendrier_officiel au total pour N1 groupe C (${SAISON}).\n`);
 
-const matchs = (cal || []).filter((c) => normalise(c.equipe_domicile).includes('hyeres') || normalise(c.equipe_exterieur).includes('hyeres'));
-matchs.sort((a, b) => new Date(a.date_match) - new Date(b.date_match));
-
-console.log(`${matchs.length} match(s) calendrier_officiel trouvé(s) pour un club "hyeres" (${SAISON}).\n`);
+const matchs = (calGroupeC || []).filter((c) => normalise(c.equipe_domicile).includes('hyer') || normalise(c.equipe_exterieur).includes('hyer'));
+console.log(`${matchs.length} match(s) impliquant Hyères (toutes graphies confondues) :\n`);
 
 const AUJOURD_HUI = new Date().toISOString().slice(0, 10);
 for (const m of matchs) {
@@ -30,21 +34,22 @@ for (const m of matchs) {
   const total = (mj || []).length;
   const avecMinutes = (mj || []).filter((x) => x.minutes_jouees != null).length;
   const statutDate = m.date_match > AUJOURD_HUI ? 'FUTUR' : 'passé';
-  console.log(`${m.date_match} (${statutDate}) ${m.division} groupe ${m.groupe} — ${m.equipe_domicile} vs ${m.equipe_exterieur} (id=${m.id}) : ${avecMinutes}/${total} ligne(s) avec minutes`);
+  console.log(`  ${m.date_match} (${statutDate}) — "${m.equipe_domicile}" vs "${m.equipe_exterieur}" (id=${m.id}) : ${avecMinutes}/${total} ligne(s) avec minutes`);
 }
 
-// Seulement 2 matchs trouvés est suspect si le club devrait déjà en avoir
-// joué 4 : vérifie si le calendrier N1 groupe C est simplement incomplet
-// pour tout le groupe (pas seulement Hyères), ou seulement pour ce club.
-const { data: calGroupeC } = await supabase
-  .from('calendrier_officiel')
-  .select('id, date_match, equipe_domicile, equipe_exterieur')
-  .eq('saison', SAISON).eq('division', 'N1').eq('groupe', 'C')
-  .lte('date_match', AUJOURD_HUI)
-  .order('date_match');
-console.log(`\n--- Calendrier complet N1 groupe C, matchs déjà passés (${(calGroupeC || []).length} au total) ---`);
-for (const m of calGroupeC || []) {
-  console.log(`  ${m.date_match} — ${m.equipe_domicile} vs ${m.equipe_exterieur} (id=${m.id})`);
+// Repère les paires de dates très proches (à 1 jour d'écart) impliquant
+// Hyères ou une équipe au nom proche : signe probable d'un doublon
+// calendrier (même match réel inséré deux fois sous des graphies
+// différentes), comme déjà observé et corrigé en N2.
+console.log('\n--- Vérification doublon éventuel (dates proches, mêmes équipes) ---');
+for (let i = 0; i < matchs.length; i++) {
+  for (let j = i + 1; j < matchs.length; j++) {
+    const a = matchs[i], b = matchs[j];
+    const ecartJours = Math.abs((new Date(a.date_match) - new Date(b.date_match)) / 86400000);
+    if (ecartJours <= 2) {
+      console.log(`  Possible doublon : id=${a.id} (${a.date_match}, "${a.equipe_domicile}" vs "${a.equipe_exterieur}") <-> id=${b.id} (${b.date_match}, "${b.equipe_domicile}" vs "${b.equipe_exterieur}")`);
+    }
+  }
 }
 
 console.log('\n--- Effectif Hyères côté FootLight (matchs_joues par joueur) ---');
@@ -55,18 +60,12 @@ console.log('\n--- Effectif Hyères côté FootLight (matchs_joues par joueur) -
 const { data: joueursN1 } = await supabase
   .from('joueurs').select('id, prenom, nom, club, niveau, matchs_joues')
   .eq('saison', SAISON).eq('niveau', 'N1');
-const joueurs = (joueursN1 || []).filter((j) => normalise(j.club).includes('hyeres'));
+const joueurs = (joueursN1 || []).filter((j) => normalise(j.club).includes('hyer'));
 console.log(`${(joueurs || []).length} joueur(s) trouvé(s) (sur ${(joueursN1 || []).length} joueurs N1 scannés).`);
-const parNiveau = new Map();
-for (const j of joueurs || []) {
-  if (!parNiveau.has(j.niveau)) parNiveau.set(j.niveau, []);
-  parNiveau.get(j.niveau).push(j);
-}
-for (const [niveau, liste] of parNiveau) {
-  console.log(`\nNiveau ${niveau} (${liste.length} joueur(s)) — club exact observé : ${[...new Set(liste.map((j) => j.club))].join(', ')}`);
-  const parCompte = new Map();
-  for (const j of liste) parCompte.set(j.matchs_joues, (parCompte.get(j.matchs_joues) || 0) + 1);
-  for (const [compte, nb] of [...parCompte.entries()].sort((a, b) => a[0] - b[0])) {
-    console.log(`  matchs_joues=${compte} : ${nb} joueur(s)`);
-  }
+const club = [...new Set(joueurs.map((j) => j.club))].join(', ');
+console.log(`Club exact observé côté joueurs : ${club}`);
+const parCompte = new Map();
+for (const j of joueurs) parCompte.set(j.matchs_joues, (parCompte.get(j.matchs_joues) || 0) + 1);
+for (const [compte, nb] of [...parCompte.entries()].sort((a, b) => a[0] - b[0])) {
+  console.log(`  matchs_joues=${compte} : ${nb} joueur(s)`);
 }
