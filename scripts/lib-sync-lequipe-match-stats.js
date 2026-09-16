@@ -164,6 +164,12 @@ const CLUB_SYNONYMES_COMPLETS_STATS = {
   // "france" ; lequipe.fr affiche "Racing CF", qui ne reste réduit qu'à
   // "cf" (non générique) — aucun mot commun sans ce synonyme.
   france: { mots: ['cf'], elargi: false },
+  // "GFA RV" (officiel, N1 groupe C) / "Rumilly Vallières" (lequipe.fr) —
+  // GFA RV est le sigle du "Groupement de Football Amateur Rumilly
+  // Vallières", aucun mot en commun avec le nom en toutes lettres. Sans ce
+  // synonyme, les stats de ce club ne sont jamais rapprochées à leur ligne
+  // calendrier_officiel (constaté : id=2814 resté à 0 minute synchronisée).
+  'gfa rv': { mots: ['rumilly', 'vallieres'], elargi: false },
 };
 function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean);
