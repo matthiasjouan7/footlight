@@ -4,35 +4,8 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-09-16T12:26:09.684Z",
+  "updated_at": "2026-09-17T12:29:24.950Z",
   "joueurs": [
-    {
-      "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
-      "prenom": "Aboubacar",
-      "nom": "Camara",
-      "club": "Union Foot de Touraine",
-      "niveau": "N1",
-      "poste": "ailier_droit",
-      "points": 6,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "Châteauroux",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        },
-        {
-          "date": "2026-09-05",
-          "adversaire": "Châteauroux",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        }
-      ]
-    },
     {
       "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
       "prenom": "Fadel",
@@ -169,38 +142,19 @@
       ]
     },
     {
-      "id": "cdd7d292-78a6-410f-a6e4-3d8be9afc8ec",
-      "prenom": "Josué",
-      "nom": "Kimboma",
-      "club": "SM Caen",
-      "niveau": "Ligue 3",
-      "poste": "milieu_defensif",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-12",
-          "adversaire": "PARIS 13 ATLETICO",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "b8ca4a6b-0dc2-4e8e-afe5-969a5789c81c",
-      "prenom": "Salim",
-      "nom": "Diakité",
-      "club": "SM Caen",
+      "id": "c7e00fe4-afe1-4fd4-842e-a723ea542afd",
+      "prenom": "Lucas",
+      "nom": "Rosier",
+      "club": "US Concarneau",
       "niveau": "Ligue 3",
       "poste": "ailier_gauche",
       "points": 1,
       "contributions": [
         {
           "date": "2026-09-12",
-          "adversaire": "PARIS 13 ATLETICO",
-          "domicile": true,
-          "situation": "menait de 1 but",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "était mené 1 but(s)",
           "resultat": "victoire",
           "points": 1
         }
@@ -245,44 +199,6 @@
       ]
     },
     {
-      "id": "c7e00fe4-afe1-4fd4-842e-a723ea542afd",
-      "prenom": "Lucas",
-      "nom": "Rosier",
-      "club": "US Concarneau",
-      "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-12",
-          "adversaire": "SC AUBAGNE AIR BEL",
-          "domicile": false,
-          "situation": "était mené 1 but(s)",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
-      "prenom": "Armand",
-      "nom": "Gnanduillet",
-      "club": "SM Caen",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-14",
-          "adversaire": "US THIONVILLE LUSITANOS",
-          "domicile": false,
-          "situation": "était mené 2 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "e50df0c5-f81f-4e76-9f4c-efea8d94002d",
       "prenom": "Nassim",
       "nom": "Sabihi",
@@ -321,25 +237,6 @@
       ]
     },
     {
-      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
-      "prenom": "Marvin",
-      "nom": "Emmanuel",
-      "club": "Le Puy-en-Velay FC",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-07",
-          "adversaire": "SC BASTIA",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
       "prenom": "Enzo",
       "nom": "Montet",
@@ -359,38 +256,114 @@
       ]
     },
     {
-      "id": "7dc004ae-4324-4773-a5cc-26d635cf57af",
-      "prenom": "Amir",
-      "nom": "Etien",
-      "club": "FC Versailles 78",
+      "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
+      "prenom": "Armand",
+      "nom": "Gnanduillet",
+      "club": "SM Caen",
       "niveau": "Ligue 3",
-      "poste": "ailier_droit",
-      "points": 0,
+      "poste": "attaquant",
+      "points": 1,
       "contributions": [
         {
-          "date": "2026-09-12",
-          "adversaire": "US ORLEANS",
+          "date": "2026-08-14",
+          "adversaire": "US THIONVILLE LUSITANOS",
           "domicile": false,
-          "situation": "menait 2 but(s)",
-          "resultat": "victoire",
-          "points": 0
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
+          "points": 1
         }
       ]
     },
     {
-      "id": "44a7457e-e42d-48fc-9533-be9304f84a2b",
-      "prenom": "Emric",
-      "nom": "Goumot",
-      "club": "FC Versailles 78",
+      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
+      "prenom": "Marvin",
+      "nom": "Emmanuel",
+      "club": "Le Puy-en-Velay FC",
       "niveau": "Ligue 3",
-      "poste": "lateral_droit",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC BASTIA",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "a7b216af-f55e-4e8c-809a-a7096bc29538",
+      "prenom": "Alexis",
+      "nom": "Gouletquer",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "09b12a16-8987-4e18-826f-baea9db78e71",
+      "prenom": "Jalil",
+      "nom": "Moustaid",
+      "club": "US THIONVILLE LUSITANOS",
+      "niveau": "Ligue 3",
+      "poste": "milieu_offensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-07",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "cdd7d292-78a6-410f-a6e4-3d8be9afc8ec",
+      "prenom": "Josué",
+      "nom": "Kimboma",
+      "club": "SM Caen",
+      "niveau": "Ligue 3",
+      "poste": "milieu_defensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-12",
+          "adversaire": "PARIS 13 ATLETICO",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "39c03926-e254-4bda-a209-d5c5d8ef9720",
+      "prenom": "Melvin",
+      "nom": "Borne",
+      "club": "FC Rouen 1899",
+      "niveau": "Ligue 3",
+      "poste": "lateral_gauche",
       "points": 0,
       "contributions": [
         {
           "date": "2026-09-12",
-          "adversaire": "US ORLEANS",
+          "adversaire": "US THIONVILLE LUSITANOS",
           "domicile": false,
-          "situation": "menait 2 but(s)",
+          "situation": "menait 3 but(s)",
           "resultat": "victoire",
           "points": 0
         }
@@ -435,25 +408,6 @@
       ]
     },
     {
-      "id": "39c03926-e254-4bda-a209-d5c5d8ef9720",
-      "prenom": "Melvin",
-      "nom": "Borne",
-      "club": "FC Rouen 1899",
-      "niveau": "Ligue 3",
-      "poste": "lateral_gauche",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-12",
-          "adversaire": "US THIONVILLE LUSITANOS",
-          "domicile": false,
-          "situation": "menait 3 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
       "id": "5dfa4b2e-d486-409a-bc25-55030b04136e",
       "prenom": "Cyril",
       "nom": "Khetir",
@@ -486,6 +440,71 @@
           "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
           "domicile": true,
           "situation": "menait 4 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "7dc004ae-4324-4773-a5cc-26d635cf57af",
+      "prenom": "Amir",
+      "nom": "Etien",
+      "club": "FC Versailles 78",
+      "niveau": "Ligue 3",
+      "poste": "ailier_droit",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-09-12",
+          "adversaire": "US ORLEANS",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "44a7457e-e42d-48fc-9533-be9304f84a2b",
+      "prenom": "Emric",
+      "nom": "Goumot",
+      "club": "FC Versailles 78",
+      "niveau": "Ligue 3",
+      "poste": "lateral_droit",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-09-12",
+          "adversaire": "US ORLEANS",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "10a3b367-ce86-4eec-9736-419d976bf847",
+      "prenom": "Marius",
+      "nom": "Reymond",
+      "club": "Sporting Club de Toulon",
+      "niveau": "N1",
+      "poste": "attaquant",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "CANET ROUSSILLON FC",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        },
+        {
+          "date": "2026-09-05",
+          "adversaire": "CANET ROUSSILLON FC",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
         }
