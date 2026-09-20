@@ -4,8 +4,35 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-09-19T11:49:36.187Z",
+  "updated_at": "2026-09-20T12:03:09.170Z",
   "joueurs": [
+    {
+      "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
+      "prenom": "Aboubacar",
+      "nom": "Camara",
+      "club": "Union Foot de Touraine",
+      "niveau": "N1",
+      "poste": "ailier_droit",
+      "points": 6,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "Châteauroux",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-09-05",
+          "adversaire": "Châteauroux",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        }
+      ]
+    },
     {
       "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
       "prenom": "Fadel",
@@ -34,101 +61,77 @@
       ]
     },
     {
-      "id": "5aa0139d-fb4e-4dc4-9054-aca4a213752a",
-      "prenom": "Sory",
-      "nom": "Traoré",
-      "club": "FC Rouen 1899",
+      "id": "d7924d37-d5c1-4d41-b6a5-1b331a60e340",
+      "prenom": "Nadir",
+      "nom": "Homssa",
+      "club": "FC Fleury 91",
       "niveau": "Ligue 3",
-      "poste": "ailier_droit",
-      "points": 3,
+      "poste": "milieu_central",
+      "points": 1,
       "contributions": [
         {
-          "date": "2026-08-14",
-          "adversaire": "US ORLEANS",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        },
-        {
-          "date": "2026-08-20",
-          "adversaire": "QRM",
+          "date": "2026-09-19",
+          "adversaire": "US THIONVILLE LUSITANOS",
           "domicile": true,
-          "situation": "menait 2 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "4284fe5e-cccd-44c7-a625-c71e75b89623",
-      "prenom": "Lilian",
-      "nom": "Fournier",
-      "club": "Angoulême Charente FC",
-      "niveau": "N1",
-      "poste": "ailier_droit",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-09-12",
-          "adversaire": "TARBES PF",
-          "domicile": false,
           "situation": "était mené 1 but(s)",
-          "resultat": "victoire",
-          "points": 1
-        },
-        {
-          "date": "2026-09-12",
-          "adversaire": "TARBES PF",
-          "domicile": false,
-          "situation": "était mené 1 but(s)",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
-      "prenom": "Morgan",
-      "nom": "Barbier",
-      "club": "FC Montlouis",
-      "niveau": "N1",
-      "poste": "attaquant",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-08-22",
-          "adversaire": "US CHANTILLY",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "nul",
-          "points": 1
-        },
-        {
-          "date": "2026-08-22",
-          "adversaire": "US CHANTILLY",
-          "domicile": false,
-          "situation": "à égalité",
           "resultat": "nul",
           "points": 1
         }
       ]
     },
     {
-      "id": "c7e00fe4-afe1-4fd4-842e-a723ea542afd",
-      "prenom": "Lucas",
-      "nom": "Rosier",
-      "club": "US Concarneau",
+      "id": "a7b216af-f55e-4e8c-809a-a7096bc29538",
+      "prenom": "Alexis",
+      "nom": "Gouletquer",
+      "club": "US Thionville Lusitanos",
       "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-19",
+          "adversaire": "FC FLEURY 91",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "cdd7d292-78a6-410f-a6e4-3d8be9afc8ec",
+      "prenom": "Josué",
+      "nom": "Kimboma",
+      "club": "SM Caen",
+      "niveau": "Ligue 3",
+      "poste": "milieu_defensif",
       "points": 1,
       "contributions": [
         {
           "date": "2026-09-12",
-          "adversaire": "SC AUBAGNE AIR BEL",
-          "domicile": false,
-          "situation": "était mené 1 but(s)",
+          "adversaire": "PARIS 13 ATLETICO",
+          "domicile": true,
+          "situation": "menait de 1 but",
           "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
+      "prenom": "Félix",
+      "nom": "Tomi",
+      "club": "SC Bastia",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-08-20",
+          "adversaire": "FC VERSAILLES",
+          "domicile": true,
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
@@ -153,19 +156,46 @@
       ]
     },
     {
-      "id": "cdd7d292-78a6-410f-a6e4-3d8be9afc8ec",
-      "prenom": "Josué",
-      "nom": "Kimboma",
-      "club": "SM Caen",
+      "id": "d0c00a8a-5dfd-4d58-823c-ade76f18e2e2",
+      "prenom": "Mathis",
+      "nom": "Colin",
+      "club": "Amiens SC",
       "niveau": "Ligue 3",
-      "poste": "milieu_defensif",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-19",
+          "adversaire": "US ORLEANS",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        },
+        {
+          "date": "2026-09-05",
+          "adversaire": "SC BASTIA",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "c7e00fe4-afe1-4fd4-842e-a723ea542afd",
+      "prenom": "Lucas",
+      "nom": "Rosier",
+      "club": "US Concarneau",
+      "niveau": "Ligue 3",
+      "poste": "ailier_gauche",
       "points": 1,
       "contributions": [
         {
           "date": "2026-09-12",
-          "adversaire": "PARIS 13 ATLETICO",
-          "domicile": true,
-          "situation": "menait de 1 but",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
+          "situation": "était mené 1 but(s)",
           "resultat": "victoire",
           "points": 1
         }
@@ -248,40 +278,40 @@
       ]
     },
     {
-      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
-      "prenom": "Félix",
-      "nom": "Tomi",
-      "club": "SC Bastia",
+      "id": "39c03926-e254-4bda-a209-d5c5d8ef9720",
+      "prenom": "Melvin",
+      "nom": "Borne",
+      "club": "FC Rouen 1899",
       "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
+      "poste": "lateral_gauche",
+      "points": 0,
       "contributions": [
         {
-          "date": "2026-08-20",
-          "adversaire": "FC VERSAILLES",
-          "domicile": true,
-          "situation": "était mené 2 but(s)",
-          "resultat": "defaite",
-          "points": 1
+          "date": "2026-09-12",
+          "adversaire": "US THIONVILLE LUSITANOS",
+          "domicile": false,
+          "situation": "menait 3 but(s)",
+          "resultat": "victoire",
+          "points": 0
         }
       ]
     },
     {
-      "id": "2f040f60-1fc5-4d8b-a23a-5a454e25841d",
-      "prenom": "Marvin",
-      "nom": "Emmanuel",
-      "club": "Le Puy-en-Velay FC",
+      "id": "5aa0139d-fb4e-4dc4-9054-aca4a213752a",
+      "prenom": "Sory",
+      "nom": "Traoré",
+      "club": "FC Rouen 1899",
       "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
+      "poste": "ailier_droit",
+      "points": 0,
       "contributions": [
         {
-          "date": "2026-08-07",
-          "adversaire": "SC BASTIA",
-          "domicile": false,
-          "situation": "menait de 1 but",
+          "date": "2026-08-20",
+          "adversaire": "QRM",
+          "domicile": true,
+          "situation": "menait 2 but(s)",
           "resultat": "victoire",
-          "points": 1
+          "points": 0
         }
       ]
     },
@@ -324,17 +354,17 @@
       ]
     },
     {
-      "id": "d0c00a8a-5dfd-4d58-823c-ade76f18e2e2",
-      "prenom": "Mathis",
-      "nom": "Colin",
-      "club": "Amiens SC",
+      "id": "5021bc96-5f99-4493-af25-f3e832f3e592",
+      "prenom": "Brice",
+      "nom": "Oggad",
+      "club": "AS Cannes",
       "niveau": "Ligue 3",
-      "poste": "attaquant",
+      "poste": "ailier_droit",
       "points": 0,
       "contributions": [
         {
           "date": "2026-09-05",
-          "adversaire": "SC BASTIA",
+          "adversaire": "FC VERSAILLES",
           "domicile": false,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
@@ -381,91 +411,26 @@
       ]
     },
     {
-      "id": "39c03926-e254-4bda-a209-d5c5d8ef9720",
-      "prenom": "Melvin",
-      "nom": "Borne",
-      "club": "FC Rouen 1899",
-      "niveau": "Ligue 3",
-      "poste": "lateral_gauche",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-12",
-          "adversaire": "US THIONVILLE LUSITANOS",
-          "domicile": false,
-          "situation": "menait 3 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "5021bc96-5f99-4493-af25-f3e832f3e592",
-      "prenom": "Brice",
-      "nom": "Oggad",
-      "club": "AS Cannes",
-      "niveau": "Ligue 3",
-      "poste": "ailier_droit",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC VERSAILLES",
-          "domicile": false,
-          "situation": "menait 2 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "1e1b42ce-8da4-4831-9347-fc7c7bacee4a",
-      "prenom": "Sébastien",
-      "nom": "da Silva",
-      "club": "AS Furiani-Agliani",
-      "niveau": "N1",
-      "poste": "attaquant",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-12",
-          "adversaire": "US CHANTILLY",
-          "domicile": false,
-          "situation": "menait 3 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        },
-        {
-          "date": "2026-09-12",
-          "adversaire": "US CHANTILLY",
-          "domicile": false,
-          "situation": "menait 3 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "facb4368-fe16-4a52-b9a3-a9bc2ee2213c",
-      "prenom": "Victor",
-      "nom": "Glaentzlin",
-      "club": "SAS Épinal",
+      "id": "10a3b367-ce86-4eec-9736-419d976bf847",
+      "prenom": "Marius",
+      "nom": "Reymond",
+      "club": "Sporting Club de Toulon",
       "niveau": "N1",
       "poste": "attaquant",
       "points": 0,
       "contributions": [
         {
           "date": "2026-09-05",
-          "adversaire": "US CHANTILLY",
-          "domicile": true,
+          "adversaire": "CANET ROUSSILLON FC",
+          "domicile": false,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
         },
         {
           "date": "2026-09-05",
-          "adversaire": "US CHANTILLY",
-          "domicile": true,
+          "adversaire": "CANET ROUSSILLON FC",
+          "domicile": false,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
