@@ -298,13 +298,28 @@ let inserted = 0, skipped = 0, errors = 0;
 // Une seule lecture pour toute la journée (au lieu d'une requête par match) :
 // permet le rapprochement flou par club, moins fragile qu'une égalité
 // stricte sur des noms qui peuvent varier d'une source à l'autre.
+//
+// Filtrer sur journee (et non date_match) : la légende de date de la page
+// lequipe.fr n'est lue qu'UNE fois (le premier `.caption--small` trouvé) et
+// appliquée à tous les matchs de la journée, alors qu'une journée s'étale
+// souvent sur plusieurs jours (vendredi/samedi/dimanche) — la plupart des
+// matchs se retrouvaient donc estampillés avec une date légèrement fausse.
+// Comme calendrier_officiel_id existant peut aussi avoir une date théorique
+// différente de la date réellement jouée (report, changement d'horaire),
+// filtrer sur date_match faisait manquer la ligne déjà existante et créait
+// un doublon à CHAQUE run pour la quasi-totalité des matchs des journées
+// récentes, dans toutes les divisions (constaté via diagnostic-matchs-
+// jamais-synchronises-toutes-divisions.js : 152 matchs sur 425 sans aucune
+// stat synchronisée, presque tous en doublon calendrier). Le numéro de
+// journée identifie de façon fiable le bon match aller/retour, indépendamment
+// de la date exacte.
 const { data: existants, error: existantsErr } = await supabase
   .from('calendrier_officiel')
   .select('id, equipe_domicile, equipe_exterieur')
   .eq('division', division)
   .eq('groupe', groupe)
   .eq('saison', saison)
-  .eq('date_match', dateMatch);
+  .eq('journee', journee);
 if (existantsErr) {
   console.error(`Erreur lecture des matchs existants : ${existantsErr.message}`);
   process.exit(1);
