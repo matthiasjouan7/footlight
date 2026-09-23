@@ -273,18 +273,40 @@ console.log(`${matchsAsynchroniser.length} match(s) à synchroniser ce run (limi
 // de chaque club), pas par position.
 async function parserPageMatchTransfermarkt(pageMatch) {
   const compositionsToutes = await pageMatch.evaluate(() => {
-    return [...document.querySelectorAll('table')].map((t) => {
+    const resultats = [];
+    // Méthode principale (vérifiée en pratique, cf. diagnostic-formation-
+    // transfermarkt.js / diagnostic-structure-page-transfermarkt.js sur le
+    // match Sablé-Alençon) : chaque équipe a un conteneur .aufstellung-box
+    // regroupant à la fois le schéma de terrain des 11 titulaires (noms
+    // dans des <span class="formation-number-name"><a>, PAS dans une
+    // <table> — un schéma en divs positionnés sur une image de terrain) et
+    // le banc de remplaçants (<table class="ersatzbank">, dont les lignes
+    // ont 3 colonnes [numéro, nom, poste] et non 2, ce qui faisait échouer
+    // l'ancienne extraction basée sur `l.length === 2`). Se fier au lien
+    // /profil/spieler/ (identifiant fiable d'un joueur chez Transfermarkt,
+    // quelle que soit la structure de la ligne/cellule qui le contient)
+    // plutôt qu'à un nombre de colonnes suppose évite les deux problèmes
+    // d'un coup et fonctionne pour le titulaire ET le remplaçant.
+    for (const box of document.querySelectorAll('.aufstellung-box')) {
+      const noms = [...box.querySelectorAll('a[href*="/profil/spieler/"]')].map((a) => (a.textContent || '').trim()).filter(Boolean);
+      if (noms.length) resultats.push(noms);
+    }
+    // Repli (ancien comportement, conservé pour les pages qui n'auraient
+    // pas de .aufstellung-box mais présenteraient encore une composition
+    // sous forme de <table> à 2 colonnes) : détecterCompositions() filtre
+    // de toute façon sur >= 5 noms et vote par correspondance de joueurs
+    // connus, donc des tableaux candidats en plus ne faussent rien.
+    for (const t of document.querySelectorAll('table')) {
       const lignes = [...t.querySelectorAll('tr')].map((tr) => [...tr.querySelectorAll('td,th')].map((td) => (td.textContent || '').trim()));
       const joueurs = [];
       for (const l of lignes) {
-        // Exclut la ligne "Manager" (entraîneur, pas un joueur) du tableau
-        // ÉQUIPES — sinon traité à tort comme une entrée de composition.
         if (l.length === 2 && l[1] && !['Officielle', 'Probable'].includes(l[1]) && !['Manager', 'Entraîneur', 'Entraineur'].includes(l[0])) {
           for (const nom of l[1].split(',').map((s) => s.trim()).filter(Boolean)) joueurs.push(nom);
         }
       }
-      return joueurs;
-    });
+      if (joueurs.length) resultats.push(joueurs);
+    }
+    return resultats;
   });
 
   const nomsEquipes = await pageMatch.evaluate(() => {
