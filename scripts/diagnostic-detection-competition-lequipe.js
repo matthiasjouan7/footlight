@@ -21,8 +21,10 @@ const HEADERS_LEQUIPE = {
 
 const URLS = [
   'https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats',
+  'https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats',
+  'https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats',
+  'https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats',
   'https://www.lequipe.fr/Football/national-2-groupe-d/page-calendrier-resultats',
-  'https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats',
 ];
 
 for (const url of URLS) {
@@ -38,7 +40,11 @@ for (const url of URLS) {
     continue;
   }
   console.log(`Statut HTTP : ${res.status} ${res.statusText} — redirigé : ${res.redirected} — url finale : ${res.url}`);
-  if (!res.ok) { console.log('Réponse non-ok, detecterCompetition() retourne null ici.'); continue; }
+  if (!res.ok) {
+    const corpsErreur = await res.text().catch(() => '');
+    console.log(`Réponse non-ok, detecterCompetition() retourne null ici. Corps (300 premiers car.) : ${corpsErreur.slice(0, 300).replace(/\s+/g, ' ')}`);
+    continue;
+  }
   const html = await res.text();
   console.log(`Taille HTML reçue : ${html.length} caractères.`);
   const $ = cheerio.load(html);
