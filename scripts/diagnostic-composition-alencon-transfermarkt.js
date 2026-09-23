@@ -17,23 +17,31 @@ const NB_JOURNEES = 3;
 const browser = await chromium.launch();
 const page = await browser.newPage({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' });
 
-// Repère les URLs des matchs d'Alençon sur les 3 premières journées, comme
-// le fait le script de synchro.
-const urlsAlencon = [];
+// Repère les URLs des matchs sur les 3 premières journées EXACTEMENT comme
+// le fait le script de synchro (sync-transfermarkt-match-stats-n2.js) :
+// la page de journée ne donne que les liens spielbericht, pas les noms de
+// club en clair — il faut visiter chaque page de match et lire son
+// <title> pour connaître domicile/extérieur.
+const toutesUrls = [];
 for (let journee = 1; journee <= NB_JOURNEES; journee++) {
   const urlJournee = `https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/${WETTBEWERB}/saison_id/${SAISON_ID_TM}/spieltag/${journee}`;
   await page.goto(urlJournee, { waitUntil: 'networkidle', timeout: 45000 });
-  const liens = await page.evaluate(() => [...document.querySelectorAll('a[href*="/spielbericht/index/spielbericht/"]')].map((a) => ({ href: a.getAttribute('href'), texte: a.closest('tr')?.textContent?.trim().slice(0, 200) || '' })));
-  const uniques = [...new Map(liens.map((l) => [l.href, l])).values()];
-  const match = uniques.find((l) => /alen[cç]on/i.test(l.texte));
-  if (match) urlsAlencon.push({ journee, url: `https://www.transfermarkt.fr${match.href}`, contexte: match.texte });
-  console.log(`Journée ${journee} : ${uniques.length} lien(s) de match trouvé(s), Alençon ${match ? 'trouvé' : 'NON trouvé'}.`);
+  const hrefs = await page.evaluate(() => [...new Set([...document.querySelectorAll('a[href*="/spielbericht/index/spielbericht/"]')].map((a) => a.getAttribute('href')))]);
+  console.log(`Journée ${journee} : ${hrefs.length} lien(s) de match trouvé(s).`);
+  for (const href of hrefs) toutesUrls.push({ journee, url: `https://www.transfermarkt.fr${href}` });
 }
-console.log(`\n${urlsAlencon.length} match(s) Alençon identifié(s) sur ${NB_JOURNEES} journées.\n`);
 
-for (const { journee, url, contexte } of urlsAlencon) {
+const urlsAlencon = [];
+for (const { journee, url } of toutesUrls) {
+  await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 });
+  const titre = await page.title();
+  if (/alen[cç]on/i.test(titre)) urlsAlencon.push({ journee, url, titre });
+}
+console.log(`\n${urlsAlencon.length} match(s) Alençon identifié(s) sur ${NB_JOURNEES} journées (via <title>, comme le script de synchro).\n`);
+
+for (const { journee, url, titre } of urlsAlencon) {
   console.log(`\n========== Journée ${journee} : ${url} ==========`);
-  console.log(`Contexte ligne calendrier Transfermarkt : "${contexte}"`);
+  console.log(`<title> : "${titre}"`);
   await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 });
   await page.waitForTimeout(500);
 
