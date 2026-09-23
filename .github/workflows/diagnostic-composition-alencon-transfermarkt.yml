@@ -1,0 +1,22 @@
+name: Diagnostic compositions Transfermarkt Alençon (N2 groupe B)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+      - name: Diagnostic
+        working-directory: scripts
+        run: node diagnostic-composition-alencon-transfermarkt.js
