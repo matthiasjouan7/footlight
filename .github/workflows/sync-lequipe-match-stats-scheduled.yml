@@ -16,23 +16,6 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        url:
-          # Mêmes compétitions que sync-lequipe-scheduled.yml.
-          - "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-a/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-b/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-c/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-d/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-e/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-f/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-g/page-calendrier-resultats"
-          - "https://www.lequipe.fr/Football/national-2-groupe-h/page-calendrier-resultats"
     steps:
       - uses: actions/checkout@v4
 
@@ -44,10 +27,36 @@ jobs:
         working-directory: scripts
         run: npm install
 
-      - name: Rapprocher et synchroniser les stats (toutes les journées jouées)
+      # Compétitions traitées SÉQUENTIELLEMENT dans un seul job (et non en
+      # matrice parallèle comme avant) : des requêtes simultanées contre
+      # lequipe.fr depuis plusieurs runners GitHub Actions déclenchent son
+      # blocage CDN ("Access Denied", cf. diagnostic-detection-competition-
+      # lequipe.js) beaucoup plus souvent qu'une requête à la fois — même
+      # constat déjà fait et corrigé pour sync-transfermarkt-match-stats-n2
+      # (voir son commentaire). `|| echo` sur chaque itération pour qu'un
+      # blocage ponctuel sur une compétition n'interrompe pas les suivantes.
+      - name: Rapprocher et synchroniser les stats (toutes les journées jouées, séquentiel)
         working-directory: scripts
         env:
-          COMPETITION_URL: ${{ matrix.url }}
           DRY_RUN: "false"
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node sync-lequipe-match-stats-auto.js
+        run: |
+          URLS=(
+            "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-2-groupe-a/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-2-groupe-b/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-2-groupe-c/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-2-groupe-d/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-2-groupe-e/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-2-groupe-f/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-2-groupe-g/page-calendrier-resultats"
+            "https://www.lequipe.fr/Football/national-2-groupe-h/page-calendrier-resultats"
+          )
+          for URL in "${URLS[@]}"; do
+            echo "########## $URL ##########"
+            COMPETITION_URL="$URL" node sync-lequipe-match-stats-auto.js || echo "Échec pour $URL, on continue avec la suivante."
+            sleep 5
+          done
