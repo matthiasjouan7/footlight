@@ -252,10 +252,17 @@ async function syncJournee(url, supabase) {
   console.log(`  ${matchs.length} match(s) trouvé(s) sur la page.`);
   if (!matchs.length) return { inserted: 0, skipped: 0, errors: 0 };
 
+  // Filtrer sur journee (et non date_match) : la date scrapée est lue une
+  // seule fois par page et appliquée à tous les matchs de la journée, alors
+  // qu'une journée s'étale souvent sur plusieurs jours — et la date théorique
+  // déjà en base peut différer de la date réellement jouée (report). Filtrer
+  // sur date_match faisait manquer la ligne existante et créait un doublon
+  // à chaque run (même bug que sync-lequipe-to-calendrier.js, à garder
+  // synchronisé avec ce correctif).
   const { data: existants, error: existantsErr } = await supabase
     .from('calendrier_officiel')
     .select('id, equipe_domicile, equipe_exterieur')
-    .eq('division', division).eq('groupe', groupe).eq('saison', saison).eq('date_match', dateMatch);
+    .eq('division', division).eq('groupe', groupe).eq('saison', saison).eq('journee', journee);
   if (existantsErr) { console.error(`  Erreur lecture existants : ${existantsErr.message}`); return { erreur: true }; }
 
   let inserted = 0, skipped = 0, errors = 0;
