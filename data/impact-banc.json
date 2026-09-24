@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-09-23T12:33:51.676Z",
+  "updated_at": "2026-09-24T12:34:41.560Z",
   "joueurs": [
     {
       "id": "a2b77657-62f3-4b50-bcc4-a097eaacacd8",
@@ -142,6 +142,25 @@
       ]
     },
     {
+      "id": "cdd7d292-78a6-410f-a6e4-3d8be9afc8ec",
+      "prenom": "Josué",
+      "nom": "Kimboma",
+      "club": "SM Caen",
+      "niveau": "Ligue 3",
+      "poste": "milieu_defensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-12",
+          "adversaire": "PARIS 13 ATLETICO",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "d7924d37-d5c1-4d41-b6a5-1b331a60e340",
       "prenom": "Nadir",
       "nom": "Homssa",
@@ -154,7 +173,7 @@
           "date": "2026-09-19",
           "adversaire": "US THIONVILLE LUSITANOS",
           "domicile": true,
-          "situation": "à égalité",
+          "situation": "était mené 1 but(s)",
           "resultat": "nul",
           "points": 1
         }
@@ -174,6 +193,25 @@
           "adversaire": "FC FLEURY 91",
           "domicile": false,
           "situation": "à égalité",
+          "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
+      "prenom": "Enzo",
+      "nom": "Montet",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "milieu_defensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "US CONCARNEAU",
+          "domicile": false,
+          "situation": "était mené 2 but(s)",
           "resultat": "nul",
           "points": 1
         }
@@ -207,58 +245,20 @@
       ]
     },
     {
-      "id": "cdd7d292-78a6-410f-a6e4-3d8be9afc8ec",
-      "prenom": "Josué",
-      "nom": "Kimboma",
-      "club": "SM Caen",
+      "id": "c7e00fe4-afe1-4fd4-842e-a723ea542afd",
+      "prenom": "Lucas",
+      "nom": "Rosier",
+      "club": "US Concarneau",
       "niveau": "Ligue 3",
-      "poste": "milieu_defensif",
+      "poste": "ailier_gauche",
       "points": 1,
       "contributions": [
         {
           "date": "2026-09-12",
-          "adversaire": "PARIS 13 ATLETICO",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
-      "prenom": "Félix",
-      "nom": "Tomi",
-      "club": "SC Bastia",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-20",
-          "adversaire": "FC VERSAILLES",
-          "domicile": true,
-          "situation": "était mené 2 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
-      "prenom": "Enzo",
-      "nom": "Montet",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "milieu_defensif",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "US CONCARNEAU",
+          "adversaire": "SC AUBAGNE AIR BEL",
           "domicile": false,
-          "situation": "était mené 2 but(s)",
-          "resultat": "nul",
+          "situation": "était mené 1 but(s)",
+          "resultat": "victoire",
           "points": 1
         }
       ]
@@ -302,25 +302,6 @@
       ]
     },
     {
-      "id": "4430d505-cfa4-43b2-8479-de0d56aaa648",
-      "prenom": "George",
-      "nom": "Morgan",
-      "club": "AS Cannes",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-08-14",
-          "adversaire": "FC FLEURY 91",
-          "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "45e05648-dc13-4a4c-95cc-65055f3d0bf5",
       "prenom": "Armand",
       "nom": "Gnanduillet",
@@ -340,20 +321,20 @@
       ]
     },
     {
-      "id": "c7e00fe4-afe1-4fd4-842e-a723ea542afd",
-      "prenom": "Lucas",
-      "nom": "Rosier",
-      "club": "US Concarneau",
+      "id": "d068cf6f-0eb0-48d9-8fe4-a3df0d0a32d2",
+      "prenom": "Félix",
+      "nom": "Tomi",
+      "club": "SC Bastia",
       "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
+      "poste": "attaquant",
       "points": 1,
       "contributions": [
         {
-          "date": "2026-09-12",
-          "adversaire": "SC AUBAGNE AIR BEL",
-          "domicile": false,
-          "situation": "était mené 1 but(s)",
-          "resultat": "victoire",
+          "date": "2026-08-20",
+          "adversaire": "FC VERSAILLES",
+          "domicile": true,
+          "situation": "était mené 2 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
@@ -372,44 +353,6 @@
           "adversaire": "US THIONVILLE LUSITANOS",
           "domicile": false,
           "situation": "menait 3 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "5dfa4b2e-d486-409a-bc25-55030b04136e",
-      "prenom": "Cyril",
-      "nom": "Khetir",
-      "club": "FC Fleury 91",
-      "niveau": "Ligue 3",
-      "poste": "milieu_central",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
-          "domicile": true,
-          "situation": "menait 4 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "7d3e8241-991c-4c1e-aeb8-1dabc3e06a94",
-      "prenom": "Clément",
-      "nom": "Badin",
-      "club": "FC Fleury 91",
-      "niveau": "Ligue 3",
-      "poste": "ailier_droit",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
-          "domicile": true,
-          "situation": "menait 4 but(s)",
           "resultat": "victoire",
           "points": 0
         }
@@ -467,6 +410,44 @@
           "adversaire": "FC VERSAILLES",
           "domicile": false,
           "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "5dfa4b2e-d486-409a-bc25-55030b04136e",
+      "prenom": "Cyril",
+      "nom": "Khetir",
+      "club": "FC Fleury 91",
+      "niveau": "Ligue 3",
+      "poste": "milieu_central",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
+          "domicile": true,
+          "situation": "menait 4 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "7d3e8241-991c-4c1e-aeb8-1dabc3e06a94",
+      "prenom": "Clément",
+      "nom": "Badin",
+      "club": "FC Fleury 91",
+      "niveau": "Ligue 3",
+      "poste": "ailier_droit",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
+          "domicile": true,
+          "situation": "menait 4 but(s)",
           "resultat": "victoire",
           "points": 0
         }
