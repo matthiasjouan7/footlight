@@ -25,22 +25,36 @@ const page = await browser.newPage({
 
 const resultats = [];
 
+// Signatures textuelles déjà observées pour un blocage confirmé (voir
+// diagnostic-captures-ecran-compositions.js) — permet un résumé texte
+// rapide (etat.json) sans avoir à ouvrir chaque capture à chaque
+// vérification ; en cas de doute ou de nouveau motif, la capture PNG reste
+// la source de vérité.
+function sembleBloque(statut, titre) {
+  if (statut === 403) return true;
+  const t = (titre || '').toLowerCase();
+  return t.includes('access denied') || t.includes('momentanément indisponible') || t.includes('moment donné') || t.includes('captcha');
+}
+
 async function capture(nom, url, options = {}) {
   console.log(`\n=== ${nom} ===`);
   console.log(`URL : ${url}`);
-  const entree = { nom, url, statut: null, titre: null, erreur: null };
+  const entree = { nom, url, statut: null, titre: null, erreur: null, bloque: null };
   try {
     const reponse = await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 });
     entree.statut = reponse ? reponse.status() : null;
     entree.titre = await page.title();
+    entree.bloque = sembleBloque(entree.statut, entree.titre);
     console.log(`Statut HTTP : ${entree.statut}`);
     console.log(`Titre de la page : "${entree.titre}"`);
+    console.log(`Semble bloqué : ${entree.bloque}`);
     if (options.attendre) await page.waitForTimeout(options.attendre);
     const chemin = `${DOSSIER}/${nom}.png`;
     await page.screenshot({ path: chemin, fullPage: true });
     console.log(`Capture enregistrée : ${chemin}`);
   } catch (e) {
     entree.erreur = e.message.split('\n')[0];
+    entree.bloque = true;
     console.log(`Erreur navigation : ${entree.erreur}`);
     try { await page.screenshot({ path: `${DOSSIER}/${nom}-erreur.png`, fullPage: true }); } catch {}
   }
@@ -78,7 +92,13 @@ await browser.close();
 
 console.log('\n=== Résumé ===');
 for (const r of resultats) {
-  const etat = r.erreur ? `ERREUR (${r.erreur})` : `statut=${r.statut}, titre="${r.titre}"`;
+  const etat = r.erreur ? `ERREUR (${r.erreur})` : `statut=${r.statut}, titre="${r.titre}", bloqué=${r.bloque}`;
   console.log(`  ${r.nom} : ${etat}`);
 }
+
+fs.writeFileSync(`${DOSSIER}/etat.json`, JSON.stringify({
+  genereLe: new Date().toISOString(),
+  resultats,
+}, null, 2));
+console.log(`\nÉtat écrit : ${DOSSIER}/etat.json`);
 console.log('\nTerminé.');
