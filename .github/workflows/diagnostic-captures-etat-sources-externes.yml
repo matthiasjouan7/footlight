@@ -2,6 +2,12 @@ name: Diagnostic captures d'écran (toutes sources externes)
 
 on:
   workflow_dispatch:
+  schedule:
+    # Toutes les 6h : les captures sur la branche diagnostic-captures sont
+    # ainsi déjà disponibles quand un blocage est signalé, sans avoir à
+    # déclencher le diagnostic puis attendre son exécution (Playwright +
+    # navigation ~2-3 min à chaque fois).
+    - cron: "15 */6 * * *"
 
 permissions:
   contents: write
