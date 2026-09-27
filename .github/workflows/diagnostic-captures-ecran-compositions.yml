@@ -31,3 +31,19 @@ jobs:
           name: captures-diagnostic
           path: scripts/captures/
           retention-days: 3
+
+      # En plus de l'artefact (dont le téléchargement direct n'est pas
+      # toujours accessible), pousse les captures sur une branche dédiée
+      # pour qu'elles restent lisibles via l'API GitHub (get_file_contents).
+      - name: Publier les captures sur la branche diagnostic-captures
+        run: |
+          cp -r scripts/captures /tmp/captures-a-publier
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan diagnostic-captures
+          git rm -rf . > /dev/null 2>&1 || true
+          rm -rf ./*
+          cp -r /tmp/captures-a-publier/* .
+          git add -A
+          git commit -m "Captures diagnostic $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push --force origin diagnostic-captures
