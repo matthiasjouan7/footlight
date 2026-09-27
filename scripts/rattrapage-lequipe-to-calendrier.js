@@ -152,6 +152,13 @@ const CLUB_SYNONYMES_COMPLETS = {
   // synonyme, chaque journée impliquant ce club crée un doublon calendrier
   // (constaté : calendrier_officiel_id=3503 en double de id=2814).
   'gfa rv': { mots: ['rumilly', 'vallieres'], elargi: false },
+  // "Et.S. Fosseenne 1" (officiel, N2 groupe G) / "Fos-sur-Mer" (lequipe.fr)
+  // — "Fosséenne" est le démonyme de Fos-sur-Mer ; une fois la ponctuation
+  // du sigle "Et.S." éclatée en mots isolés ("et", "s"), plus aucun mot en
+  // commun avec le nom court. Sans ce synonyme, chaque journée impliquant
+  // ce club crée un doublon calendrier (constaté : calendrier_officiel_id
+  // 3489 et 3512, doublons de 1587 et 1603).
+  'et fosseenne s': { mots: ['fos', 'mer'], elargi: false },
 };
 const CLUB_PAIRES_DISTINCTES = new Set([
   ['apm metz', 'metz'].sort().join('|'),
