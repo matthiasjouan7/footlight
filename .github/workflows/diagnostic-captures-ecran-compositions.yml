@@ -1,0 +1,33 @@
+name: Diagnostic captures d'écran (lequipe.fr / Transfermarkt, N2 groupe D)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances
+        working-directory: scripts
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Capturer
+        working-directory: scripts
+        run: node diagnostic-captures-ecran-compositions.js
+
+      - name: Publier les captures
+        uses: actions/upload-artifact@v4
+        with:
+          name: captures-diagnostic
+          path: scripts/captures/
+          retention-days: 3
