@@ -159,6 +159,14 @@ const CLUB_SYNONYMES_COMPLETS = {
   // ce club crée un doublon calendrier (constaté : calendrier_officiel_id
   // 3489 et 3512, doublons de 1587 et 1603).
   'et fosseenne s': { mots: ['fos', 'mer'], elargi: false },
+  // "Sbfc 1" (officiel, N2 groupe G, sigle FFF de "Stade Beaucairois 30",
+  // via le remplacement sbfc->beaucairois utilisé aussi pour rapprocher la
+  // fiche joueur) / "Beaucaire" (lequipe.fr) — "beaucairois" n'est pas un
+  // simple préfixe de "beaucaire" (9e lettre différente : o/e), motsProches
+  // échoue. Sans ce synonyme, chaque journée impliquant ce club crée un
+  // doublon calendrier (constaté : calendrier_officiel_id=3516, doublon de
+  // 1611).
+  beaucairois: { mots: ['beaucaire'], elargi: false },
 };
 const CLUB_PAIRES_DISTINCTES = new Set([
   ['apm metz', 'metz'].sort().join('|'),

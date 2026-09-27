@@ -177,6 +177,14 @@ const CLUB_SYNONYMES_COMPLETS_STATS = {
   // sont jamais rapprochées à leur ligne calendrier_officiel (constaté :
   // id=1587 et 1603 restés à 0 minute synchronisée).
   'et fosseenne s': { mots: ['fos', 'mer'], elargi: false },
+  // "Sbfc 1" (officiel, N2 groupe G, sigle FFF de "Stade Beaucairois 30",
+  // via le remplacement sbfc->beaucairois utilisé aussi pour rapprocher la
+  // fiche joueur) / "Beaucaire" (lequipe.fr) — "beaucairois" n'est pas un
+  // simple préfixe de "beaucaire" (9e lettre différente : o/e), motsProches
+  // échoue. Sans ce synonyme, chaque journée impliquant ce club crée un
+  // doublon calendrier (constaté : calendrier_officiel_id=3516, doublon de
+  // 1611).
+  beaucairois: { mots: ['beaucaire'], elargi: false },
 };
 function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean);
