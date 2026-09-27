@@ -170,6 +170,13 @@ const CLUB_SYNONYMES_COMPLETS_STATS = {
   // synonyme, les stats de ce club ne sont jamais rapprochées à leur ligne
   // calendrier_officiel (constaté : id=2814 resté à 0 minute synchronisée).
   'gfa rv': { mots: ['rumilly', 'vallieres'], elargi: false },
+  // "Et.S. Fosseenne 1" (officiel, N2 groupe G) / "Fos-sur-Mer" (lequipe.fr)
+  // — "Fosséenne" est le démonyme de Fos-sur-Mer ; une fois la ponctuation
+  // du sigle "Et.S." éclatée en mots isolés ("et", "s"), plus aucun mot en
+  // commun avec le nom court. Sans ce synonyme, les stats de ce club ne
+  // sont jamais rapprochées à leur ligne calendrier_officiel (constaté :
+  // id=1587 et 1603 restés à 0 minute synchronisée).
+  'et fosseenne s': { mots: ['fos', 'mer'], elargi: false },
 };
 function motsClub(s) {
   const mots = normaliserClub(s).split(' ').filter(Boolean);
