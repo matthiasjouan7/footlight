@@ -3,6 +3,9 @@ name: Diagnostic captures d'écran (lequipe.fr / Transfermarkt, N2 groupe D)
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   diag:
     runs-on: ubuntu-latest
