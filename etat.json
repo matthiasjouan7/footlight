@@ -1,0 +1,229 @@
+{
+  "genereLe": "2026-10-03T16:17:22.468Z",
+  "resultats": [
+    {
+      "nom": "lequipe-n1-groupe-a",
+      "url": "https://www.lequipe.fr/Football/national-1-groupe-a/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n1-groupe-b",
+      "url": "https://www.lequipe.fr/Football/national-1-groupe-b/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n1-groupe-c",
+      "url": "https://www.lequipe.fr/Football/national-1-groupe-c/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-ligue-3",
+      "url": "https://www.lequipe.fr/Football/ligue-3/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n2-groupe-a",
+      "url": "https://www.lequipe.fr/Football/national-2-groupe-a/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n2-groupe-b",
+      "url": "https://www.lequipe.fr/Football/national-2-groupe-b/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n2-groupe-c",
+      "url": "https://www.lequipe.fr/Football/national-2-groupe-c/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n2-groupe-d",
+      "url": "https://www.lequipe.fr/Football/national-2-groupe-d/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n2-groupe-e",
+      "url": "https://www.lequipe.fr/Football/national-2-groupe-e/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n2-groupe-f",
+      "url": "https://www.lequipe.fr/Football/national-2-groupe-f/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n2-groupe-g",
+      "url": "https://www.lequipe.fr/Football/national-2-groupe-g/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "lequipe-n2-groupe-h",
+      "url": "https://www.lequipe.fr/Football/national-2-groupe-h/page-calendrier-resultats",
+      "statut": 403,
+      "titre": "Access Denied",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "transfermarkt-n2-groupe-a",
+      "url": "https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5A/saison_id/2026/spieltag/1",
+      "statut": 202,
+      "titre": "Human Verification",
+      "erreur": null,
+      "bloque": false
+    },
+    {
+      "nom": "transfermarkt-n2-groupe-b",
+      "url": "https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5B/saison_id/2026/spieltag/1",
+      "statut": 405,
+      "titre": "Human Verification",
+      "erreur": null,
+      "bloque": false
+    },
+    {
+      "nom": "transfermarkt-n2-groupe-c",
+      "url": "https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5C/saison_id/2026/spieltag/1",
+      "statut": 405,
+      "titre": "Human Verification",
+      "erreur": null,
+      "bloque": false
+    },
+    {
+      "nom": "transfermarkt-n2-groupe-d",
+      "url": "https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5D/saison_id/2026/spieltag/1",
+      "statut": 405,
+      "titre": "Human Verification",
+      "erreur": null,
+      "bloque": false
+    },
+    {
+      "nom": "transfermarkt-n2-groupe-e",
+      "url": "https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5E/saison_id/2026/spieltag/1",
+      "statut": 405,
+      "titre": "Human Verification",
+      "erreur": null,
+      "bloque": false
+    },
+    {
+      "nom": "transfermarkt-n2-groupe-f",
+      "url": "https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5F/saison_id/2026/spieltag/1",
+      "statut": 405,
+      "titre": "Human Verification",
+      "erreur": null,
+      "bloque": false
+    },
+    {
+      "nom": "transfermarkt-n2-groupe-g",
+      "url": "https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5G/saison_id/2026/spieltag/1",
+      "statut": 405,
+      "titre": "Human Verification",
+      "erreur": null,
+      "bloque": false
+    },
+    {
+      "nom": "transfermarkt-n2-groupe-h",
+      "url": "https://www.transfermarkt.fr/national-2/spieltag/wettbewerb/FR5H/saison_id/2026/spieltag/1",
+      "statut": 405,
+      "titre": "Human Verification",
+      "erreur": null,
+      "bloque": false
+    },
+    {
+      "nom": "fff-n2-groupe-a",
+      "url": "https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/1/resultats-et-calendrier",
+      "statut": 403,
+      "titre": "Fédération française de football",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "fff-n2-groupe-b",
+      "url": "https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/2/resultats-et-calendrier",
+      "statut": 403,
+      "titre": "Fédération française de football",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "fff-n2-groupe-c",
+      "url": "https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/3/resultats-et-calendrier",
+      "statut": 403,
+      "titre": "Fédération française de football",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "fff-n2-groupe-d",
+      "url": "https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/4/resultats-et-calendrier",
+      "statut": 403,
+      "titre": "Fédération française de football",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "fff-n2-groupe-e",
+      "url": "https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/5/resultats-et-calendrier",
+      "statut": 403,
+      "titre": "Fédération française de football",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "fff-n2-groupe-f",
+      "url": "https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/6/resultats-et-calendrier",
+      "statut": 403,
+      "titre": "Fédération française de football",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "fff-n2-groupe-g",
+      "url": "https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/7/resultats-et-calendrier",
+      "statut": 403,
+      "titre": "Fédération française de football",
+      "erreur": null,
+      "bloque": true
+    },
+    {
+      "nom": "fff-n2-groupe-h",
+      "url": "https://epreuves.fff.fr/competition/engagement/3-n2/phase/1/8/resultats-et-calendrier",
+      "statut": 403,
+      "titre": "Fédération française de football",
+      "erreur": null,
+      "bloque": true
+    }
+  ]
+}
