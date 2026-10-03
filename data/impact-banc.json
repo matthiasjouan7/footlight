@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-10-02T13:31:25.863Z",
+  "updated_at": "2026-10-03T12:14:50.013Z",
   "joueurs": [
     {
       "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
@@ -27,6 +27,33 @@
           "date": "2026-09-05",
           "adversaire": "Châteauroux",
           "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        }
+      ]
+    },
+    {
+      "id": "cde193ed-ebd7-4f97-911b-cc99782b381e",
+      "prenom": "Frédéric",
+      "nom": "Loki",
+      "club": "Stade Briochin",
+      "niveau": "N1",
+      "poste": "milieu_central",
+      "points": 6,
+      "contributions": [
+        {
+          "date": "2026-09-19",
+          "adversaire": "SAUMUR OFC",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-09-19",
+          "adversaire": "SAUMUR OFC",
+          "domicile": false,
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
@@ -61,28 +88,66 @@
       ]
     },
     {
-      "id": "dcc7ebbf-da29-4fc5-8bcd-89b336672e3e",
-      "prenom": "Omar",
-      "nom": "Benyounes",
-      "club": "Lyon - La Duchère",
+      "id": "3a8cf382-e216-49d0-86d8-875adb70ae18",
+      "prenom": "Noah",
+      "nom": "Adekalom",
+      "club": "US Avranches",
       "niveau": "N1",
-      "poste": "ailier_droit",
+      "poste": "ailier_gauche",
       "points": 2,
       "contributions": [
         {
-          "date": "2026-09-19",
-          "adversaire": "SPORTING CLUB TOULON",
-          "domicile": true,
-          "situation": "menait de 1 but",
+          "date": "2026-09-04",
+          "adversaire": "Les Herbiers",
+          "domicile": false,
+          "situation": "était mené 1 but(s)",
           "resultat": "victoire",
           "points": 1
         },
         {
-          "date": "2026-09-19",
-          "adversaire": "SPORTING CLUB TOULON",
-          "domicile": true,
-          "situation": "menait de 1 but",
+          "date": "2026-09-04",
+          "adversaire": "Les Herbiers",
+          "domicile": false,
+          "situation": "était mené 1 but(s)",
           "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "e50df0c5-f81f-4e76-9f4c-efea8d94002d",
+      "prenom": "Nassim",
+      "nom": "Sabihi",
+      "club": "FC Villefranche Beaujolais",
+      "niveau": "Ligue 3",
+      "poste": "ailier gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "FC FLEURY 91",
+          "domicile": false,
+          "situation": "était mené 4 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "01f12cf3-c4e3-4d5a-9def-9680c868c50a",
+      "prenom": "Fred",
+      "nom": "Ondoa Onambele",
+      "club": "FC Villefranche Beaujolais",
+      "niveau": "Ligue 3",
+      "poste": "lateral_gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "FC FLEURY 91",
+          "domicile": false,
+          "situation": "était mené 3 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
@@ -145,44 +210,6 @@
       ]
     },
     {
-      "id": "e50df0c5-f81f-4e76-9f4c-efea8d94002d",
-      "prenom": "Nassim",
-      "nom": "Sabihi",
-      "club": "FC Villefranche Beaujolais",
-      "niveau": "Ligue 3",
-      "poste": "ailier gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC FLEURY 91",
-          "domicile": false,
-          "situation": "était mené 4 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "01f12cf3-c4e3-4d5a-9def-9680c868c50a",
-      "prenom": "Fred",
-      "nom": "Ondoa Onambele",
-      "club": "FC Villefranche Beaujolais",
-      "niveau": "Ligue 3",
-      "poste": "lateral_gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC FLEURY 91",
-          "domicile": false,
-          "situation": "était mené 3 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "5021bc96-5f99-4493-af25-f3e832f3e592",
       "prenom": "Brice",
       "nom": "Oggad",
@@ -214,25 +241,6 @@
           "date": "2026-09-05",
           "adversaire": "SC BASTIA",
           "domicile": false,
-          "situation": "menait 2 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "5aa0139d-fb4e-4dc4-9054-aca4a213752a",
-      "prenom": "Sory",
-      "nom": "Traoré",
-      "club": "FC Rouen 1899",
-      "niveau": "Ligue 3",
-      "poste": "ailier_droit",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-08-20",
-          "adversaire": "QRM",
-          "domicile": true,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
