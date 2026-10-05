@@ -4,32 +4,48 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-10-04T13:05:39.148Z",
+  "updated_at": "2026-10-05T15:31:56.442Z",
   "joueurs": [
     {
-      "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
-      "prenom": "Aboubacar",
-      "nom": "Camara",
-      "club": "Union Foot de Touraine",
+      "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
+      "prenom": "Morgan",
+      "nom": "Barbier",
+      "club": "FC Montlouis",
       "niveau": "N1",
-      "poste": "ailier_droit",
-      "points": 6,
+      "poste": "attaquant",
+      "points": 8,
       "contributions": [
         {
-          "date": "2026-09-05",
-          "adversaire": "Châteauroux",
+          "date": "2026-10-03",
+          "adversaire": "ST PRYVE ST HILAIRE FC",
           "domicile": true,
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
         },
         {
-          "date": "2026-09-05",
-          "adversaire": "Châteauroux",
+          "date": "2026-10-03",
+          "adversaire": "ST PRYVE ST HILAIRE FC",
           "domicile": true,
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
+        },
+        {
+          "date": "2026-08-22",
+          "adversaire": "US CHANTILLY",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "nul",
+          "points": 1
+        },
+        {
+          "date": "2026-08-22",
+          "adversaire": "US CHANTILLY",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "nul",
+          "points": 1
         }
       ]
     },
@@ -115,27 +131,27 @@
       ]
     },
     {
-      "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
-      "prenom": "Morgan",
-      "nom": "Barbier",
-      "club": "FC Montlouis",
+      "id": "a199a2b1-e671-4285-b170-fd93ce5247a6",
+      "prenom": "Florian",
+      "nom": "Raspentino",
+      "club": "FC Limonest",
       "niveau": "N1",
       "poste": "attaquant",
       "points": 2,
       "contributions": [
         {
-          "date": "2026-08-22",
-          "adversaire": "US CHANTILLY",
-          "domicile": false,
-          "situation": "à égalité",
+          "date": "2026-09-19",
+          "adversaire": "Istres",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
           "resultat": "nul",
           "points": 1
         },
         {
-          "date": "2026-08-22",
-          "adversaire": "US CHANTILLY",
-          "domicile": false,
-          "situation": "à égalité",
+          "date": "2026-09-19",
+          "adversaire": "Istres",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
           "resultat": "nul",
           "points": 1
         }
@@ -169,55 +185,20 @@
       ]
     },
     {
-      "id": "4e938011-9b73-43ba-b747-d738c6799e21",
-      "prenom": "Najib",
-      "nom": "Bennour",
-      "club": "Nîmes Olympique",
-      "niveau": "N1",
-      "poste": "ailier_gauche",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        },
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "a199a2b1-e671-4285-b170-fd93ce5247a6",
-      "prenom": "Florian",
-      "nom": "Raspentino",
-      "club": "FC Limonest",
-      "niveau": "N1",
+      "id": "e58e3d5b-4fa9-48b9-8918-37d92e270f22",
+      "prenom": "Matthieu",
+      "nom": "Villette",
+      "club": "La Roche sur Yon",
+      "niveau": "Ligue 3",
       "poste": "attaquant",
-      "points": 2,
+      "points": 1,
       "contributions": [
         {
-          "date": "2026-09-19",
-          "adversaire": "Istres",
-          "domicile": true,
+          "date": "2026-09-26",
+          "adversaire": "US THIONVILLE LUSITANOS",
+          "domicile": false,
           "situation": "était mené 1 but(s)",
-          "resultat": "nul",
-          "points": 1
-        },
-        {
-          "date": "2026-09-19",
-          "adversaire": "Istres",
-          "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "nul",
+          "resultat": "victoire",
           "points": 1
         }
       ]
@@ -269,20 +250,39 @@
       ]
     },
     {
-      "id": "e58e3d5b-4fa9-48b9-8918-37d92e270f22",
-      "prenom": "Matthieu",
-      "nom": "Villette",
-      "club": "La Roche sur Yon",
+      "id": "e50df0c5-f81f-4e76-9f4c-efea8d94002d",
+      "prenom": "Nassim",
+      "nom": "Sabihi",
+      "club": "FC Villefranche Beaujolais",
       "niveau": "Ligue 3",
-      "poste": "attaquant",
+      "poste": "ailier gauche",
       "points": 1,
       "contributions": [
         {
-          "date": "2026-09-26",
-          "adversaire": "US THIONVILLE LUSITANOS",
+          "date": "2026-09-05",
+          "adversaire": "FC FLEURY 91",
           "domicile": false,
-          "situation": "était mené 1 but(s)",
-          "resultat": "victoire",
+          "situation": "était mené 4 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "01f12cf3-c4e3-4d5a-9def-9680c868c50a",
+      "prenom": "Fred",
+      "nom": "Ondoa Onambele",
+      "club": "FC Villefranche Beaujolais",
+      "niveau": "Ligue 3",
+      "poste": "lateral_gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "FC FLEURY 91",
+          "domicile": false,
+          "situation": "était mené 3 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
@@ -326,63 +326,6 @@
       ]
     },
     {
-      "id": "e50df0c5-f81f-4e76-9f4c-efea8d94002d",
-      "prenom": "Nassim",
-      "nom": "Sabihi",
-      "club": "FC Villefranche Beaujolais",
-      "niveau": "Ligue 3",
-      "poste": "ailier gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC FLEURY 91",
-          "domicile": false,
-          "situation": "était mené 4 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "01f12cf3-c4e3-4d5a-9def-9680c868c50a",
-      "prenom": "Fred",
-      "nom": "Ondoa Onambele",
-      "club": "FC Villefranche Beaujolais",
-      "niveau": "Ligue 3",
-      "poste": "lateral_gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC FLEURY 91",
-          "domicile": false,
-          "situation": "était mené 3 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
-      "prenom": "Etienne",
-      "nom": "Michut",
-      "club": "Paris 13 Atletico",
-      "niveau": "Ligue 3",
-      "poste": "milieu_offensif",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-10-03",
-          "adversaire": "US CONCARNEAU",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "defaite",
-          "points": 0
-        }
-      ]
-    },
-    {
       "id": "5dfa4b2e-d486-409a-bc25-55030b04136e",
       "prenom": "Cyril",
       "nom": "Khetir",
@@ -415,6 +358,52 @@
           "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
           "domicile": true,
           "situation": "menait 4 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
+      "prenom": "Etienne",
+      "nom": "Michut",
+      "club": "Paris 13 Atletico",
+      "niveau": "Ligue 3",
+      "poste": "milieu_offensif",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "US CONCARNEAU",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "defaite",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "10a3b367-ce86-4eec-9736-419d976bf847",
+      "prenom": "Marius",
+      "nom": "Reymond",
+      "club": "Sporting Club de Toulon",
+      "niveau": "N1",
+      "poste": "attaquant",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "CANET ROUSSILLON FC",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        },
+        {
+          "date": "2026-09-05",
+          "adversaire": "CANET ROUSSILLON FC",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
         }
