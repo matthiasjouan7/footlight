@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-10-07T14:13:37.083Z",
+  "updated_at": "2026-10-08T14:22:34.459Z",
   "joueurs": [
     {
       "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
@@ -46,6 +46,33 @@
           "situation": "à égalité",
           "resultat": "nul",
           "points": 1
+        }
+      ]
+    },
+    {
+      "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
+      "prenom": "Aboubacar",
+      "nom": "Camara",
+      "club": "Union Foot de Touraine",
+      "niveau": "N1",
+      "poste": "ailier_droit",
+      "points": 6,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "Châteauroux",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-09-05",
+          "adversaire": "Châteauroux",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
         }
       ]
     },
@@ -124,6 +151,33 @@
           "date": "2026-09-05",
           "adversaire": "FC MONTLOUIS",
           "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "4e938011-9b73-43ba-b747-d738c6799e21",
+      "prenom": "Najib",
+      "nom": "Bennour",
+      "club": "Nîmes Olympique",
+      "niveau": "N1",
+      "poste": "ailier_gauche",
+      "points": 2,
+      "contributions": [
+        {
+          "date": "2026-09-19",
+          "adversaire": "HAUTS LYONNAIS",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        },
+        {
+          "date": "2026-09-19",
+          "adversaire": "HAUTS LYONNAIS",
+          "domicile": false,
           "situation": "menait de 1 but",
           "resultat": "victoire",
           "points": 1
@@ -250,44 +304,6 @@
       ]
     },
     {
-      "id": "e50df0c5-f81f-4e76-9f4c-efea8d94002d",
-      "prenom": "Nassim",
-      "nom": "Sabihi",
-      "club": "FC Villefranche Beaujolais",
-      "niveau": "Ligue 3",
-      "poste": "ailier gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC FLEURY 91",
-          "domicile": false,
-          "situation": "était mené 4 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "01f12cf3-c4e3-4d5a-9def-9680c868c50a",
-      "prenom": "Fred",
-      "nom": "Ondoa Onambele",
-      "club": "FC Villefranche Beaujolais",
-      "niveau": "Ligue 3",
-      "poste": "lateral_gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC FLEURY 91",
-          "domicile": false,
-          "situation": "était mené 3 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
       "prenom": "Enzo",
       "nom": "Montet",
@@ -321,6 +337,44 @@
           "domicile": false,
           "situation": "était mené 2 but(s)",
           "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "e50df0c5-f81f-4e76-9f4c-efea8d94002d",
+      "prenom": "Nassim",
+      "nom": "Sabihi",
+      "club": "FC Villefranche Beaujolais",
+      "niveau": "Ligue 3",
+      "poste": "ailier gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "FC FLEURY 91",
+          "domicile": false,
+          "situation": "était mené 4 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "01f12cf3-c4e3-4d5a-9def-9680c868c50a",
+      "prenom": "Fred",
+      "nom": "Ondoa Onambele",
+      "club": "FC Villefranche Beaujolais",
+      "niveau": "Ligue 3",
+      "poste": "lateral_gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "FC FLEURY 91",
+          "domicile": false,
+          "situation": "était mené 3 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
