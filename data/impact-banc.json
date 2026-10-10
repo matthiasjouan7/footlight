@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-10-09T14:07:19.660Z",
+  "updated_at": "2026-10-10T13:17:18.416Z",
   "joueurs": [
     {
       "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
@@ -46,33 +46,6 @@
           "situation": "à égalité",
           "resultat": "nul",
           "points": 1
-        }
-      ]
-    },
-    {
-      "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
-      "prenom": "Aboubacar",
-      "nom": "Camara",
-      "club": "Union Foot de Touraine",
-      "niveau": "N1",
-      "poste": "ailier_droit",
-      "points": 6,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "Châteauroux",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        },
-        {
-          "date": "2026-09-05",
-          "adversaire": "Châteauroux",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
         }
       ]
     },
@@ -151,33 +124,6 @@
           "date": "2026-09-05",
           "adversaire": "FC MONTLOUIS",
           "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "4e938011-9b73-43ba-b747-d738c6799e21",
-      "prenom": "Najib",
-      "nom": "Bennour",
-      "club": "Nîmes Olympique",
-      "niveau": "N1",
-      "poste": "ailier_gauche",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        },
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
           "situation": "menait de 1 but",
           "resultat": "victoire",
           "points": 1
