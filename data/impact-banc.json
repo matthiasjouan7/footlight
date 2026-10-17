@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-10-16T12:07:41.036Z",
+  "updated_at": "2026-10-17T12:23:21.038Z",
   "joueurs": [
     {
       "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
@@ -92,14 +92,6 @@
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
-        },
-        {
-          "date": "2026-09-05",
-          "adversaire": "SC BASTIA",
-          "domicile": false,
-          "situation": "menait 2 but(s)",
-          "resultat": "victoire",
-          "points": 0
         }
       ]
     },
@@ -151,33 +143,6 @@
           "date": "2026-09-05",
           "adversaire": "FC MONTLOUIS",
           "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "4e938011-9b73-43ba-b747-d738c6799e21",
-      "prenom": "Najib",
-      "nom": "Bennour",
-      "club": "Nîmes Olympique",
-      "niveau": "N1",
-      "poste": "ailier_gauche",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        },
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
           "situation": "menait de 1 but",
           "resultat": "victoire",
           "points": 1
@@ -342,40 +307,21 @@
       ]
     },
     {
-      "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
-      "prenom": "Enzo",
-      "nom": "Montet",
-      "club": "US Thionville Lusitanos",
+      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
+      "prenom": "Etienne",
+      "nom": "Michut",
+      "club": "Paris 13 Atletico",
       "niveau": "Ligue 3",
-      "poste": "milieu_defensif",
-      "points": 1,
+      "poste": "milieu_offensif",
+      "points": 0,
       "contributions": [
         {
-          "date": "2026-09-05",
+          "date": "2026-10-03",
           "adversaire": "US CONCARNEAU",
           "domicile": false,
-          "situation": "était mené 2 but(s)",
-          "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
-      "prenom": "Fadel",
-      "nom": "Gobitaka",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "US CONCARNEAU",
-          "domicile": false,
-          "situation": "était mené 2 but(s)",
-          "resultat": "nul",
-          "points": 1
+          "situation": "à égalité",
+          "resultat": "defaite",
+          "points": 0
         }
       ]
     },
@@ -413,25 +359,6 @@
           "domicile": true,
           "situation": "menait 4 but(s)",
           "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
-      "prenom": "Etienne",
-      "nom": "Michut",
-      "club": "Paris 13 Atletico",
-      "niveau": "Ligue 3",
-      "poste": "milieu_offensif",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-10-03",
-          "adversaire": "US CONCARNEAU",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "defaite",
           "points": 0
         }
       ]
