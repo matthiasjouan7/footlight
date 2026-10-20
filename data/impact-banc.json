@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-10-19T14:30:51.579Z",
+  "updated_at": "2026-10-20T12:32:46.186Z",
   "joueurs": [
     {
       "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
@@ -88,25 +88,6 @@
       ]
     },
     {
-      "id": "bbcf3c93-fce4-486d-a814-92782f36e6e6",
-      "prenom": "Wesley",
-      "nom": "Zahibo",
-      "club": "Le Puy-en-Velay FC",
-      "niveau": "Ligue 3",
-      "poste": "lateral_gauche",
-      "points": 3,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "SC AUBAGNE AIR BEL",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        }
-      ]
-    },
-    {
       "id": "5a602495-0176-4246-b0eb-4accdec2a79e",
       "prenom": "Souleymane",
       "nom": "Anne",
@@ -138,6 +119,33 @@
           "date": "2026-10-03",
           "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
           "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-09-05",
+          "adversaire": "SC BASTIA",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "bbcf3c93-fce4-486d-a814-92782f36e6e6",
+      "prenom": "Wesley",
+      "nom": "Zahibo",
+      "club": "Le Puy-en-Velay FC",
+      "niveau": "Ligue 3",
+      "poste": "lateral_gauche",
+      "points": 3,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "SC AUBAGNE AIR BEL",
+          "domicile": false,
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
@@ -394,6 +402,44 @@
       ]
     },
     {
+      "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
+      "prenom": "Enzo",
+      "nom": "Montet",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "milieu_defensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "US CONCARNEAU",
+          "domicile": false,
+          "situation": "était mené 2 but(s)",
+          "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
+      "prenom": "Fadel",
+      "nom": "Gobitaka",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "ailier_gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-05",
+          "adversaire": "US CONCARNEAU",
+          "domicile": false,
+          "situation": "était mené 2 but(s)",
+          "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
       "prenom": "Etienne",
       "nom": "Michut",
@@ -445,6 +491,33 @@
           "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
           "domicile": true,
           "situation": "menait 4 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "87e77794-e53d-44d8-a92c-b01515b0ef7b",
+      "prenom": "Dalvin",
+      "nom": "Fellice",
+      "club": "US Le Pays du Valois",
+      "niveau": "N1",
+      "poste": "milieu_defensif",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "FC MONTLOUIS",
+          "domicile": true,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        },
+        {
+          "date": "2026-10-17",
+          "adversaire": "FC MONTLOUIS",
+          "domicile": true,
+          "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
         }
