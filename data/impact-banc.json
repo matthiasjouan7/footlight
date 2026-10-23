@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-10-22T12:45:00.488Z",
+  "updated_at": "2026-10-23T12:22:54.296Z",
   "joueurs": [
     {
       "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
@@ -88,25 +88,6 @@
       ]
     },
     {
-      "id": "5a602495-0176-4246-b0eb-4accdec2a79e",
-      "prenom": "Souleymane",
-      "nom": "Anne",
-      "club": "FC Fleury 91",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 3,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "F BOURG EN BRESSE P01",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        }
-      ]
-    },
-    {
       "id": "d0c00a8a-5dfd-4d58-823c-ade76f18e2e2",
       "prenom": "Mathis",
       "nom": "Colin",
@@ -119,6 +100,33 @@
           "date": "2026-10-03",
           "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
           "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-09-05",
+          "adversaire": "SC BASTIA",
+          "domicile": false,
+          "situation": "menait 2 but(s)",
+          "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "5a602495-0176-4246-b0eb-4accdec2a79e",
+      "prenom": "Souleymane",
+      "nom": "Anne",
+      "club": "FC Fleury 91",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 3,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "F BOURG EN BRESSE P01",
+          "domicile": false,
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
@@ -234,25 +242,6 @@
       ]
     },
     {
-      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
-      "prenom": "Abdelmalek",
-      "nom": "Amara",
-      "club": "Paris 13 Atletico",
-      "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "FC ROUEN 1899",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
       "prenom": "Bryan",
       "nom": "Labissiere",
@@ -285,6 +274,25 @@
           "adversaire": "US THIONVILLE LUSITANOS",
           "domicile": false,
           "situation": "était mené 1 but(s)",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
+      "prenom": "Abdelmalek",
+      "nom": "Amara",
+      "club": "Paris 13 Atletico",
+      "niveau": "Ligue 3",
+      "poste": "ailier_gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "FC ROUEN 1899",
+          "domicile": true,
+          "situation": "menait de 1 but",
           "resultat": "victoire",
           "points": 1
         }
@@ -337,39 +345,39 @@
       ]
     },
     {
-      "id": "e50df0c5-f81f-4e76-9f4c-efea8d94002d",
-      "prenom": "Nassim",
-      "nom": "Sabihi",
-      "club": "FC Villefranche Beaujolais",
+      "id": "3d570f16-b6e5-4a0c-933d-851de0273939",
+      "prenom": "Enzo",
+      "nom": "Montet",
+      "club": "US Thionville Lusitanos",
       "niveau": "Ligue 3",
-      "poste": "ailier gauche",
+      "poste": "milieu_defensif",
       "points": 1,
       "contributions": [
         {
           "date": "2026-09-05",
-          "adversaire": "FC FLEURY 91",
+          "adversaire": "US CONCARNEAU",
           "domicile": false,
-          "situation": "était mené 4 but(s)",
-          "resultat": "defaite",
+          "situation": "était mené 2 but(s)",
+          "resultat": "nul",
           "points": 1
         }
       ]
     },
     {
-      "id": "01f12cf3-c4e3-4d5a-9def-9680c868c50a",
-      "prenom": "Fred",
-      "nom": "Ondoa Onambele",
-      "club": "FC Villefranche Beaujolais",
+      "id": "de62504e-e7b6-49f2-a48d-55556680a29a",
+      "prenom": "Fadel",
+      "nom": "Gobitaka",
+      "club": "US Thionville Lusitanos",
       "niveau": "Ligue 3",
-      "poste": "lateral_gauche",
+      "poste": "ailier_gauche",
       "points": 1,
       "contributions": [
         {
           "date": "2026-09-05",
-          "adversaire": "FC FLEURY 91",
+          "adversaire": "US CONCARNEAU",
           "domicile": false,
-          "situation": "était mené 3 but(s)",
-          "resultat": "defaite",
+          "situation": "était mené 2 but(s)",
+          "resultat": "nul",
           "points": 1
         }
       ]
@@ -389,44 +397,6 @@
           "domicile": false,
           "situation": "à égalité",
           "resultat": "defaite",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "5dfa4b2e-d486-409a-bc25-55030b04136e",
-      "prenom": "Cyril",
-      "nom": "Khetir",
-      "club": "FC Fleury 91",
-      "niveau": "Ligue 3",
-      "poste": "milieu_central",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
-          "domicile": true,
-          "situation": "menait 4 but(s)",
-          "resultat": "victoire",
-          "points": 0
-        }
-      ]
-    },
-    {
-      "id": "7d3e8241-991c-4c1e-aeb8-1dabc3e06a94",
-      "prenom": "Clément",
-      "nom": "Badin",
-      "club": "FC Fleury 91",
-      "niveau": "Ligue 3",
-      "poste": "ailier_droit",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
-          "domicile": true,
-          "situation": "menait 4 but(s)",
-          "resultat": "victoire",
           "points": 0
         }
       ]
