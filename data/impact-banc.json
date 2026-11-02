@@ -4,8 +4,35 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-01T14:02:50.445Z",
+  "updated_at": "2026-11-02T16:46:42.998Z",
   "joueurs": [
+    {
+      "id": "a2b77657-62f3-4b50-bcc4-a097eaacacd8",
+      "prenom": "Thomas",
+      "nom": "De Parmentier",
+      "club": "Entente Feignies Aulnoye FC",
+      "niveau": "N1",
+      "poste": "ailier_droit",
+      "points": 6,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "FC CHAMBLY OISE",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-10-03",
+          "adversaire": "FC CHAMBLY OISE",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        }
+      ]
+    },
     {
       "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
       "prenom": "Morgan",
@@ -34,25 +61,25 @@
       ]
     },
     {
-      "id": "a2b77657-62f3-4b50-bcc4-a097eaacacd8",
-      "prenom": "Thomas",
-      "nom": "De Parmentier",
-      "club": "Entente Feignies Aulnoye FC",
+      "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
+      "prenom": "Aboubacar",
+      "nom": "Camara",
+      "club": "Union Foot de Touraine",
       "niveau": "N1",
       "poste": "ailier_droit",
       "points": 6,
       "contributions": [
         {
-          "date": "2026-10-03",
-          "adversaire": "FC CHAMBLY OISE",
+          "date": "2026-09-05",
+          "adversaire": "Châteauroux",
           "domicile": true,
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
         },
         {
-          "date": "2026-10-03",
-          "adversaire": "FC CHAMBLY OISE",
+          "date": "2026-09-05",
+          "adversaire": "Châteauroux",
           "domicile": true,
           "situation": "à égalité",
           "resultat": "victoire",
@@ -122,6 +149,33 @@
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
+        }
+      ]
+    },
+    {
+      "id": "98953883-d5f0-4a41-b5ee-109dc05b00b1",
+      "prenom": "Abdel Nour",
+      "nom": "Bouhenni",
+      "club": "US Lusitanos Saint-Maur",
+      "niveau": "N1",
+      "poste": "attaquant",
+      "points": 2,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "FC BORGO",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        },
+        {
+          "date": "2026-10-03",
+          "adversaire": "FC BORGO",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
         }
       ]
     },
@@ -234,6 +288,33 @@
       ]
     },
     {
+      "id": "4e938011-9b73-43ba-b747-d738c6799e21",
+      "prenom": "Najib",
+      "nom": "Bennour",
+      "club": "Nîmes Olympique",
+      "niveau": "N1",
+      "poste": "ailier_gauche",
+      "points": 2,
+      "contributions": [
+        {
+          "date": "2026-09-19",
+          "adversaire": "HAUTS LYONNAIS",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        },
+        {
+          "date": "2026-09-19",
+          "adversaire": "HAUTS LYONNAIS",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "a199a2b1-e671-4285-b170-fd93ce5247a6",
       "prenom": "Florian",
       "nom": "Raspentino",
@@ -280,6 +361,25 @@
       ]
     },
     {
+      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
+      "prenom": "Abdelmalek",
+      "nom": "Amara",
+      "club": "Paris 13 Atletico",
+      "niveau": "Ligue 3",
+      "poste": "ailier_gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "FC ROUEN 1899",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "d8ec40b4-51f5-43b9-89b6-541c9e46dfe1",
       "prenom": "Clément",
       "nom": "Rodrigues",
@@ -313,25 +413,6 @@
           "domicile": true,
           "situation": "menait de 1 but",
           "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
-      "prenom": "Bryan",
-      "nom": "Labissiere",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "FC VERSAILLES",
-          "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "defaite",
           "points": 1
         }
       ]
@@ -375,20 +456,20 @@
       ]
     },
     {
-      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
-      "prenom": "Abdelmalek",
-      "nom": "Amara",
-      "club": "Paris 13 Atletico",
+      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
+      "prenom": "Bryan",
+      "nom": "Labissiere",
+      "club": "US Thionville Lusitanos",
       "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
+      "poste": "attaquant",
       "points": 1,
       "contributions": [
         {
           "date": "2026-10-17",
-          "adversaire": "FC ROUEN 1899",
+          "adversaire": "FC VERSAILLES",
           "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
+          "situation": "était mené 1 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
