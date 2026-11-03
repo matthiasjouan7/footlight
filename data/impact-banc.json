@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-02T16:46:42.998Z",
+  "updated_at": "2026-11-03T14:53:48.176Z",
   "joueurs": [
     {
       "id": "a2b77657-62f3-4b50-bcc4-a097eaacacd8",
@@ -361,25 +361,6 @@
       ]
     },
     {
-      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
-      "prenom": "Abdelmalek",
-      "nom": "Amara",
-      "club": "Paris 13 Atletico",
-      "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "FC ROUEN 1899",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "d8ec40b4-51f5-43b9-89b6-541c9e46dfe1",
       "prenom": "Clément",
       "nom": "Rodrigues",
@@ -413,6 +394,25 @@
           "domicile": true,
           "situation": "menait de 1 but",
           "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
+      "prenom": "Bryan",
+      "nom": "Labissiere",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "FC VERSAILLES",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
@@ -456,40 +456,21 @@
       ]
     },
     {
-      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
-      "prenom": "Bryan",
-      "nom": "Labissiere",
-      "club": "US Thionville Lusitanos",
+      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
+      "prenom": "Abdelmalek",
+      "nom": "Amara",
+      "club": "Paris 13 Atletico",
       "niveau": "Ligue 3",
-      "poste": "attaquant",
+      "poste": "ailier_gauche",
       "points": 1,
       "contributions": [
         {
           "date": "2026-10-17",
-          "adversaire": "FC VERSAILLES",
+          "adversaire": "FC ROUEN 1899",
           "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "defaite",
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
           "points": 1
-        }
-      ]
-    },
-    {
-      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
-      "prenom": "Etienne",
-      "nom": "Michut",
-      "club": "Paris 13 Atletico",
-      "niveau": "Ligue 3",
-      "poste": "milieu_offensif",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-10-03",
-          "adversaire": "US CONCARNEAU",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "defaite",
-          "points": 0
         }
       ]
     },
@@ -527,6 +508,25 @@
           "domicile": true,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
+      "prenom": "Etienne",
+      "nom": "Michut",
+      "club": "Paris 13 Atletico",
+      "niveau": "Ligue 3",
+      "poste": "milieu_offensif",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "US CONCARNEAU",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "defaite",
           "points": 0
         }
       ]
