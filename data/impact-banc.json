@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-04T15:02:26.541Z",
+  "updated_at": "2026-11-05T15:14:33.284Z",
   "joueurs": [
     {
       "id": "a2b77657-62f3-4b50-bcc4-a097eaacacd8",
@@ -149,6 +149,33 @@
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
+        }
+      ]
+    },
+    {
+      "id": "73ddcf19-1548-452f-b18e-db0adddd0845",
+      "prenom": "Sory",
+      "nom": "Doumbouya",
+      "club": "Nîmes Olympique",
+      "niveau": "N1",
+      "poste": "attaquant",
+      "points": 2,
+      "contributions": [
+        {
+          "date": "2026-10-31",
+          "adversaire": "Limonest",
+          "domicile": true,
+          "situation": "était mené 2 but(s)",
+          "resultat": "nul",
+          "points": 1
+        },
+        {
+          "date": "2026-10-31",
+          "adversaire": "Limonest",
+          "domicile": true,
+          "situation": "était mené 2 but(s)",
+          "resultat": "nul",
+          "points": 1
         }
       ]
     },
@@ -361,17 +388,55 @@
       ]
     },
     {
-      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
-      "prenom": "Abdelmalek",
-      "nom": "Amara",
-      "club": "Paris 13 Atletico",
+      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
+      "prenom": "Bryan",
+      "nom": "Labissiere",
+      "club": "US Thionville Lusitanos",
       "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
+      "poste": "attaquant",
       "points": 1,
       "contributions": [
         {
           "date": "2026-10-17",
-          "adversaire": "FC ROUEN 1899",
+          "adversaire": "FC VERSAILLES",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
+          "resultat": "defaite",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "e58e3d5b-4fa9-48b9-8918-37d92e270f22",
+      "prenom": "Matthieu",
+      "nom": "Villette",
+      "club": "La Roche sur Yon",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-09-26",
+          "adversaire": "US THIONVILLE LUSITANOS",
+          "domicile": false,
+          "situation": "était mené 1 but(s)",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
+      "prenom": "Cheikh",
+      "nom": "N'Doye",
+      "club": "AS Cannes",
+      "niveau": "Ligue 3",
+      "poste": "milieu_central",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "QRM",
           "domicile": true,
           "situation": "menait de 1 but",
           "resultat": "victoire",
@@ -418,58 +483,20 @@
       ]
     },
     {
-      "id": "e58e3d5b-4fa9-48b9-8918-37d92e270f22",
-      "prenom": "Matthieu",
-      "nom": "Villette",
-      "club": "La Roche sur Yon",
+      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
+      "prenom": "Abdelmalek",
+      "nom": "Amara",
+      "club": "Paris 13 Atletico",
       "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-09-26",
-          "adversaire": "US THIONVILLE LUSITANOS",
-          "domicile": false,
-          "situation": "était mené 1 but(s)",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
-      "prenom": "Cheikh",
-      "nom": "N'Doye",
-      "club": "AS Cannes",
-      "niveau": "Ligue 3",
-      "poste": "milieu_central",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-03",
-          "adversaire": "QRM",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
-      "prenom": "Bryan",
-      "nom": "Labissiere",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
+      "poste": "ailier_gauche",
       "points": 1,
       "contributions": [
         {
           "date": "2026-10-17",
-          "adversaire": "FC VERSAILLES",
+          "adversaire": "FC ROUEN 1899",
           "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "defaite",
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
           "points": 1
         }
       ]
