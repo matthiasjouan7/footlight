@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-05T15:14:33.284Z",
+  "updated_at": "2026-11-06T14:47:51.316Z",
   "joueurs": [
     {
       "id": "a2b77657-62f3-4b50-bcc4-a097eaacacd8",
@@ -53,33 +53,6 @@
         {
           "date": "2026-10-03",
           "adversaire": "ST PRYVE ST HILAIRE FC",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        }
-      ]
-    },
-    {
-      "id": "b44c5040-b233-464b-adb2-371dd82eb7e4",
-      "prenom": "Aboubacar",
-      "nom": "Camara",
-      "club": "Union Foot de Touraine",
-      "niveau": "N1",
-      "poste": "ailier_droit",
-      "points": 6,
-      "contributions": [
-        {
-          "date": "2026-09-05",
-          "adversaire": "Châteauroux",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        },
-        {
-          "date": "2026-09-05",
-          "adversaire": "Châteauroux",
           "domicile": true,
           "situation": "à égalité",
           "resultat": "victoire",
@@ -149,33 +122,6 @@
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
-        }
-      ]
-    },
-    {
-      "id": "73ddcf19-1548-452f-b18e-db0adddd0845",
-      "prenom": "Sory",
-      "nom": "Doumbouya",
-      "club": "Nîmes Olympique",
-      "niveau": "N1",
-      "poste": "attaquant",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-10-31",
-          "adversaire": "Limonest",
-          "domicile": true,
-          "situation": "était mené 2 but(s)",
-          "resultat": "nul",
-          "points": 1
-        },
-        {
-          "date": "2026-10-31",
-          "adversaire": "Limonest",
-          "domicile": true,
-          "situation": "était mené 2 but(s)",
-          "resultat": "nul",
-          "points": 1
         }
       ]
     },
@@ -315,74 +261,39 @@
       ]
     },
     {
-      "id": "4e938011-9b73-43ba-b747-d738c6799e21",
-      "prenom": "Najib",
-      "nom": "Bennour",
-      "club": "Nîmes Olympique",
-      "niveau": "N1",
-      "poste": "ailier_gauche",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        },
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "a199a2b1-e671-4285-b170-fd93ce5247a6",
-      "prenom": "Florian",
-      "nom": "Raspentino",
-      "club": "FC Limonest",
-      "niveau": "N1",
-      "poste": "attaquant",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-09-19",
-          "adversaire": "Istres",
-          "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "nul",
-          "points": 1
-        },
-        {
-          "date": "2026-09-19",
-          "adversaire": "Istres",
-          "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "de5ea2c3-60a4-4ebf-8015-4854d563b2cd",
-      "prenom": "Hugo",
-      "nom": "Aubourg",
-      "club": "US Orléans",
+      "id": "d8ec40b4-51f5-43b9-89b6-541c9e46dfe1",
+      "prenom": "Clément",
+      "nom": "Rodrigues",
+      "club": "SC Bastia",
       "niveau": "Ligue 3",
-      "poste": "milieu_defensif",
+      "poste": "attaquant",
       "points": 1,
       "contributions": [
         {
           "date": "2026-10-31",
-          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
+          "adversaire": "QRM",
           "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "nul",
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "d34db4c8-98b3-49f7-8321-1b3a22b8ef5c",
+      "prenom": "Erawan",
+      "nom": "Garnier",
+      "club": "SC Bastia",
+      "niveau": "Ligue 3",
+      "poste": "ailier_droit",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-31",
+          "adversaire": "QRM",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
           "points": 1
         }
       ]
@@ -445,39 +356,20 @@
       ]
     },
     {
-      "id": "d8ec40b4-51f5-43b9-89b6-541c9e46dfe1",
-      "prenom": "Clément",
-      "nom": "Rodrigues",
-      "club": "SC Bastia",
+      "id": "de5ea2c3-60a4-4ebf-8015-4854d563b2cd",
+      "prenom": "Hugo",
+      "nom": "Aubourg",
+      "club": "US Orléans",
       "niveau": "Ligue 3",
-      "poste": "attaquant",
+      "poste": "milieu_defensif",
       "points": 1,
       "contributions": [
         {
           "date": "2026-10-31",
-          "adversaire": "QRM",
+          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
           "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "d34db4c8-98b3-49f7-8321-1b3a22b8ef5c",
-      "prenom": "Erawan",
-      "nom": "Garnier",
-      "club": "SC Bastia",
-      "niveau": "Ligue 3",
-      "poste": "ailier_droit",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-31",
-          "adversaire": "QRM",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
+          "situation": "était mené 1 but(s)",
+          "resultat": "nul",
           "points": 1
         }
       ]
@@ -498,25 +390,6 @@
           "situation": "menait de 1 but",
           "resultat": "victoire",
           "points": 1
-        }
-      ]
-    },
-    {
-      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
-      "prenom": "Etienne",
-      "nom": "Michut",
-      "club": "Paris 13 Atletico",
-      "niveau": "Ligue 3",
-      "poste": "milieu_offensif",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-10-03",
-          "adversaire": "US CONCARNEAU",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "defaite",
-          "points": 0
         }
       ]
     },
@@ -554,6 +427,25 @@
           "domicile": true,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
+      "prenom": "Etienne",
+      "nom": "Michut",
+      "club": "Paris 13 Atletico",
+      "niveau": "Ligue 3",
+      "poste": "milieu_offensif",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "US CONCARNEAU",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "defaite",
           "points": 0
         }
       ]
