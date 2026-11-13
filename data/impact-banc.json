@@ -4,8 +4,51 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-12T15:51:32.903Z",
+  "updated_at": "2026-11-13T15:05:04.333Z",
   "joueurs": [
+    {
+      "id": "b2c137b4-a565-4129-b173-c84943482bd1",
+      "prenom": "Maxence",
+      "nom": "Fortier",
+      "club": "GFA Rumilly Vallières",
+      "niveau": "N1",
+      "poste": "ailier_droit",
+      "points": 8,
+      "contributions": [
+        {
+          "date": "2026-10-31",
+          "adversaire": "Istres",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-10-31",
+          "adversaire": "Istres",
+          "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        },
+        {
+          "date": "2026-11-11",
+          "adversaire": "Saint-Priest",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        },
+        {
+          "date": "2026-11-11",
+          "adversaire": "Saint-Priest",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
     {
       "id": "33c0e18f-eb28-4c8c-b940-8b565540d74b",
       "prenom": "Morgan",
@@ -88,33 +131,6 @@
       ]
     },
     {
-      "id": "b2c137b4-a565-4129-b173-c84943482bd1",
-      "prenom": "Maxence",
-      "nom": "Fortier",
-      "club": "GFA Rumilly Vallières",
-      "niveau": "N1",
-      "poste": "ailier_droit",
-      "points": 6,
-      "contributions": [
-        {
-          "date": "2026-10-31",
-          "adversaire": "Istres",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        },
-        {
-          "date": "2026-10-31",
-          "adversaire": "Istres",
-          "domicile": true,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        }
-      ]
-    },
-    {
       "id": "5021bc96-5f99-4493-af25-f3e832f3e592",
       "prenom": "Brice",
       "nom": "Oggad",
@@ -176,33 +192,6 @@
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
-        }
-      ]
-    },
-    {
-      "id": "4e938011-9b73-43ba-b747-d738c6799e21",
-      "prenom": "Najib",
-      "nom": "Bennour",
-      "club": "Nîmes Olympique",
-      "niveau": "N1",
-      "poste": "ailier_gauche",
-      "points": 2,
-      "contributions": [
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        },
-        {
-          "date": "2026-09-19",
-          "adversaire": "HAUTS LYONNAIS",
-          "domicile": false,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
         }
       ]
     },
@@ -283,6 +272,33 @@
           "domicile": true,
           "situation": "était mené 1 but(s)",
           "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "4e938011-9b73-43ba-b747-d738c6799e21",
+      "prenom": "Najib",
+      "nom": "Bennour",
+      "club": "Nîmes Olympique",
+      "niveau": "N1",
+      "poste": "ailier_gauche",
+      "points": 2,
+      "contributions": [
+        {
+          "date": "2026-09-19",
+          "adversaire": "HAUTS LYONNAIS",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        },
+        {
+          "date": "2026-09-19",
+          "adversaire": "HAUTS LYONNAIS",
+          "domicile": false,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
           "points": 1
         }
       ]
@@ -402,25 +418,6 @@
       ]
     },
     {
-      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
-      "prenom": "Bryan",
-      "nom": "Labissiere",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "FC VERSAILLES",
-          "domicile": true,
-          "situation": "était mené 1 but(s)",
-          "resultat": "defaite",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "e58e3d5b-4fa9-48b9-8918-37d92e270f22",
       "prenom": "Matthieu",
       "nom": "Villette",
@@ -435,6 +432,25 @@
           "domicile": false,
           "situation": "était mené 1 but(s)",
           "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
+      "prenom": "Bryan",
+      "nom": "Labissiere",
+      "club": "US Thionville Lusitanos",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "FC VERSAILLES",
+          "domicile": true,
+          "situation": "était mené 1 but(s)",
+          "resultat": "defaite",
           "points": 1
         }
       ]
