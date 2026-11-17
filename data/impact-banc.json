@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-16T16:46:37.060Z",
+  "updated_at": "2026-11-17T16:42:06.720Z",
   "joueurs": [
     {
       "id": "a276448c-f5e0-4459-b3c5-e4d43ddcfc59",
@@ -261,6 +261,44 @@
       ]
     },
     {
+      "id": "d40d414f-9be7-4037-abd5-a5073107c30e",
+      "prenom": "Jules",
+      "nom": "Varvat",
+      "club": "US Concarneau",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-11-07",
+          "adversaire": "FC FLEURY 91",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
+      "prenom": "Cheikh",
+      "nom": "N'Doye",
+      "club": "AS Cannes",
+      "niveau": "Ligue 3",
+      "poste": "milieu_central",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "QRM",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
       "prenom": "Abdelmalek",
       "nom": "Amara",
@@ -318,58 +356,20 @@
       ]
     },
     {
-      "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
-      "prenom": "Cheikh",
-      "nom": "N'Doye",
-      "club": "AS Cannes",
+      "id": "de5ea2c3-60a4-4ebf-8015-4854d563b2cd",
+      "prenom": "Hugo",
+      "nom": "Aubourg",
+      "club": "US Orléans",
       "niveau": "Ligue 3",
-      "poste": "milieu_central",
+      "poste": "milieu_defensif",
       "points": 1,
       "contributions": [
         {
-          "date": "2026-10-03",
-          "adversaire": "QRM",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "d40d414f-9be7-4037-abd5-a5073107c30e",
-      "prenom": "Jules",
-      "nom": "Varvat",
-      "club": "US Concarneau",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-11-07",
-          "adversaire": "FC FLEURY 91",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
-      "prenom": "Bryan",
-      "nom": "Labissiere",
-      "club": "US Thionville Lusitanos",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "FC VERSAILLES",
+          "date": "2026-10-31",
+          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
           "domicile": true,
           "situation": "était mené 1 but(s)",
-          "resultat": "defaite",
+          "resultat": "nul",
           "points": 1
         }
       ]
@@ -394,40 +394,21 @@
       ]
     },
     {
-      "id": "de5ea2c3-60a4-4ebf-8015-4854d563b2cd",
-      "prenom": "Hugo",
-      "nom": "Aubourg",
-      "club": "US Orléans",
+      "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
+      "prenom": "Bryan",
+      "nom": "Labissiere",
+      "club": "US Thionville Lusitanos",
       "niveau": "Ligue 3",
-      "poste": "milieu_defensif",
+      "poste": "attaquant",
       "points": 1,
       "contributions": [
         {
-          "date": "2026-10-31",
-          "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
+          "date": "2026-10-17",
+          "adversaire": "FC VERSAILLES",
           "domicile": true,
           "situation": "était mené 1 but(s)",
-          "resultat": "nul",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
-      "prenom": "Etienne",
-      "nom": "Michut",
-      "club": "Paris 13 Atletico",
-      "niveau": "Ligue 3",
-      "poste": "milieu_offensif",
-      "points": 0,
-      "contributions": [
-        {
-          "date": "2026-10-03",
-          "adversaire": "US CONCARNEAU",
-          "domicile": false,
-          "situation": "à égalité",
           "resultat": "defaite",
-          "points": 0
+          "points": 1
         }
       ]
     },
@@ -465,6 +446,25 @@
           "domicile": true,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "0516d4d7-de7f-4227-93e8-69cd4994d11a",
+      "prenom": "Etienne",
+      "nom": "Michut",
+      "club": "Paris 13 Atletico",
+      "niveau": "Ligue 3",
+      "poste": "milieu_offensif",
+      "points": 0,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "US CONCARNEAU",
+          "domicile": false,
+          "situation": "à égalité",
+          "resultat": "defaite",
           "points": 0
         }
       ]
