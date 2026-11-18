@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-17T16:42:06.720Z",
+  "updated_at": "2026-11-18T16:08:48.589Z",
   "joueurs": [
     {
       "id": "a276448c-f5e0-4459-b3c5-e4d43ddcfc59",
@@ -280,44 +280,6 @@
       ]
     },
     {
-      "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
-      "prenom": "Cheikh",
-      "nom": "N'Doye",
-      "club": "AS Cannes",
-      "niveau": "Ligue 3",
-      "poste": "milieu_central",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-03",
-          "adversaire": "QRM",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
-      "prenom": "Abdelmalek",
-      "nom": "Amara",
-      "club": "Paris 13 Atletico",
-      "niveau": "Ligue 3",
-      "poste": "ailier_gauche",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "FC ROUEN 1899",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "d8ec40b4-51f5-43b9-89b6-541c9e46dfe1",
       "prenom": "Clément",
       "nom": "Rodrigues",
@@ -370,6 +332,44 @@
           "domicile": true,
           "situation": "était mené 1 but(s)",
           "resultat": "nul",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
+      "prenom": "Cheikh",
+      "nom": "N'Doye",
+      "club": "AS Cannes",
+      "niveau": "Ligue 3",
+      "poste": "milieu_central",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-03",
+          "adversaire": "QRM",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "09da5613-a1e6-431b-a6e1-edc76b177dbb",
+      "prenom": "Abdelmalek",
+      "nom": "Amara",
+      "club": "Paris 13 Atletico",
+      "niveau": "Ligue 3",
+      "poste": "ailier_gauche",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "FC ROUEN 1899",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
           "points": 1
         }
       ]
