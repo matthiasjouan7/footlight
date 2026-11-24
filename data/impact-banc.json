@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-23T19:24:21.705Z",
+  "updated_at": "2026-11-24T18:35:02.811Z",
   "joueurs": [
     {
       "id": "facb4368-fe16-4a52-b9a3-a9bc2ee2213c",
@@ -315,44 +315,6 @@
       ]
     },
     {
-      "id": "19765bb2-7533-446b-a462-4f9b9c666a11",
-      "prenom": "Simon",
-      "nom": "Cara",
-      "club": "FC Versailles 78",
-      "niveau": "Ligue 3",
-      "poste": "milieu_offensif",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-11-21",
-          "adversaire": "F BOURG EN BRESSE P01",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "35dfe240-3be5-4751-abe7-d01e76ccbe9a",
-      "prenom": "Jawed",
-      "nom": "Kalai",
-      "club": "FC Versailles 78",
-      "niveau": "Ligue 3",
-      "poste": "ailier_droit",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-11-21",
-          "adversaire": "F BOURG EN BRESSE P01",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "de5ea2c3-60a4-4ebf-8015-4854d563b2cd",
       "prenom": "Hugo",
       "nom": "Aubourg",
@@ -448,6 +410,44 @@
       ]
     },
     {
+      "id": "19765bb2-7533-446b-a462-4f9b9c666a11",
+      "prenom": "Simon",
+      "nom": "Cara",
+      "club": "FC Versailles 78",
+      "niveau": "Ligue 3",
+      "poste": "milieu_offensif",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-11-21",
+          "adversaire": "F BOURG EN BRESSE P01",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "35dfe240-3be5-4751-abe7-d01e76ccbe9a",
+      "prenom": "Jawed",
+      "nom": "Kalai",
+      "club": "FC Versailles 78",
+      "niveau": "Ligue 3",
+      "poste": "ailier_droit",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-11-21",
+          "adversaire": "F BOURG EN BRESSE P01",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
       "prenom": "Cheikh",
       "nom": "N'Doye",
@@ -459,6 +459,25 @@
         {
           "date": "2026-10-03",
           "adversaire": "QRM",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "d40d414f-9be7-4037-abd5-a5073107c30e",
+      "prenom": "Jules",
+      "nom": "Varvat",
+      "club": "US Concarneau",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-11-07",
+          "adversaire": "FC FLEURY 91",
           "domicile": true,
           "situation": "menait de 1 but",
           "resultat": "victoire",
