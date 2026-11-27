@@ -4,7 +4,7 @@
     "Ligue 3",
     "N1"
   ],
-  "updated_at": "2026-11-26T17:31:02.854Z",
+  "updated_at": "2026-11-27T17:12:03.087Z",
   "joueurs": [
     {
       "id": "facb4368-fe16-4a52-b9a3-a9bc2ee2213c",
@@ -196,25 +196,6 @@
       ]
     },
     {
-      "id": "5a602495-0176-4246-b0eb-4accdec2a79e",
-      "prenom": "Souleymane",
-      "nom": "Anne",
-      "club": "FC Fleury 91",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 3,
-      "contributions": [
-        {
-          "date": "2026-10-17",
-          "adversaire": "F BOURG EN BRESSE P01",
-          "domicile": false,
-          "situation": "à égalité",
-          "resultat": "victoire",
-          "points": 3
-        }
-      ]
-    },
-    {
       "id": "d0c00a8a-5dfd-4d58-823c-ade76f18e2e2",
       "prenom": "Mathis",
       "nom": "Colin",
@@ -227,6 +208,25 @@
           "date": "2026-10-03",
           "adversaire": "FC VILLEFRANCHE BEAUJOLAIS",
           "domicile": true,
+          "situation": "à égalité",
+          "resultat": "victoire",
+          "points": 3
+        }
+      ]
+    },
+    {
+      "id": "5a602495-0176-4246-b0eb-4accdec2a79e",
+      "prenom": "Souleymane",
+      "nom": "Anne",
+      "club": "FC Fleury 91",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 3,
+      "contributions": [
+        {
+          "date": "2026-10-17",
+          "adversaire": "F BOURG EN BRESSE P01",
+          "domicile": false,
           "situation": "à égalité",
           "resultat": "victoire",
           "points": 3
@@ -361,6 +361,25 @@
       ]
     },
     {
+      "id": "d40d414f-9be7-4037-abd5-a5073107c30e",
+      "prenom": "Jules",
+      "nom": "Varvat",
+      "club": "US Concarneau",
+      "niveau": "Ligue 3",
+      "poste": "attaquant",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-11-07",
+          "adversaire": "FC FLEURY 91",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
       "id": "c80d8b06-5e86-423e-a1be-33895e77d3b1",
       "prenom": "Bryan",
       "nom": "Labissiere",
@@ -409,6 +428,25 @@
       "contributions": [
         {
           "date": "2026-10-31",
+          "adversaire": "QRM",
+          "domicile": true,
+          "situation": "menait de 1 but",
+          "resultat": "victoire",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
+      "prenom": "Cheikh",
+      "nom": "N'Doye",
+      "club": "AS Cannes",
+      "niveau": "Ligue 3",
+      "poste": "milieu_central",
+      "points": 1,
+      "contributions": [
+        {
+          "date": "2026-10-03",
           "adversaire": "QRM",
           "domicile": true,
           "situation": "menait de 1 but",
@@ -475,44 +513,6 @@
       ]
     },
     {
-      "id": "0a4679e2-65c8-4f0c-af01-833699226d4f",
-      "prenom": "Cheikh",
-      "nom": "N'Doye",
-      "club": "AS Cannes",
-      "niveau": "Ligue 3",
-      "poste": "milieu_central",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-10-03",
-          "adversaire": "QRM",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
-      "id": "d40d414f-9be7-4037-abd5-a5073107c30e",
-      "prenom": "Jules",
-      "nom": "Varvat",
-      "club": "US Concarneau",
-      "niveau": "Ligue 3",
-      "poste": "attaquant",
-      "points": 1,
-      "contributions": [
-        {
-          "date": "2026-11-07",
-          "adversaire": "FC FLEURY 91",
-          "domicile": true,
-          "situation": "menait de 1 but",
-          "resultat": "victoire",
-          "points": 1
-        }
-      ]
-    },
-    {
       "id": "53edf70c-1535-4cae-a4a3-a0c60db408a3",
       "prenom": "Alexis",
       "nom": "Kabamba",
@@ -522,16 +522,16 @@
       "points": 0,
       "contributions": [
         {
-          "date": "2026-11-21",
-          "adversaire": "F BOURG EN BRESSE P01",
+          "date": "2026-10-31",
+          "adversaire": "SC AUBAGNE AIR BEL",
           "domicile": true,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
           "points": 0
         },
         {
-          "date": "2026-10-31",
-          "adversaire": "SC AUBAGNE AIR BEL",
+          "date": "2026-11-21",
+          "adversaire": "F BOURG EN BRESSE P01",
           "domicile": true,
           "situation": "menait 2 but(s)",
           "resultat": "victoire",
